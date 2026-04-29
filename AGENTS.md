@@ -54,3 +54,16 @@ Field Ledger is a mobile-first web app for individual Army property accountabili
 - Use `field-ledger-provider-boundary` for auth, billing, storage, email, or notification integration.
 - Use `field-ledger-architecture-audit` before large PRs or after several slices.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `waffleflopper/field-ledger`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default five-label triage vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This repo uses a single-context domain-doc layout: root `CONTEXT.md` plus root `docs/adr/`. See `docs/agents/domain.md`.

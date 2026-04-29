@@ -1,0 +1,1 @@
+-- Field Ledger has no seed data in the scaffold phase.

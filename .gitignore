@@ -1,1 +1,25 @@
 .DS_Store
+
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# production
+build/
+
+# local env files
+.env*
+!.env.example
+
+# logs
+*.log
+
+# typescript
+*.tsbuildinfo
+
+# test artifacts
+test-results/
+playwright-report/
