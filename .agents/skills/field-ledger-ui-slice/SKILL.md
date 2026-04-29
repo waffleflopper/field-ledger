@@ -21,6 +21,7 @@ Use this skill for app shell, route layout, or feature UI work.
 - Dashboard priority is overdue/upcoming requirements, quick actions, signed-out items.
 - Use the mock as workflow/layout truth, not pixel-perfect law.
 - Use shadcn/ui and Tailwind v4.
+- Use impeccable skills for good UI where it doesn't conflict with shadcn/ui.
 - Build into real `/app/...` routes.
 - Do not create a feature-only mega-route.
 - Item screens must work well without photos.
