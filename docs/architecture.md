@@ -68,8 +68,10 @@ belongs in domain modules; shell pages are only composition surfaces.
 - Supabase provides Postgres/Auth/Storage.
 - Drizzle owns app schema and migrations.
 - RLS is required for account-owned data.
-- The `accounts` table uses the Supabase Auth user id as its primary key,
-  establishing the one-login-to-one-owner-account boundary.
+- The `accounts` table has an app-owned primary key and a unique `user_id`
+  mapping to the Supabase Auth user id, establishing the
+  one-login-to-one-owner-account boundary without making auth ids the product
+  ownership id.
 - User-owned tables after `accounts` must include `account_id`.
 - RLS protects ownership. App services protect behavior.
 - Service-role or privileged database access must be rare, isolated, and documented.

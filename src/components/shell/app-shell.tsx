@@ -5,8 +5,17 @@ import { BottomNav } from "@/components/shell/bottom-nav";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OnboardingNotice } from "@/modules/accounts/ui/onboarding-notice";
+import type { getOnboardingStatus } from "@/modules/accounts/application/ensure-account";
 
-export function AppShell({ children }: { children: ReactNode }) {
+type InitialOnboardingStatus = ReturnType<typeof getOnboardingStatus>;
+
+export function AppShell({
+  children,
+  initialOnboardingStatus,
+}: {
+  children: ReactNode;
+  initialOnboardingStatus: InitialOnboardingStatus;
+}) {
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -17,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="mx-auto w-full max-w-6xl">{children}</div>
             </main>
             <BottomNav />
-            <OnboardingNotice />
+            <OnboardingNotice initialStatus={initialOnboardingStatus} />
           </div>
         </SidebarInset>
       </SidebarProvider>

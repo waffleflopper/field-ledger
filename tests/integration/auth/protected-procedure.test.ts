@@ -43,7 +43,8 @@ describe("protectedProcedure", () => {
         email: "owner@example.com",
       },
       account: {
-        id: "user-1",
+        id: "account-1",
+        userId: "user-1",
         accessState: "trialing",
         subscriptionTier: null,
         trialStartsAt: new Date("2026-04-29T12:00:00.000Z"),

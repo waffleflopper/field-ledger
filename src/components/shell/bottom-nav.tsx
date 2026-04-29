@@ -84,7 +84,6 @@ export function BottomNav() {
         <Sheet>
           <SheetTrigger asChild>
             <button
-              aria-current={moreActive ? "page" : undefined}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-[0.68rem] font-semibold leading-none text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 moreActive && "bg-primary text-primary-foreground",
@@ -95,10 +94,14 @@ export function BottomNav() {
               <span>More</span>
             </button>
           </SheetTrigger>
-          <SheetContent className="rounded-t-lg px-4 pb-6" side="bottom">
+          <SheetContent
+            aria-describedby="mobile-more-navigation-description"
+            className="rounded-t-lg px-4 pb-6"
+            side="bottom"
+          >
             <SheetHeader className="px-0">
               <SheetTitle>More</SheetTitle>
-              <SheetDescription>
+              <SheetDescription id="mobile-more-navigation-description">
                 Additional Field Ledger surfaces.
               </SheetDescription>
             </SheetHeader>

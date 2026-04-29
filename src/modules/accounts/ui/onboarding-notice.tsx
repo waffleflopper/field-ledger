@@ -16,6 +16,13 @@ import { trpc } from "@/trpc/react";
 
 type AccessState = "trialing" | "active" | "paused_read_only";
 
+type OnboardingStatus = {
+  completed: boolean;
+  completedAt: Date | null;
+  accessState: AccessState;
+  isReadOnly: boolean;
+};
+
 function getAccessStateCopy(accessState: AccessState, isReadOnly: boolean) {
   if (accessState === "paused_read_only" || isReadOnly) {
     return "Your account is currently read-only. You can still review existing accountable records, but new hand receipt work waits until access is restored.";
@@ -24,8 +31,13 @@ function getAccessStateCopy(accessState: AccessState, isReadOnly: boolean) {
   return "When the hand receipt workflow lands, the dashboard will point you toward creating your first hand receipt.";
 }
 
-export function OnboardingNotice() {
+export function OnboardingNotice({
+  initialStatus,
+}: {
+  initialStatus: OnboardingStatus;
+}) {
   const status = trpc.accounts.getOnboardingStatus.useQuery(undefined, {
+    initialData: initialStatus,
     staleTime: 60_000,
   });
   const utils = trpc.useUtils();
@@ -37,11 +49,7 @@ export function OnboardingNotice() {
     },
   });
 
-  if (status.isLoading || status.data?.completed || dismissedForSession) {
-    return null;
-  }
-
-  if (!status.data) {
+  if (status.data.completed || dismissedForSession) {
     return null;
   }
 

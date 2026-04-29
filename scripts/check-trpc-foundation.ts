@@ -5,7 +5,7 @@ async function main() {
     session: null,
     account: null,
     accountRepository: {
-      async findById() {
+      async findByUserId() {
         return null;
       },
       async create() {

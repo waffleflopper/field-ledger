@@ -62,7 +62,7 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "app_internal.scaffold_migration_checks": {
       "name": "scaffold_migration_checks",

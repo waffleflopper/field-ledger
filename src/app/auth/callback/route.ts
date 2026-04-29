@@ -19,11 +19,10 @@ export async function GET(request: NextRequest) {
   });
 
   if (!result.ok) {
+    console.error("Auth callback exchange failed.", { error: result.message });
+
     return NextResponse.redirect(
-      new URL(
-        `/auth/login?error=${encodeURIComponent(result.message)}`,
-        request.url,
-      ),
+      new URL("/auth/login?error=callback-exchange-failed", request.url),
     );
   }
 

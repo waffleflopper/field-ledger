@@ -1,5 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+import { createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -7,11 +6,12 @@ import {
   getSupabaseUrl,
 } from "@/modules/provider-boundaries/auth/config";
 
-type MutableCookieStore = ReadonlyRequestCookies & {
+export type CookieStore = {
+  getAll(): Array<{ name: string; value: string }>;
   set?: unknown;
 };
 
-export function createServerSupabaseClient(cookieStore: MutableCookieStore) {
+export function createServerSupabaseClient(cookieStore: CookieStore) {
   return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
     cookies: {
       getAll() {
@@ -25,8 +25,8 @@ export function createServerSupabaseClient(cookieStore: MutableCookieStore) {
         const setCookie = cookieStore.set as (
           name: string,
           value: string,
-          options?: CookieOptions,
-        ) => void;
+          options?: unknown,
+        ) => unknown;
 
         cookiesToSet.forEach(({ name, value, options }) => {
           setCookie(name, value, options);

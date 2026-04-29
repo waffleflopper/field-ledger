@@ -9,6 +9,7 @@ import { InMemoryAccountRepository } from "../../support/account-repository";
 
 const trialAccount: AccountRecord = {
   id: "6a9b6ae8-ed65-4f5a-b8c3-585cf141abce",
+  userId: "e95e817e-31f8-450e-86ac-b1fd269321e4",
   accessState: "trialing",
   subscriptionTier: null,
   trialStartsAt: new Date("2026-04-29T12:00:00.000Z"),

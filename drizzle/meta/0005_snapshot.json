@@ -1,6 +1,6 @@
 {
-  "id": "495e93fb-40a6-4234-a253-45cf1a72887b",
-  "prevId": "cab25b18-2a28-4c36-a314-f79aeec4aa92",
+  "id": "4ce3a961-7860-44a5-ae2c-7e7cfedca448",
+  "prevId": "5267dfb8-d821-4a45-b1c7-88ff3a623f6e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -12,6 +12,13 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "access_state": {
@@ -21,6 +28,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'trialing'"
+        },
+        "subscription_tier": {
+          "name": "subscription_tier",
+          "type": "subscription_tier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "trial_starts_at": {
           "name": "trial_starts_at",
@@ -33,6 +47,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "onboarding_completed_at": {
+          "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -52,9 +72,22 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "accounts_user_id_unique": {
+          "name": "accounts_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "accounts_trial_window_check": {
+          "name": "accounts_trial_window_check",
+          "value": "\"accounts\".\"trial_ends_at\" >= \"accounts\".\"trial_starts_at\""
+        }
+      },
       "isRLSEnabled": true
     },
     "app_internal.scaffold_migration_checks": {
@@ -92,6 +125,14 @@
         "trialing",
         "active",
         "paused_read_only"
+      ]
+    },
+    "public.subscription_tier": {
+      "name": "subscription_tier",
+      "schema": "public",
+      "values": [
+        "base",
+        "pro"
       ]
     }
   },

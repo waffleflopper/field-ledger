@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { accounts } from "@/db/schema";
 import type { AccountRepository } from "@/modules/accounts/application/ensure-account";
@@ -10,11 +10,11 @@ export function createDrizzleAccountRepository(
   db: DrizzleClient,
 ): AccountRepository {
   return {
-    async findById(accountId) {
+    async findByUserId(userId) {
       const [account] = await db
         .select()
         .from(accounts)
-        .where(eq(accounts.id, accountId))
+        .where(eq(accounts.userId, userId))
         .limit(1);
 
       return account ?? null;
@@ -23,7 +23,7 @@ export function createDrizzleAccountRepository(
       const [createdAccount] = await db
         .insert(accounts)
         .values(account)
-        .onConflictDoNothing({ target: accounts.id })
+        .onConflictDoNothing({ target: accounts.userId })
         .returning();
 
       return createdAccount ?? null;
@@ -35,10 +35,25 @@ export function createDrizzleAccountRepository(
           onboardingCompletedAt: completedAt,
           updatedAt: new Date(),
         })
-        .where(eq(accounts.id, accountId))
+        .where(
+          and(
+            eq(accounts.id, accountId),
+            isNull(accounts.onboardingCompletedAt),
+          ),
+        )
         .returning();
 
-      return updatedAccount ?? null;
+      if (updatedAccount) {
+        return updatedAccount;
+      }
+
+      const [existingAccount] = await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, accountId))
+        .limit(1);
+
+      return existingAccount ?? null;
     },
   };
 }

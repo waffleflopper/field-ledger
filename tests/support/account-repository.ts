@@ -8,25 +8,27 @@ export class InMemoryAccountRepository implements AccountRepository {
 
   constructor(accounts: AccountRecord[] = []) {
     for (const account of accounts) {
-      this.accounts.set(account.id, account);
+      this.accounts.set(account.userId, account);
     }
   }
 
-  async findById(accountId: string) {
-    return this.accounts.get(accountId) ?? null;
+  async findByUserId(userId: string) {
+    return this.accounts.get(userId) ?? null;
   }
 
   async create(account: AccountRecord) {
-    if (this.accounts.has(account.id)) {
-      return this.accounts.get(account.id) ?? null;
+    if (this.accounts.has(account.userId)) {
+      return this.accounts.get(account.userId) ?? null;
     }
 
-    this.accounts.set(account.id, account);
+    this.accounts.set(account.userId, account);
     return account;
   }
 
   async markOnboardingCompleted(accountId: string, completedAt: Date) {
-    const account = this.accounts.get(accountId);
+    const account = Array.from(this.accounts.values()).find(
+      (candidate) => candidate.id === accountId,
+    );
 
     if (!account) {
       return null;
@@ -37,7 +39,7 @@ export class InMemoryAccountRepository implements AccountRepository {
       onboardingCompletedAt: account.onboardingCompletedAt ?? completedAt,
     };
 
-    this.accounts.set(accountId, updatedAccount);
+    this.accounts.set(account.userId, updatedAccount);
     return updatedAccount;
   }
 }

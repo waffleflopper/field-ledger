@@ -3,11 +3,27 @@ const localPublishableKey =
   "replace-with-local-publishable-key-from-pnpm-supabase-status";
 
 export function getSupabaseUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? localSupabaseUrl;
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("getSupabaseUrl requires NEXT_PUBLIC_SUPABASE_URL.");
+  }
+
+  return localSupabaseUrl;
 }
 
 export function getSupabasePublishableKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? localPublishableKey
-  );
+  if (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "getSupabasePublishableKey requires NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
+    );
+  }
+
+  return localPublishableKey;
 }

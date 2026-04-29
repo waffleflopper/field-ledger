@@ -5,6 +5,7 @@ export type SubscriptionTier = "base" | "pro";
 
 export type AccountRecord = {
   id: string;
+  userId: string;
   accessState: AccessState;
   subscriptionTier: SubscriptionTier | null;
   trialStartsAt: Date;
@@ -15,7 +16,7 @@ export type AccountRecord = {
 };
 
 export type AccountRepository = {
-  findById(accountId: string): Promise<AccountRecord | null>;
+  findByUserId(userId: string): Promise<AccountRecord | null>;
   create(account: AccountRecord): Promise<AccountRecord | null>;
   markOnboardingCompleted(
     accountId: string,
@@ -27,6 +28,7 @@ type EnsureAccountInput = {
   userId: string;
   repository: AccountRepository;
   now?: Date;
+  createAccountId?: () => string;
 };
 
 const trialLengthDays = 30;
@@ -36,8 +38,9 @@ export async function ensureAccount({
   userId,
   repository,
   now = new Date(),
+  createAccountId = () => globalThis.crypto.randomUUID(),
 }: EnsureAccountInput) {
-  const existingAccount = await repository.findById(userId);
+  const existingAccount = await repository.findByUserId(userId);
 
   if (existingAccount) {
     return existingAccount;
@@ -49,7 +52,8 @@ export async function ensureAccount({
   );
 
   const createdAccount = await repository.create({
-    id: userId,
+    id: createAccountId(),
+    userId,
     accessState: "trialing",
     subscriptionTier: null,
     trialStartsAt,
@@ -60,7 +64,7 @@ export async function ensureAccount({
     return createdAccount;
   }
 
-  const concurrentlyCreatedAccount = await repository.findById(userId);
+  const concurrentlyCreatedAccount = await repository.findByUserId(userId);
 
   if (!concurrentlyCreatedAccount) {
     throw new Error("Unable to initialize owner account.");
@@ -71,7 +75,7 @@ export async function ensureAccount({
 
 type GetOnboardingStatusInput = {
   account: AccountRecord;
-  now?: Date;
+  now?: Date | undefined;
 };
 
 type CompleteOnboardingInput = {
@@ -103,9 +107,7 @@ export async function completeOnboarding({
   now,
 }: CompleteOnboardingInput) {
   if (account.onboardingCompletedAt) {
-    return now
-      ? getOnboardingStatus({ account, now })
-      : getOnboardingStatus({ account });
+    return getOnboardingStatus({ account, now });
   }
 
   const updatedAccount = await repository.markOnboardingCompleted(
@@ -117,7 +119,5 @@ export async function completeOnboarding({
     throw new Error("Unable to complete owner account onboarding.");
   }
 
-  return now
-    ? getOnboardingStatus({ account: updatedAccount, now })
-    : getOnboardingStatus({ account: updatedAccount });
+  return getOnboardingStatus({ account: updatedAccount, now });
 }

@@ -5,17 +5,19 @@ import { createEmptyAccountRepository } from "../../support/account-repository";
 
 describe("billingRouter", () => {
   it("serves current account capabilities through the typed tRPC boundary", async () => {
+    const now = Date.now();
     const caller = appRouter.createCaller({
       session: {
         userId: "user-1",
         email: "owner@example.com",
       },
       account: {
-        id: "user-1",
+        id: "account-1",
+        userId: "user-1",
         accessState: "active",
         subscriptionTier: "base",
-        trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-        trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+        trialStartsAt: new Date(now - 7 * 24 * 60 * 60 * 1000),
+        trialEndsAt: new Date(now + 23 * 24 * 60 * 60 * 1000),
       },
       accountRepository: createEmptyAccountRepository(),
     });

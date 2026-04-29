@@ -25,6 +25,7 @@ pnpm test:unit
 
 Current scaffold proof:
 
+- `tests/unit/accounts/ensure-account.test.ts`
 - `tests/unit/app-foundation/get-scaffold-health.test.ts`
 
 ## Integration Tests
@@ -51,7 +52,6 @@ Current scaffold proof:
 
 - `tests/integration/trpc/foundation-router.test.ts`
 - `tests/integration/auth/protected-procedure.test.ts`
-- `tests/unit/accounts/ensure-account.test.ts`
 
 ## RLS Tests
 

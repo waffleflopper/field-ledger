@@ -38,32 +38,42 @@ export function LoginForm() {
     setIsSubmitting(true);
     setMessage(null);
 
-    const result = await signInWithEmailPassword({ email, password });
+    try {
+      const result = await signInWithEmailPassword({ email, password });
 
-    setIsSubmitting(false);
-    if (!result.ok) {
-      setMessage(result.message);
-      return;
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+
+      router.replace(nextPath);
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.replace(nextPath);
-    router.refresh();
   }
 
   async function handleLocalSignup() {
     setIsSubmitting(true);
     setMessage(null);
 
-    const result = await signUpWithEmailPassword({ email, password });
+    try {
+      const result = await signUpWithEmailPassword({ email, password });
 
-    setIsSubmitting(false);
-    if (!result.ok) {
-      setMessage(result.message);
-      return;
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+
+      router.replace(nextPath);
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.replace(nextPath);
-    router.refresh();
   }
 
   async function handleMagicSubmit(event: FormEvent<HTMLFormElement>) {
@@ -71,17 +81,22 @@ export function LoginForm() {
     setIsSubmitting(true);
     setMessage(null);
 
-    const result = await requestMagicLink({
-      email,
-      redirectTo: callbackUrl,
-    });
+    try {
+      const result = await requestMagicLink({
+        email,
+        redirectTo: callbackUrl,
+      });
 
-    setIsSubmitting(false);
-    setMessage(
-      result.ok
-        ? "Check the local Inbucket inbox for your sign-in link."
-        : result.message,
-    );
+      setMessage(
+        result.ok
+          ? "Check the local Inbucket inbox for your sign-in link."
+          : result.message,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (

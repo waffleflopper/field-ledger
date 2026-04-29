@@ -226,7 +226,7 @@ and `Quiet Rule` before adding shadows.
 
 ### Buttons
 
-Buttons should feel compact and tactile. Use lucide icons where a common action
+Buttons should feel compact and tactile. Use Lucide icons where a common action
 has a recognizable symbol.
 
 - **Shape:** Slightly squared, never pill-like (`4px` radius).

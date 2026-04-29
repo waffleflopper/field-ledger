@@ -33,7 +33,7 @@ export async function getAppSession(
 
 export async function requireAppSession(
   supabaseClient: Pick<SupabaseClient, "auth">,
-) {
+): Promise<AppSession> {
   const session = await getAppSession(supabaseClient);
 
   if (!session) {

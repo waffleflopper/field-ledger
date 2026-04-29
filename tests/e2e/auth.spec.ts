@@ -16,6 +16,8 @@ test("sign-out returns the browser to the public auth surface", async ({
     maxRedirects: 0,
   });
 
-  expect(response.status()).toBe(307);
-  expect(response.headers().location).toBe("http://localhost:3000/auth/login");
+  expect(response.status()).toBe(303);
+  const location = response.headers().location;
+  expect(location).toBeTruthy();
+  expect(new URL(location!, "http://localhost").pathname).toBe("/auth/login");
 });

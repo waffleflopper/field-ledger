@@ -169,9 +169,7 @@ Supabase email confirmations are disabled for local development in
 Magic-link sign-in is included on the same auth surface. Local emails are
 captured by Inbucket at `SUPABASE_INBUCKET_URL`:
 
-```sh
-open http://127.0.0.1:54334
-```
+Visit `http://127.0.0.1:54334` in your browser.
 
 Click the generated sign-in link from that mailbox to complete the
 `/auth/callback` flow.

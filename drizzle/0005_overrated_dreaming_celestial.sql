@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_trial_window_check" CHECK ("accounts"."trial_ends_at" >= "accounts"."trial_starts_at");

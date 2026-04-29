@@ -7,6 +7,8 @@ const databaseUrl =
 
 const ownerOneId = "1b0c3a89-dbef-4242-8d5e-cb8d3ed728f8";
 const ownerTwoId = "2b0c3a89-dbef-4242-8d5e-cb8d3ed728f8";
+const ownerOneAccountId = "de1415fb-dbd2-4527-8cd1-6b2c0175ca8a";
+const ownerTwoAccountId = "4919295f-e59b-49f9-8335-b7b51558e0b7";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -26,22 +28,24 @@ describe("accounts RLS", () => {
   beforeAll(async () => {
     await sql`insert into accounts ${sql([
       {
-        id: ownerOneId,
+        id: ownerOneAccountId,
+        user_id: ownerOneId,
         access_state: "trialing",
         trial_starts_at: new Date("2026-04-29T12:00:00.000Z"),
         trial_ends_at: new Date("2026-05-29T12:00:00.000Z"),
       },
       {
-        id: ownerTwoId,
+        id: ownerTwoAccountId,
+        user_id: ownerTwoId,
         access_state: "trialing",
         trial_starts_at: new Date("2026-04-29T12:00:00.000Z"),
         trial_ends_at: new Date("2026-05-29T12:00:00.000Z"),
       },
-    ])} on conflict (id) do update set access_state = excluded.access_state`;
+    ])} on conflict (user_id) do update set access_state = excluded.access_state`;
   });
 
   afterAll(async () => {
-    await sql`delete from accounts where id in (${ownerOneId}, ${ownerTwoId})`;
+    await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
   });
 
@@ -49,17 +53,17 @@ describe("accounts RLS", () => {
     const rows = await asAuthenticatedOwner(
       ownerOneId,
       async (transaction) =>
-        transaction`select id from accounts where id = ${ownerOneId}`,
+        transaction`select id from accounts where user_id = ${ownerOneId}`,
     );
 
-    expect(rows).toEqual([{ id: ownerOneId }]);
+    expect(rows).toEqual([{ id: ownerOneAccountId }]);
   });
 
   it("prevents an owner from reading another account record", async () => {
     const rows = await asAuthenticatedOwner(
       ownerOneId,
       async (transaction) =>
-        transaction`select id from accounts where id = ${ownerTwoId}`,
+        transaction`select id from accounts where user_id = ${ownerTwoId}`,
     );
 
     expect(rows).toEqual([]);
@@ -69,7 +73,7 @@ describe("accounts RLS", () => {
     const rows = await asAuthenticatedOwner(
       ownerOneId,
       async (transaction) =>
-        transaction`update accounts set access_state = 'active' where id = ${ownerTwoId} returning id`,
+        transaction`update accounts set access_state = 'active' where user_id = ${ownerTwoId} returning id`,
     );
 
     expect(rows).toEqual([]);

@@ -33,10 +33,10 @@ export function PlaceholderPage({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        {sections.map((section) => (
+        {sections.map((section, index) => (
           <div
             className="rounded-lg border bg-card px-4 py-3 text-sm font-medium text-card-foreground"
-            key={section}
+            key={`${section}-${index}`}
           >
             {section}
           </div>
