@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HandReceipt — Concepts</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="phone-frame.jsx"></script>
+<script type="text/babel" src="desktop-frame.jsx"></script>
+<script type="text/babel" src="screen-mobile-dashboard.jsx"></script>
+<script type="text/babel" src="screen-mobile-item-detail.jsx"></script>
+<script type="text/babel" src="screen-mobile-hr-detail.jsx"></script>
+<script type="text/babel" src="screen-mobile-upload.jsx"></script>
+<script type="text/babel" src="screen-desktop-dashboard.jsx"></script>
+<script type="text/babel" src="screen-desktop-items.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "dark": false
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const T = t.dark ? HR_TOKENS_DARK : HR_TOKENS_LIGHT;
+
+  // Per-artboard local state
+  const [mItem, setMItem] = React.useState("itm-003");
+  const [mHr, setMHr] = React.useState("hr-arms");
+  const [dCollapsed, setDCollapsed] = React.useState(false);
+  const [dItemsCollapsed, setDItemsCollapsed] = React.useState(true);
+
+  // Each artboard navigates within itself: clicking around inside the
+  // artboard updates the local item/hr id but doesn't jump out of the canvas.
+
+  React.useEffect(() => {
+    document.body.style.background = t.dark ? HR_TOKENS_DARK.bg : HR_TOKENS_LIGHT.bg;
+  }, [t.dark]);
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection id="mobile" title="Mobile" subtitle="390 × 800 — phone bottom nav: Dashboard · Items · Receipts · More">
+          <DCArtboard id="m-dash" label="01 · Dashboard" width={390} height={800}>
+            <MobileDashboard T={T}
+              onOpenItem={(id) => setMItem(id)}
+              onOpenHR={(id) => setMHr(id)}
+              onNav={() => {}}/>
+          </DCArtboard>
+
+          <DCArtboard id="m-item" label="02 · Item detail" width={390} height={800}>
+            <MobileItemDetail T={T} itemId={mItem}
+              onBack={() => {}} onNav={() => {}}/>
+          </DCArtboard>
+
+          <DCArtboard id="m-hr" label="03 · Hand receipt detail" width={390} height={800}>
+            <MobileHRDetail T={T} hrId={mHr}
+              onBack={() => {}} onOpenItem={(id) => setMItem(id)}
+              onOpenUpload={() => {}} onNav={() => {}}/>
+          </DCArtboard>
+
+          <DCArtboard id="m-upload-multi" label="04a · Upload 2062 — multi-item" width={390} height={800}>
+            <MobileUpload2062 T={T} originItemId={null} onBack={() => {}} onNav={() => {}}/>
+          </DCArtboard>
+
+          <DCArtboard id="m-upload-single" label="04b · Upload 2062 — single item" width={390} height={800}>
+            <MobileUpload2062 T={T} originItemId={mItem} onBack={() => {}} onNav={() => {}}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="desktop" title="Tablet / Desktop" subtitle="1200 × 760 — collapsible left sidebar">
+          <DCArtboard id="d-dash" label="05 · Desktop dashboard" width={1200} height={760}>
+            <DesktopDashboard T={T}
+              collapsed={dCollapsed} onToggle={() => setDCollapsed(c => !c)}
+              onNav={() => {}}
+              onOpenItem={(id) => setMItem(id)}
+              onOpenHR={(id) => setMHr(id)}/>
+          </DCArtboard>
+
+          <DCArtboard id="d-items" label="06 · Item management & search" width={1200} height={760}>
+            <DesktopItems T={T}
+              collapsed={dItemsCollapsed} onToggle={() => setDItemsCollapsed(c => !c)}
+              onNav={() => {}}
+              onOpenItem={() => {}}/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Theme"/>
+        <TweakToggle label="Dark mode" value={t.dark}
+          onChange={(v) => setTweak('dark', v)}/>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

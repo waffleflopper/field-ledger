@@ -1,8 +1,10 @@
 # UI Specification
 
-The UI source of truth is the mockup file:
+The UI source of truth is the repo-local mockup file:
 
-`/Users/robertbaddeley/Downloads/HandReceipt Concepts _standalone_.html`
+`mocks/HandReceipt Concepts _standalone_.html`
+
+The original mock component export is also preserved under `mocks/HandReceipt/`.
 
 Treat the mock as source of truth for layout, workflow, and route responsibility. Do not treat it as pixel-perfect styling law.
 
@@ -117,4 +119,3 @@ Due windows:
 - Do not reserve a large permanent image slot for optional future photos.
 - Manual signed-to items appear in signed-out surfaces but are clearly marked "No 2062" or equivalent.
 - Active 2062s means formal 2062 assignments only.
-

@@ -6,9 +6,12 @@ Accepted
 
 ## Context
 
-The MVP must be a real product UI, not a placeholder vertical-slice demo. A mockup exists at:
+The MVP must be a real product UI, not a placeholder vertical-slice demo. The
+repo-local mockup exists at:
 
-`/Users/robertbaddeley/Downloads/HandReceipt Concepts _standalone_.html`
+`mocks/HandReceipt Concepts _standalone_.html`
+
+The original mock component export is also preserved under `mocks/HandReceipt/`.
 
 ## Decision
 
@@ -33,4 +36,3 @@ Use:
 - One giant MVP route.
 - Desktop top nav as the main app shell.
 - Treating the mock as only vague inspiration.
-
