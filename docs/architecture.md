@@ -46,6 +46,23 @@ Required boundaries:
 
 Supabase Auth, Supabase Storage, and Stripe are implementation details behind boundaries.
 
+## App Shell
+
+Authenticated product routes live under the literal `/app` URL path. The
+current Next.js implementation uses a protected route group so auth concerns
+stay outside feature pages while preserving the public route shape from the UI
+spec.
+
+The shell components live in `src/components/shell/`:
+
+- `AppShell` wraps authenticated pages in the responsive navigation frame.
+- `AppSidebar` owns tablet and desktop sidebar navigation.
+- `BottomNav` owns phone bottom navigation and the More sheet.
+- `navigation-config.ts` is the shared route list for both navigation modes.
+
+The shell changes mode at Tailwind's `md` breakpoint. Business behavior still
+belongs in domain modules; shell pages are only composition surfaces.
+
 ## Database Access
 
 - Supabase provides Postgres/Auth/Storage.
