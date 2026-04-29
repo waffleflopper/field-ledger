@@ -46,14 +46,40 @@ Required boundaries:
 
 Supabase Auth, Supabase Storage, and Stripe are implementation details behind boundaries.
 
+## App Shell
+
+Authenticated product routes live under the literal `/app` URL path. The
+current Next.js implementation uses a protected route group so auth concerns
+stay outside feature pages while preserving the public route shape from the UI
+spec.
+
+The shell components live in `src/components/shell/`:
+
+- `AppShell` wraps authenticated pages in the responsive navigation frame.
+- `AppSidebar` owns tablet and desktop sidebar navigation.
+- `BottomNav` owns phone bottom navigation and the More sheet.
+- `navigation-config.ts` is the shared route list for both navigation modes.
+
+The shell changes mode at Tailwind's `md` breakpoint. Business behavior still
+belongs in domain modules; shell pages are only composition surfaces.
+
 ## Database Access
 
 - Supabase provides Postgres/Auth/Storage.
 - Drizzle owns app schema and migrations.
 - RLS is required for account-owned data.
-- User-owned tables must include `account_id`.
+- The `accounts` table has an app-owned primary key and a unique `user_id`
+  mapping to the Supabase Auth user id, establishing the
+  one-login-to-one-owner-account boundary without making auth ids the product
+  ownership id.
+- User-owned tables after `accounts` must include `account_id`.
 - RLS protects ownership. App services protect behavior.
 - Service-role or privileged database access must be rare, isolated, and documented.
+- Temporary Phase 1 scaffold exception: local runtime database access currently
+  uses the local `postgres` role so the server can initialize the first owner
+  account while the app-role/RLS session boundary is still thin. Replace this
+  with a non-superuser runtime role, or per-request RLS claim handling, before
+  adding additional account-owned runtime tables.
 
 ## Import/Export Boundary
 
@@ -77,4 +103,3 @@ Future phase:
 
 - read-only offline access to recently viewed hand receipts, items, locations, signed-out state, and due requirements
 - later limited offline requirement completion sync if justified
-

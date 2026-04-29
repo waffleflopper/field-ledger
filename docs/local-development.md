@@ -108,6 +108,12 @@ raw Supabase or Postgres clients directly. Future domain modules should call
 application services, and those services should use provider-boundary adapters
 for database, auth, storage, billing, audit, and notification work.
 
+Temporary Phase 1 exception: `DATABASE_URL` points at the local `postgres`
+role so the scaffold can initialize owner accounts from the server. This is
+privileged local runtime access. Before Field Ledger adds more account-owned
+runtime tables, replace it with a non-superuser app role or a per-request RLS
+claim boundary so app reads and writes exercise ownership policies.
+
 ## tRPC and Query Foundation
 
 tRPC is the app API layer, and TanStack Query owns client-side query state. The
@@ -129,6 +135,44 @@ Verify the scaffold tRPC procedure with:
 ```sh
 pnpm api:check:local
 ```
+
+## Auth Routes and Local Users
+
+Supabase Auth is wrapped by the app-owned auth/session provider boundary under
+`src/modules/provider-boundaries/auth/`. Product routes and UI should use that
+boundary instead of importing Supabase Auth directly.
+
+Route shape:
+
+- `/auth/login` is the public sign-in surface.
+- `/auth/callback` handles magic-link callbacks.
+- `/auth/signout` signs out the current browser session.
+- `/app/...` routes are authenticated product routes and redirect signed-out
+  users to `/auth/login`.
+
+For local email/password testing:
+
+1. Start local Supabase and the app:
+
+   ```sh
+   pnpm supabase:start
+   pnpm dev
+   ```
+
+2. Open `http://localhost:3000/auth/login`.
+3. Enter a local email address and a password of at least six characters.
+4. Use **Create local user** once, then use **Sign in** for later sessions.
+
+Supabase email confirmations are disabled for local development in
+`supabase/config.toml`, so the local user can sign in immediately.
+
+Magic-link sign-in is included on the same auth surface. Local emails are
+captured by Inbucket at `SUPABASE_INBUCKET_URL`:
+
+Visit `http://127.0.0.1:54334` in your browser.
+
+Click the generated sign-in link from that mailbox to complete the
+`/auth/callback` flow.
 
 ## RLS Expectations
 

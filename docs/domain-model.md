@@ -2,13 +2,43 @@
 
 ## Accounts
 
-An account owns all user data. One login identity maps to one account, with room for multiple linked auth identities later.
+An account owns all user data. One login identity maps to exactly one owner
+account, with room for multiple linked auth identities later.
+
+Account records use an app-owned `accounts.id` as the product ownership id and
+a unique `accounts.user_id` mapping to the Supabase Auth user id. Account
+initialization is idempotent: repeated first-run checks for the same auth user
+return the existing account instead of resetting trial dates or creating another
+ownership record.
+
+New accounts initialize with:
+
+- `access_state`: `trialing`
+- `trial_starts_at`: first initialization time
+- `trial_ends_at`: 30 days after trial start
+- `onboarding_completed_at`: null until the first-run boundary notice is acknowledged
 
 Account access state is separate from subscription tier.
 
 - `trialing`
 - `active`
 - `paused_read_only`
+
+Subscription tier is nullable while an account is trialing. When active, it is:
+
+- `base`: up to 3 active hand receipts
+- `pro`: unlimited active hand receipts
+
+Capability checks live in the billing module so product workflows do not need
+to know billing-provider details.
+
+First-run onboarding is account-level state, not device-local state. The app
+shows a short boundary notice until `onboarding_completed_at` is set. The
+notice states that Field Ledger is for property accountability assistance, is
+not an official Army system of record, and must not store classified
+information, PHI, or sensitive operational details. Paused/read-only accounts
+can acknowledge the notice, but the copy must make clear that new hand receipt
+work waits until access is restored.
 
 ## Hand Receipts
 
@@ -164,4 +194,3 @@ Dashboard windows:
 Meaningful state changes create audit events. Activity is the user-visible version of that history.
 
 Events include create/edit/archive/restore, assignment link/close, requirement complete, document upload, location/contact changes, and subscription access changes.
-

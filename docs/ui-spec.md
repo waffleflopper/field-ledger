@@ -1,5 +1,8 @@
 # UI Specification
 
+See root `PRODUCT.md` for strategic product/design principles and root
+`DESIGN.md` for visual tokens, typography, component rules, and anti-patterns.
+
 The UI source of truth is the repo-local mockup file:
 
 `mocks/HandReceipt Concepts _standalone_.html`
@@ -33,6 +36,13 @@ Tablet/desktop:
 - Dashboard remains home
 - Active 2062s can be visible in sidebar or secondary nav
 
+Implementation note:
+
+- The authenticated shell lives at the literal `/app` URL path through the
+  protected Next route group.
+- Phone navigation uses the bottom nav below the Tailwind `md` breakpoint.
+- Tablet and desktop navigation use the collapsible sidebar at `md` and above.
+
 ## Initial Route Map
 
 ```text
@@ -50,6 +60,8 @@ Tablet/desktop:
 /app/settings
 /app/billing
 ```
+
+`/app` redirects to `/app/dashboard`.
 
 Public/future routes can live outside `/app`, such as `/`, `/pricing`, `/login`, `/privacy`, and `/terms`.
 

@@ -94,6 +94,10 @@ Implement the mock-derived app shell with authenticated `/app/...` routing, phon
 
 ## Phase 5: Minimal First-Run Onboarding
 
+Implementation reference: issue #12 adds account-level
+`onboarding_completed_at` state, tRPC onboarding procedures, and an app-shell
+boundary notice.
+
 **User stories covered**: As a new user, I understand the app boundary and can start by creating my first hand receipt later.
 
 ### What To Build
@@ -106,4 +110,3 @@ Add lightweight first-run onboarding that communicates the product boundary and 
 - [ ] The onboarding flow is minimal and does not become a long tour.
 - [ ] Onboarding routes build into the real shell/auth flow.
 - [ ] The flow respects paused/read-only access state.
-

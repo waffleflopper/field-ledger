@@ -22,6 +22,8 @@
 | **Paused Account** | An account state where existing data remains viewable but active workflows are read-only. | Archived account, locked account |
 | **Base Tier** | The paid tier that allows up to three active hand receipts. | Free tier, standard plan |
 | **Pro Tier** | The paid tier that allows unlimited active hand receipts. | Unlimited mode |
+| **Onboarding Notice** | The first-run app-shell notice that records the user's acknowledgement of Field Ledger's product boundary. | Tour, setup wizard |
+| **Boundary Notice** | The compliance-facing copy that states Field Ledger is for property accountability assistance, is not an official Army system of record, and must not store classified information, PHI, or sensitive operational details. | Legal modal, disclaimer wall |
 
 ## Property Records
 
@@ -142,4 +144,3 @@
 - "Requirement" should be used for item-level recurring obligations; avoid "cyclic inventory," which is explicitly out of MVP scope.
 - "Due Soon" and "Upcoming" are distinct dashboard windows: **Due Soon** is today through 14 days, while **Upcoming** is 15 through 30 days.
 - "Activity" is the user-visible surface; **Audit Log** is the internal accountability record.
-

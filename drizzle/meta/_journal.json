@@ -8,6 +8,41 @@
       "when": 1777426997322,
       "tag": "0000_far_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777437334978,
+      "tag": "0001_safe_nebula",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777438123288,
+      "tag": "0002_salty_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777440866973,
+      "tag": "0003_light_martin_li",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777442863881,
+      "tag": "0004_remarkable_mother_askani",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777444245786,
+      "tag": "0005_overrated_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

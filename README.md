@@ -70,14 +70,15 @@ internal boundaries.
 ## Current Status
 
 The repo is in the foundation stage. The scaffold proves the real app stack is
-installed and wired:
+installed and wired, and the first auth/session slice is now in place:
 
 - Next.js app shell
 - Tailwind v4 and shadcn/ui setup
 - tRPC plus TanStack Query foundation
 - Drizzle config and first scaffold migration
 - Local Supabase config on nondefault ports
-- Provider-boundary starting point
+- Provider-boundary starting point, including Supabase Auth session access
+- Public `/auth/login` and protected `/app/...` route behavior
 - Unit, integration, RLS-placeholder, and browser test commands
 
 Product workflows are intentionally added in small vertical slices.
@@ -158,6 +159,10 @@ pnpm supabase:stop
 
 ## Project Documents
 
+- [PRODUCT.md](PRODUCT.md) defines the product register, user context, brand
+  personality, anti-references, and design principles.
+- [DESIGN.md](DESIGN.md) captures the mock-derived visual system, tokens,
+  typography, components, and UI guardrails.
 - [CONTEXT.md](CONTEXT.md) defines the durable product boundary.
 - [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) keeps domain terms sharp.
 - [docs/prd/field-ledger-mvp-prd.md](docs/prd/field-ledger-mvp-prd.md) is the

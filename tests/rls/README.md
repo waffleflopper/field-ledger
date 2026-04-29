@@ -1,9 +1,12 @@
 # RLS Tests
 
-Field Ledger has no account-owned product tables in the scaffold phase, so
-there are no RLS tests yet.
+Field Ledger's first account-owned production table is `accounts`.
 
-When a slice adds an account-owned table, add tests here that prove one account
-cannot read or write another account's rows. Keep the `pnpm test:rls` command
-green by replacing the scaffold `--passWithNoTests` behavior with real tests
-once the first account-owned schema exists.
+The account RLS tests connect to local Supabase Postgres, seed two account rows
+as the privileged migration user, then run read/write probes as the Supabase
+`authenticated` role with `request.jwt.claim.sub` set to one owner id. That
+proves an owner can see their own account row and cannot read or update another
+owner account row.
+
+When future slices add account-owned tables, add tests here that prove one
+account cannot read or write another account's rows.

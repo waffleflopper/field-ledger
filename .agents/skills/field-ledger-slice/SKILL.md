@@ -9,9 +9,27 @@ Use this skill when the user says `field-ledger-slice #123` or `field-ledger-sli
 
 ## Resolve Input
 
-- If input is `#123`, fetch and read the GitHub issue.
+- If input is `#123`, fetch and read the GitHub issue, including comments.
 - If input is a file path, read that local slice file.
 - Extract goal, scope, acceptance criteria, affected modules, UI surfaces, tests, docs, and stop conditions.
+
+## Issue Comments and CodeRabbit Plans
+
+Some `needs-triage` issues may include CodeRabbit comments with a proposed
+implementation plan. Treat those comments as advisory review input, not as a
+step-by-step guide or source of truth.
+
+When a CodeRabbit plan exists:
+
+1. Read it before implementation.
+2. Compare it against the issue body, parent PRD, `AGENTS.md`, relevant docs,
+   ADRs, and Field Ledger module/provider rules.
+3. Use any helpful observations only when they fit those sources of truth.
+4. Ignore or correct suggestions that would put business rules in routes,
+   call Supabase/Stripe directly from UI or domain code, create fake product
+   workflows, skip RLS/tests/docs, or expand beyond the slice.
+5. Mention in closeout whether CodeRabbit feedback was used, corrected, or not
+   applicable.
 
 ## Required Reading
 
@@ -61,4 +79,3 @@ Report:
 - tests/checks run
 - docs updated
 - follow-ups or deferred scope
-
