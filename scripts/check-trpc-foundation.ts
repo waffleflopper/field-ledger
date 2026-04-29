@@ -1,7 +1,7 @@
 import { appRouter } from "../src/server/trpc/router";
 
 async function main() {
-  const caller = appRouter.createCaller({});
+  const caller = appRouter.createCaller({ session: null });
   const health = await caller.foundation.health();
 
   if (

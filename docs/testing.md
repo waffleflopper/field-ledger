@@ -50,6 +50,7 @@ pnpm test:integration
 Current scaffold proof:
 
 - `tests/integration/trpc/foundation-router.test.ts`
+- `tests/integration/auth/protected-procedure.test.ts`
 
 ## RLS Tests
 
@@ -88,6 +89,7 @@ pnpm test:e2e
 Current scaffold proof:
 
 - `tests/e2e/scaffold.spec.ts`
+- `tests/e2e/auth.spec.ts`
 
 ## API and Database Checks
 

@@ -4,7 +4,7 @@ import { appRouter } from "@/server/trpc/router";
 
 describe("foundationRouter", () => {
   it("serves health through the typed tRPC caller", async () => {
-    const caller = appRouter.createCaller({});
+    const caller = appRouter.createCaller({ session: null });
 
     await expect(caller.foundation.health()).resolves.toMatchObject({
       status: "ok",
