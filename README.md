@@ -159,6 +159,10 @@ pnpm supabase:stop
 
 ## Project Documents
 
+- [PRODUCT.md](PRODUCT.md) defines the product register, user context, brand
+  personality, anti-references, and design principles.
+- [DESIGN.md](DESIGN.md) captures the mock-derived visual system, tokens,
+  typography, components, and UI guardrails.
 - [CONTEXT.md](CONTEXT.md) defines the durable product boundary.
 - [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) keeps domain terms sharp.
 - [docs/prd/field-ledger-mvp-prd.md](docs/prd/field-ledger-mvp-prd.md) is the

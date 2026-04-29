@@ -1,5 +1,8 @@
 # UI Specification
 
+See root `PRODUCT.md` for strategic product/design principles and root
+`DESIGN.md` for visual tokens, typography, component rules, and anti-patterns.
+
 The UI source of truth is the repo-local mockup file:
 
 `mocks/HandReceipt Concepts _standalone_.html`
