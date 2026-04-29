@@ -1,19 +1,34 @@
-import { cookies } from "next/headers";
-
 import {
-  createServerSupabaseClient,
-  getAppSession,
-  type AppSession,
-} from "@/modules/provider-boundaries/auth";
+  ensureAccount,
+  type AccountRecord,
+} from "@/modules/accounts/application/ensure-account";
+import { createDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
+import { type AppSession } from "@/modules/provider-boundaries/auth";
+import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
+import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
 
 export async function createTRPCContext(): Promise<{
   session: AppSession | null;
+  account: AccountRecord | null;
 }> {
-  const cookieStore = await cookies();
-  const supabase = createServerSupabaseClient(cookieStore);
+  const session = await getCurrentServerAppSession();
+
+  if (!session) {
+    return {
+      session: null,
+      account: null,
+    };
+  }
+
+  const db = getDrizzleClient();
+  const account = await ensureAccount({
+    userId: session.userId,
+    repository: createDrizzleAccountRepository(db),
+  });
 
   return {
-    session: await getAppSession(supabase),
+    session,
+    account,
   };
 }
 

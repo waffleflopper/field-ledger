@@ -1,4 +1,11 @@
-import { integer, pgSchema, timestamp } from "drizzle-orm/pg-core";
+import {
+  integer,
+  pgEnum,
+  pgSchema,
+  pgTable,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const appInternal = pgSchema("app_internal");
 
@@ -11,3 +18,22 @@ export const scaffoldMigrationChecks = appInternal.table(
       .defaultNow(),
   },
 );
+
+export const accessStateEnum = pgEnum("access_state", [
+  "trialing",
+  "active",
+  "paused_read_only",
+]);
+
+export const accounts = pgTable("accounts", {
+  id: uuid("id").primaryKey(),
+  accessState: accessStateEnum("access_state").notNull().default("trialing"),
+  trialStartsAt: timestamp("trial_starts_at", { withTimezone: true }).notNull(),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

@@ -2,7 +2,18 @@
 
 ## Accounts
 
-An account owns all user data. One login identity maps to one account, with room for multiple linked auth identities later.
+An account owns all user data. One login identity maps to exactly one owner
+account, with room for multiple linked auth identities later.
+
+Initial account records use the Supabase Auth user id as `accounts.id`. Account
+initialization is idempotent: repeated first-run checks return the existing
+account instead of resetting trial dates or creating another ownership record.
+
+New accounts initialize with:
+
+- `access_state`: `trialing`
+- `trial_starts_at`: first initialization time
+- `trial_ends_at`: 30 days after trial start
 
 Account access state is separate from subscription tier.
 
@@ -164,4 +175,3 @@ Dashboard windows:
 Meaningful state changes create audit events. Activity is the user-visible version of that history.
 
 Events include create/edit/archive/restore, assignment link/close, requirement complete, document upload, location/contact changes, and subscription access changes.
-

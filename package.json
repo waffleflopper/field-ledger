@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:rls": "vitest run tests/rls --passWithNoTests",
+    "test:rls": "vitest run tests/rls",
     "test:e2e": "playwright test",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:rls && pnpm test:e2e && pnpm format:check",
     "supabase:start": "supabase start",

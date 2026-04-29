@@ -1,16 +1,10 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import {
-  createServerSupabaseClient,
-  getAppSession,
-} from "@/modules/provider-boundaries/auth";
 import { Button } from "@/components/ui/button";
+import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
 
 export default async function AppHomePage() {
-  const cookieStore = await cookies();
-  const supabase = createServerSupabaseClient(cookieStore);
-  const session = await getAppSession(supabase);
+  const session = await getCurrentServerAppSession();
 
   if (!session) {
     redirect("/auth/login");

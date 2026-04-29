@@ -11,16 +11,17 @@ const t = initTRPC.context<TRPCContext>().create({
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session) {
+  if (!ctx.session || !ctx.account) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
-      message: "An authenticated Field Ledger session is required.",
+      message: "An initialized Field Ledger account is required.",
     });
   }
 
   return next({
     ctx: {
       session: ctx.session,
+      account: ctx.account,
     },
   });
 });

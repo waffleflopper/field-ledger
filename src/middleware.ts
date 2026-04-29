@@ -1,16 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import {
-  createMiddlewareSupabaseClient,
-  getAppSession,
-} from "@/modules/provider-boundaries/auth";
+import { getMiddlewareAppSession } from "@/modules/provider-boundaries/auth/server-session";
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({
     request,
   });
-  const supabase = createMiddlewareSupabaseClient({ request, response });
-  const session = await getAppSession(supabase);
+  const session = await getMiddlewareAppSession({ request, response });
 
   if (!session) {
     const loginUrl = request.nextUrl.clone();

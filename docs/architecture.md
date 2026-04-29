@@ -51,7 +51,9 @@ Supabase Auth, Supabase Storage, and Stripe are implementation details behind bo
 - Supabase provides Postgres/Auth/Storage.
 - Drizzle owns app schema and migrations.
 - RLS is required for account-owned data.
-- User-owned tables must include `account_id`.
+- The `accounts` table uses the Supabase Auth user id as its primary key,
+  establishing the one-login-to-one-owner-account boundary.
+- User-owned tables after `accounts` must include `account_id`.
 - RLS protects ownership. App services protect behavior.
 - Service-role or privileged database access must be rare, isolated, and documented.
 
@@ -77,4 +79,3 @@ Future phase:
 
 - read-only offline access to recently viewed hand receipts, items, locations, signed-out state, and due requirements
 - later limited offline requirement completion sync if justified
-

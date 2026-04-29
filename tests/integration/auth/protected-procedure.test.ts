@@ -9,7 +9,24 @@ const authProbeRouter = createTRPCRouter({
 
 describe("protectedProcedure", () => {
   it("rejects callers without an app session", async () => {
-    const caller = authProbeRouter.createCaller({ session: null });
+    const caller = authProbeRouter.createCaller({
+      session: null,
+      account: null,
+    });
+
+    await expect(caller.currentUserEmail()).rejects.toMatchObject({
+      code: "UNAUTHORIZED" satisfies TRPCError["code"],
+    });
+  });
+
+  it("rejects callers without an initialized owner account", async () => {
+    const caller = authProbeRouter.createCaller({
+      session: {
+        userId: "user-1",
+        email: "owner@example.com",
+      },
+      account: null,
+    });
 
     await expect(caller.currentUserEmail()).rejects.toMatchObject({
       code: "UNAUTHORIZED" satisfies TRPCError["code"],
@@ -21,6 +38,12 @@ describe("protectedProcedure", () => {
       session: {
         userId: "user-1",
         email: "owner@example.com",
+      },
+      account: {
+        id: "user-1",
+        accessState: "trialing",
+        trialStartsAt: new Date("2026-04-29T12:00:00.000Z"),
+        trialEndsAt: new Date("2026-05-29T12:00:00.000Z"),
       },
     });
 

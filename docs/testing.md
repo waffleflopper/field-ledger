@@ -51,6 +51,7 @@ Current scaffold proof:
 
 - `tests/integration/trpc/foundation-router.test.ts`
 - `tests/integration/auth/protected-procedure.test.ts`
+- `tests/unit/accounts/ensure-account.test.ts`
 
 ## RLS Tests
 
@@ -66,9 +67,13 @@ Command:
 pnpm test:rls
 ```
 
-The scaffold phase has no account-owned product tables, so this command is wired
-with `--passWithNoTests`. Replace that with real tests when the first
-account-owned table lands.
+The account foundation includes the first RLS-protected production table, so
+`pnpm test:rls` now runs real tests instead of using scaffold
+`--passWithNoTests` behavior.
+
+Current account RLS proof:
+
+- `tests/rls/accounts/accounts-rls.test.ts`
 
 ## Browser/UI Tests
 
