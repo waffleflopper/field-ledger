@@ -25,9 +25,15 @@ export const accessStateEnum = pgEnum("access_state", [
   "paused_read_only",
 ]);
 
+export const subscriptionTierEnum = pgEnum("subscription_tier", [
+  "base",
+  "pro",
+]);
+
 export const accounts = pgTable("accounts", {
   id: uuid("id").primaryKey(),
   accessState: accessStateEnum("access_state").notNull().default("trialing"),
+  subscriptionTier: subscriptionTierEnum("subscription_tier"),
   trialStartsAt: timestamp("trial_starts_at", { withTimezone: true }).notNull(),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })

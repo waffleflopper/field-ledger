@@ -21,6 +21,14 @@ Account access state is separate from subscription tier.
 - `active`
 - `paused_read_only`
 
+Subscription tier is nullable while an account is trialing. When active, it is:
+
+- `base`: up to 3 active hand receipts
+- `pro`: unlimited active hand receipts
+
+Capability checks live in the billing module so product workflows do not need
+to know billing-provider details.
+
 ## Hand Receipts
 
 A hand receipt is a bucket for property items.

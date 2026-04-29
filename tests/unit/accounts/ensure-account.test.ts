@@ -37,6 +37,7 @@ describe("ensureAccount", () => {
     ).resolves.toMatchObject({
       id: "5d44c151-92e4-486f-8ff1-5daf0b3f7ad5",
       accessState: "trialing",
+      subscriptionTier: null,
       trialStartsAt: now,
       trialEndsAt: new Date("2026-05-29T12:00:00.000Z"),
     });

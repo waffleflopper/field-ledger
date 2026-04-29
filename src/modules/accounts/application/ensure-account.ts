@@ -1,8 +1,10 @@
 export type AccessState = "trialing" | "active" | "paused_read_only";
+export type SubscriptionTier = "base" | "pro";
 
 export type AccountRecord = {
   id: string;
   accessState: AccessState;
+  subscriptionTier: SubscriptionTier | null;
   trialStartsAt: Date;
   trialEndsAt: Date;
   createdAt?: Date;
@@ -42,6 +44,7 @@ export async function ensureAccount({
   const createdAccount = await repository.create({
     id: userId,
     accessState: "trialing",
+    subscriptionTier: null,
     trialStartsAt,
     trialEndsAt,
   });

@@ -42,6 +42,7 @@ describe("protectedProcedure", () => {
       account: {
         id: "user-1",
         accessState: "trialing",
+        subscriptionTier: null,
         trialStartsAt: new Date("2026-04-29T12:00:00.000Z"),
         trialEndsAt: new Date("2026-05-29T12:00:00.000Z"),
       },
