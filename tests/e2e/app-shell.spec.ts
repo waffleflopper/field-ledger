@@ -9,6 +9,18 @@ async function signInLocalUser(page: Page) {
   await page.getByLabel("Password").fill("password");
   await page.getByRole("button", { name: "Create local user" }).click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
+  await acknowledgeOnboardingIfPresent(page);
+}
+
+async function acknowledgeOnboardingIfPresent(page: Page) {
+  const notice = page.getByRole("dialog", {
+    name: "Property accountability only",
+  });
+  const acknowledgment = page.getByRole("button", { name: "I understand" });
+
+  await expect(notice).toBeVisible();
+  await acknowledgment.click();
+  await expect(notice).toBeHidden();
 }
 
 test("mobile shell uses bottom navigation and exposes More surfaces", async ({

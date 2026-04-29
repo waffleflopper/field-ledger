@@ -22,6 +22,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     ctx: {
       session: ctx.session,
       account: ctx.account,
+      accountRepository: ctx.accountRepository,
     },
   });
 });

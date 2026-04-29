@@ -7,6 +7,7 @@ export type AccountRecord = {
   subscriptionTier: SubscriptionTier | null;
   trialStartsAt: Date;
   trialEndsAt: Date;
+  onboardingCompletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -14,6 +15,10 @@ export type AccountRecord = {
 export type AccountRepository = {
   findById(accountId: string): Promise<AccountRecord | null>;
   create(account: AccountRecord): Promise<AccountRecord | null>;
+  markOnboardingCompleted(
+    accountId: string,
+    completedAt: Date,
+  ): Promise<AccountRecord | null>;
 };
 
 type EnsureAccountInput = {
@@ -60,4 +65,73 @@ export async function ensureAccount({
   }
 
   return concurrentlyCreatedAccount;
+}
+
+type GetOnboardingStatusInput = {
+  account: AccountRecord;
+  now?: Date;
+};
+
+type CompleteOnboardingInput = {
+  account: AccountRecord;
+  repository: AccountRepository;
+  completedAt?: Date;
+  now?: Date;
+};
+
+export function getOnboardingStatus({
+  account,
+  now = new Date(),
+}: GetOnboardingStatusInput) {
+  const effectiveAccessState = getEffectiveAccessState(account, now);
+  const completedAt = account.onboardingCompletedAt ?? null;
+
+  return {
+    completed: completedAt !== null,
+    completedAt,
+    accessState: effectiveAccessState,
+    isReadOnly: effectiveAccessState === "paused_read_only",
+  };
+}
+
+export async function completeOnboarding({
+  account,
+  repository,
+  completedAt = new Date(),
+  now,
+}: CompleteOnboardingInput) {
+  if (account.onboardingCompletedAt) {
+    return now
+      ? getOnboardingStatus({ account, now })
+      : getOnboardingStatus({ account });
+  }
+
+  const updatedAccount = await repository.markOnboardingCompleted(
+    account.id,
+    completedAt,
+  );
+
+  if (!updatedAccount) {
+    throw new Error("Unable to complete owner account onboarding.");
+  }
+
+  return now
+    ? getOnboardingStatus({ account: updatedAccount, now })
+    : getOnboardingStatus({ account: updatedAccount });
+}
+
+function getEffectiveAccessState(account: AccountRecord, now: Date) {
+  if (account.accessState === "paused_read_only") {
+    return account.accessState;
+  }
+
+  if (
+    account.accessState === "trialing" &&
+    account.subscriptionTier === null &&
+    account.trialEndsAt <= now
+  ) {
+    return "paused_read_only";
+  }
+
+  return account.accessState;
 }

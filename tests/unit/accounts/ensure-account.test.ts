@@ -1,27 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  ensureAccount,
-  type AccountRecord,
-  type AccountRepository,
-} from "@/modules/accounts/application/ensure-account";
-
-class InMemoryAccountRepository implements AccountRepository {
-  private accounts = new Map<string, AccountRecord>();
-
-  async findById(accountId: string) {
-    return this.accounts.get(accountId) ?? null;
-  }
-
-  async create(account: AccountRecord) {
-    if (this.accounts.has(account.id)) {
-      return this.accounts.get(account.id) ?? null;
-    }
-
-    this.accounts.set(account.id, account);
-    return account;
-  }
-}
+import { ensureAccount } from "@/modules/accounts/application/ensure-account";
+import { InMemoryAccountRepository } from "../../support/account-repository";
 
 describe("ensureAccount", () => {
   it("creates a new owner account with 30-day trial access", async () => {

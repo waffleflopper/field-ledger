@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/shell/app-sidebar";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OnboardingNotice } from "@/modules/accounts/ui/onboarding-notice";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="mx-auto w-full max-w-6xl">{children}</div>
             </main>
             <BottomNav />
+            <OnboardingNotice />
           </div>
         </SidebarInset>
       </SidebarProvider>

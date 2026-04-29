@@ -28,5 +28,17 @@ export function createDrizzleAccountRepository(
 
       return createdAccount ?? null;
     },
+    async markOnboardingCompleted(accountId, completedAt) {
+      const [updatedAccount] = await db
+        .update(accounts)
+        .set({
+          onboardingCompletedAt: completedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(accounts.id, accountId))
+        .returning();
+
+      return updatedAccount ?? null;
+    },
   };
 }

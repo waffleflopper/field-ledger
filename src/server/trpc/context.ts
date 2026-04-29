@@ -10,25 +10,29 @@ import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle
 export async function createTRPCContext(): Promise<{
   session: AppSession | null;
   account: AccountRecord | null;
+  accountRepository: ReturnType<typeof createDrizzleAccountRepository>;
 }> {
+  const db = getDrizzleClient();
+  const accountRepository = createDrizzleAccountRepository(db);
   const session = await getCurrentServerAppSession();
 
   if (!session) {
     return {
       session: null,
       account: null,
+      accountRepository,
     };
   }
 
-  const db = getDrizzleClient();
   const account = await ensureAccount({
     userId: session.userId,
-    repository: createDrizzleAccountRepository(db),
+    repository: accountRepository,
   });
 
   return {
     session,
     account,
+    accountRepository,
   };
 }
 

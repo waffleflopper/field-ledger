@@ -14,6 +14,7 @@ New accounts initialize with:
 - `access_state`: `trialing`
 - `trial_starts_at`: first initialization time
 - `trial_ends_at`: 30 days after trial start
+- `onboarding_completed_at`: null until the first-run boundary notice is acknowledged
 
 Account access state is separate from subscription tier.
 
@@ -28,6 +29,14 @@ Subscription tier is nullable while an account is trialing. When active, it is:
 
 Capability checks live in the billing module so product workflows do not need
 to know billing-provider details.
+
+First-run onboarding is account-level state, not device-local state. The app
+shows a short boundary notice until `onboarding_completed_at` is set. The
+notice states that Field Ledger is for property accountability assistance, is
+not an official Army system of record, and must not store classified
+information, PHI, or sensitive operational details. Paused/read-only accounts
+can acknowledge the notice, but the copy must make clear that new hand receipt
+work waits until access is restored.
 
 ## Hand Receipts
 
