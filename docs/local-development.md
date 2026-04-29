@@ -108,6 +108,12 @@ raw Supabase or Postgres clients directly. Future domain modules should call
 application services, and those services should use provider-boundary adapters
 for database, auth, storage, billing, audit, and notification work.
 
+Temporary Phase 1 exception: `DATABASE_URL` points at the local `postgres`
+role so the scaffold can initialize owner accounts from the server. This is
+privileged local runtime access. Before Field Ledger adds more account-owned
+runtime tables, replace it with a non-superuser app role or a per-request RLS
+claim boundary so app reads and writes exercise ownership policies.
+
 ## tRPC and Query Foundation
 
 tRPC is the app API layer, and TanStack Query owns client-side query state. The

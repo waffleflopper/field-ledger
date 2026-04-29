@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 
 import {
+  getSafeAuthRedirectPath,
   requestMagicLink,
   signInWithEmailPassword,
   signUpWithEmailPassword,
@@ -16,7 +17,7 @@ type AuthMode = "password" | "magic";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") ?? "/app";
+  const nextPath = getSafeAuthRedirectPath(searchParams.get("next"));
   const authError = searchParams.get("error");
   const [mode, setMode] = useState<AuthMode>("password");
   const [email, setEmail] = useState("");

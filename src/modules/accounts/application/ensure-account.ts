@@ -1,3 +1,5 @@
+import { deriveAccountCapabilities } from "@/modules/billing";
+
 export type AccessState = "trialing" | "active" | "paused_read_only";
 export type SubscriptionTier = "base" | "pro";
 
@@ -83,14 +85,14 @@ export function getOnboardingStatus({
   account,
   now = new Date(),
 }: GetOnboardingStatusInput) {
-  const effectiveAccessState = getEffectiveAccessState(account, now);
+  const capabilities = deriveAccountCapabilities(account, now);
   const completedAt = account.onboardingCompletedAt ?? null;
 
   return {
     completed: completedAt !== null,
     completedAt,
-    accessState: effectiveAccessState,
-    isReadOnly: effectiveAccessState === "paused_read_only",
+    accessState: capabilities.accessState,
+    isReadOnly: capabilities.isReadOnly,
   };
 }
 
@@ -118,20 +120,4 @@ export async function completeOnboarding({
   return now
     ? getOnboardingStatus({ account: updatedAccount, now })
     : getOnboardingStatus({ account: updatedAccount });
-}
-
-function getEffectiveAccessState(account: AccountRecord, now: Date) {
-  if (account.accessState === "paused_read_only") {
-    return account.accessState;
-  }
-
-  if (
-    account.accessState === "trialing" &&
-    account.subscriptionTier === null &&
-    account.trialEndsAt <= now
-  ) {
-    return "paused_read_only";
-  }
-
-  return account.accessState;
 }

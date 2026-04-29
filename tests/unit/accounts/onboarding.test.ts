@@ -31,6 +31,22 @@ describe("account onboarding", () => {
     });
   });
 
+  it("uses centralized capability rules for expired trial read-only status", () => {
+    expect(
+      getOnboardingStatus({
+        account: {
+          ...trialAccount,
+          trialEndsAt: new Date("2026-04-28T12:00:00.000Z"),
+        },
+        now: new Date("2026-04-29T12:00:00.000Z"),
+      }),
+    ).toMatchObject({
+      completed: false,
+      accessState: "paused_read_only",
+      isReadOnly: true,
+    });
+  });
+
   it("marks onboarding complete idempotently", async () => {
     const repository = new InMemoryAccountRepository([trialAccount]);
     const completedAt = new Date("2026-04-30T12:00:00.000Z");

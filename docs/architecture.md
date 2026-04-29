@@ -73,6 +73,11 @@ belongs in domain modules; shell pages are only composition surfaces.
 - User-owned tables after `accounts` must include `account_id`.
 - RLS protects ownership. App services protect behavior.
 - Service-role or privileged database access must be rare, isolated, and documented.
+- Temporary Phase 1 scaffold exception: local runtime database access currently
+  uses the local `postgres` role so the server can initialize the first owner
+  account while the app-role/RLS session boundary is still thin. Replace this
+  with a non-superuser runtime role, or per-request RLS claim handling, before
+  adding additional account-owned runtime tables.
 
 ## Import/Export Boundary
 
