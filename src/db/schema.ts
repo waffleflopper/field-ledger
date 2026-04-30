@@ -38,7 +38,7 @@ export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").notNull().unique(),
+    userId: text("auth_user_id").notNull().unique(),
     accessState: accessStateEnum("access_state").notNull().default("trialing"),
     subscriptionTier: subscriptionTierEnum("subscription_tier"),
     trialStartsAt: timestamp("trial_starts_at", {
@@ -68,7 +68,7 @@ export const auditEvents = pgTable("audit_events", {
   accountId: uuid("account_id")
     .notNull()
     .references(() => accounts.id),
-  actorId: uuid("actor_id").notNull(),
+  actorId: text("actor_id").notNull(),
   action: text("action").notNull(),
   targetType: text("target_type"),
   targetId: text("target_id"),

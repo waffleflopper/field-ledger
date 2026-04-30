@@ -50,6 +50,13 @@
       "when": 1777497582117,
       "tag": "0006_medical_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777511259974,
+      "tag": "0007_long_dark_beast",
+      "breakpoints": true
     }
   ]
 }

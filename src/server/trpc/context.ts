@@ -41,7 +41,7 @@ export async function createTRPCContext(): Promise<{
     account,
     accountRepository,
     auditRepository: createDrizzleAuditRepository(db, {
-      authUserId: session.userId,
+      authSubject: session.userId,
     }),
   };
 }

@@ -13,8 +13,9 @@ changes happen; routes and UI components do not write audit rows directly.
 - `AuditRepository` is the application port. The Drizzle adapter is an
   infrastructure detail and should stay out of domain/UI code.
 - The Drizzle adapter runs each operation inside an authenticated database
-  session so RLS evaluates the current app user's `auth.uid()` claim. Do not
-  remove that boundary or replace it with direct privileged database access.
+  session so RLS evaluates the app-owned `app.current_auth_subject` setting.
+  Do not remove that boundary or replace it with direct privileged database
+  access.
 
 ## Actions
 

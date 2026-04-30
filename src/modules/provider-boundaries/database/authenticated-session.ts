@@ -8,7 +8,7 @@ type DrizzleTransaction = Parameters<
 >[0];
 
 export type AuthenticatedDatabaseSession = {
-  authUserId: string;
+  authSubject: string;
 };
 
 export async function runWithAuthenticatedDatabaseSession<T>(
@@ -19,7 +19,7 @@ export async function runWithAuthenticatedDatabaseSession<T>(
   return db.transaction(async (transaction) => {
     await transaction.execute(sql`set local role authenticated`);
     await transaction.execute(
-      sql`select set_config('request.jwt.claim.sub', ${session.authUserId}, true)`,
+      sql`select set_config('app.current_auth_subject', ${session.authSubject}, true)`,
     );
 
     return operation(transaction);
