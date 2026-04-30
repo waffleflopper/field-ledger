@@ -3,6 +3,7 @@
 import type { AccountCapabilities } from "@/modules/billing";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import { trpc } from "@/trpc/react";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { CreateHandReceiptForm } from "./create-hand-receipt-form";
 import { HandReceiptEmptyState } from "./hand-receipt-empty-state";
@@ -33,12 +34,30 @@ function getCreateDisabledReason(
   return null;
 }
 
+function getRestoreErrorMessage(
+  errorMessage: string,
+  capabilities: AccountCapabilities,
+) {
+  if (errorMessage === "Active hand receipt limit reached.") {
+    const limit = capabilities.activeHandReceiptLimit;
+
+    if (limit !== null) {
+      return `Base allows ${limit} active hand receipts. Archive an active hand receipt or upgrade before restoring this one.`;
+    }
+
+    return "Restore is blocked by the current account limits.";
+  }
+
+  return errorMessage;
+}
+
 export function HandReceiptsWorkspace({
   initialCapabilities,
   initialHandReceipts,
 }: HandReceiptsWorkspaceProps) {
   const utilities = trpc.useUtils();
   const [view, setView] = useState<HandReceiptView>("active");
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const activeHandReceiptsQuery = trpc.handReceipts.list.useQuery(
     { status: "active" },
     {
@@ -49,6 +68,9 @@ export function HandReceiptsWorkspace({
   const capabilitiesQuery = trpc.billing.capabilities.useQuery(undefined, {
     initialData: initialCapabilities,
   });
+  const activeHandReceipts = activeHandReceiptsQuery.data ?? [];
+  const archivedHandReceipts = archivedHandReceiptsQuery.data ?? [];
+  const capabilities = capabilitiesQuery.data ?? initialCapabilities;
   const createMutation = trpc.handReceipts.create.useMutation({
     onSuccess: async () => {
       await utilities.handReceipts.list.invalidate();
@@ -58,19 +80,20 @@ export function HandReceiptsWorkspace({
   });
   const restoreMutation = trpc.handReceipts.restore.useMutation({
     onSuccess: async () => {
+      setRestoreError(null);
       await utilities.handReceipts.list.invalidate();
       await utilities.handReceipts.listArchived.invalidate();
       await utilities.billing.capabilities.invalidate();
     },
+    onError: (error) => {
+      setRestoreError(getRestoreErrorMessage(error.message, capabilities));
+    },
   });
 
-  const activeHandReceipts = activeHandReceiptsQuery.data ?? [];
-  const archivedHandReceipts = archivedHandReceiptsQuery.data ?? [];
   const handReceipts =
     view === "active" ? activeHandReceipts : archivedHandReceipts;
   const currentQuery =
     view === "active" ? activeHandReceiptsQuery : archivedHandReceiptsQuery;
-  const capabilities = capabilitiesQuery.data ?? initialCapabilities;
   const disabledReason = getCreateDisabledReason(
     capabilities,
     activeHandReceipts.length,
@@ -112,7 +135,10 @@ export function HandReceiptsWorkspace({
       <div className="flex w-fit rounded-lg border bg-card p-1">
         <button
           className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          onClick={() => setView("active")}
+          onClick={() => {
+            setRestoreError(null);
+            setView("active");
+          }}
           aria-pressed={view === "active"}
           type="button"
         >
@@ -120,13 +146,29 @@ export function HandReceiptsWorkspace({
         </button>
         <button
           className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          onClick={() => setView("archived")}
+          onClick={() => {
+            setRestoreError(null);
+            setView("archived");
+          }}
           aria-pressed={view === "archived"}
           type="button"
         >
           Archived
         </button>
       </div>
+
+      {restoreError && view === "archived" ? (
+        <div
+          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0"
+          />
+          <p>{restoreError}</p>
+        </div>
+      ) : null}
 
       {currentQuery.isLoading ? (
         <div className="space-y-2">
@@ -138,6 +180,7 @@ export function HandReceiptsWorkspace({
           canRestore={canRestore}
           handReceipts={handReceipts}
           onRestore={(handReceipt) => {
+            setRestoreError(null);
             restoreMutation.mutate({ id: handReceipt.id });
           }}
           restorePendingId={restoreMutation.variables?.id ?? null}
