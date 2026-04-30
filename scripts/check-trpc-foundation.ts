@@ -23,6 +23,17 @@ async function main() {
         return [];
       },
     },
+    handReceiptRepository: {
+      async createWithAuditEvent() {
+        throw new Error("Foundation check should not create hand receipts.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async countActiveByAccountId() {
+        return 0;
+      },
+    },
   });
   const health = await caller.foundation.health();
 

@@ -65,6 +65,9 @@ Status:
 - archived
 
 Archived hand receipts are hidden from day-to-day workflows and suppress contained item reminders.
+Creation of a hand receipt emits `hand_receipt.created` through the audit
+logger boundary. Later edit, archive, and restore slices should emit matching
+stable hand receipt action names.
 
 ## Property Items
 

@@ -18,7 +18,8 @@ behavior even if the stored access state has not yet been updated.
 
 ## Subscription Tiers
 
-- `base`: Allows up to 3 active hand receipts.
+- `base`: Allows up to 3 active hand receipts. Archived hand receipts do not
+  count against this active limit.
 - `pro`: Allows unlimited active hand receipts.
 
 Subscription tier is separate from access state. A trial account can have no

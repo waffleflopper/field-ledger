@@ -8,6 +8,11 @@ import {
   type AuditRepository,
 } from "@/modules/audit";
 import { createDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
+import {
+  createUnavailableHandReceiptRepository,
+  type HandReceiptRepository,
+} from "@/modules/hand-receipts";
+import { createDrizzleHandReceiptRepository } from "@/modules/hand-receipts/infrastructure/drizzle-hand-receipt-repository";
 import { type AppSession } from "@/modules/provider-boundaries/auth";
 import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
 import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
@@ -17,6 +22,7 @@ export async function createTRPCContext(): Promise<{
   account: AccountRecord | null;
   accountRepository: ReturnType<typeof createDrizzleAccountRepository>;
   auditRepository: AuditRepository;
+  handReceiptRepository: HandReceiptRepository;
 }> {
   const db = getDrizzleClient();
   const accountRepository = createDrizzleAccountRepository(db);
@@ -28,6 +34,7 @@ export async function createTRPCContext(): Promise<{
       account: null,
       accountRepository,
       auditRepository: createUnavailableAuditRepository(),
+      handReceiptRepository: createUnavailableHandReceiptRepository(),
     };
   }
 
@@ -41,6 +48,9 @@ export async function createTRPCContext(): Promise<{
     account,
     accountRepository,
     auditRepository: createDrizzleAuditRepository(db, {
+      authSubject: session.userId,
+    }),
+    handReceiptRepository: createDrizzleHandReceiptRepository(db, {
       authSubject: session.userId,
     }),
   };

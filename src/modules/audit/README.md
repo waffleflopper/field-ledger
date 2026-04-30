@@ -23,11 +23,12 @@ Current action names:
 
 - `system.initialized`
 - `account.onboarding_completed`
+- `hand_receipt.created`
 
 Future slices should add stable domain action names when they add real
-workflows. Prefer names such as `hand_receipt.created`,
-`hand_receipt.updated`, `hand_receipt.archived`, and
-`hand_receipt.restored` over implementation-specific labels.
+workflows. Prefer names such as `hand_receipt.updated`,
+`hand_receipt.archived`, and `hand_receipt.restored` over
+implementation-specific labels.
 
 ## Emission Expectations
 

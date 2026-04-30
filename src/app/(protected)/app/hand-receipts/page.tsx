@@ -1,14 +1,18 @@
-import { ClipboardList } from "lucide-react";
+import { HandReceiptsWorkspace } from "@/modules/hand-receipts/ui/hand-receipts-workspace";
+import { createTRPCContext } from "@/server/trpc/context";
+import { appRouter } from "@/server/trpc/router";
 
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+export default async function HandReceiptsPage() {
+  const caller = appRouter.createCaller(await createTRPCContext());
+  const [handReceipts, capabilities] = await Promise.all([
+    caller.handReceipts.list(),
+    caller.billing.capabilities(),
+  ]);
 
-export default function HandReceiptsPage() {
   return (
-    <PlaceholderPage
-      description="Hand Receipts will organize property into the user's named receipt buckets without becoming an organization or official record system."
-      icon={ClipboardList}
-      sections={["Receipt list", "Receipt detail", "Linked property"]}
-      title="Hand Receipts"
+    <HandReceiptsWorkspace
+      initialCapabilities={capabilities}
+      initialHandReceipts={handReceipts}
     />
   );
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
+import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 describe("billingRouter", () => {
   it("serves current account capabilities through the typed tRPC boundary", async () => {
@@ -22,6 +23,7 @@ describe("billingRouter", () => {
       },
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.billing.capabilities()).resolves.toMatchObject({

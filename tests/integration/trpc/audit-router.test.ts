@@ -4,6 +4,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
+import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -28,6 +29,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: new InMemoryAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toEqual([]);
@@ -67,6 +69,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toMatchObject([
@@ -115,6 +118,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(

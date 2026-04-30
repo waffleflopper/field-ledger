@@ -1,0 +1,93 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+import {
+  createHandReceipt,
+  listActiveHandReceipts,
+} from "@/modules/hand-receipts";
+import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
+
+const optionalText = z
+  .string()
+  .max(500)
+  .optional()
+  .nullable()
+  .transform((value) => value ?? null);
+
+const createHandReceiptInput = z.object({
+  name: z.string().trim().min(1, "Hand receipt name is required.").max(120),
+  notes: z
+    .string()
+    .max(1000)
+    .optional()
+    .nullable()
+    .transform((value) => value ?? null),
+  handReceiptNumber: optionalText,
+  holderName: optionalText,
+  unitName: optionalText,
+  uic: optionalText,
+  effectiveDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD.")
+    .optional()
+    .nullable()
+    .transform((value) => value ?? null),
+});
+
+function toTRPCError(error: unknown): never {
+  const message =
+    error instanceof Error ? error.message : "Unable to create hand receipt.";
+
+  if (
+    message === "This account is read-only." ||
+    message === "Active hand receipt limit reached."
+  ) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message,
+    });
+  }
+
+  if (message === "Hand receipt name is required.") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message,
+    });
+  }
+
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message,
+  });
+}
+
+export const handReceiptsRouter = createTRPCRouter({
+  list: protectedProcedure.query(({ ctx }) =>
+    listActiveHandReceipts({
+      accountId: ctx.account.id,
+      repository: ctx.handReceiptRepository,
+    }),
+  ),
+  create: protectedProcedure
+    .input(createHandReceiptInput)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await createHandReceipt({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input: {
+            name: input.name,
+            notes: input.notes,
+            handReceiptNumber: input.handReceiptNumber,
+            holderName: input.holderName,
+            unitName: input.unitName,
+            uic: input.uic,
+            effectiveDate: input.effectiveDate,
+          },
+          handReceiptRepository: ctx.handReceiptRepository,
+        });
+      } catch (error) {
+        toTRPCError(error);
+      }
+    }),
+});
