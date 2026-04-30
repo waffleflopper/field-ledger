@@ -10,11 +10,14 @@ import {
 } from "@/modules/provider-boundaries/auth";
 import { Button } from "@/components/ui/button";
 
+type AuthMode = "sign-in" | "sign-up";
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeAuthRedirectPath(searchParams.get("next"));
   const authError = searchParams.get("error");
+  const [mode, setMode] = useState<AuthMode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -26,7 +29,10 @@ export function LoginForm() {
     setMessage(null);
 
     try {
-      const result = await signInWithEmailPassword({ email, password });
+      const result =
+        mode === "sign-up"
+          ? await signUpWithEmailPassword({ email, password })
+          : await signInWithEmailPassword({ email, password });
 
       if (!result.ok) {
         setMessage(result.message);
@@ -42,26 +48,16 @@ export function LoginForm() {
     }
   }
 
-  async function handleSignup() {
-    setIsSubmitting(true);
+  function selectMode(nextMode: AuthMode) {
+    setMode(nextMode);
     setMessage(null);
-
-    try {
-      const result = await signUpWithEmailPassword({ email, password });
-
-      if (!result.ok) {
-        setMessage(result.message);
-        return;
-      }
-
-      router.replace(nextPath);
-      router.refresh();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSubmitting(false);
-    }
   }
+
+  const isSignUp = mode === "sign-up";
+  const title = isSignUp ? "Create account" : "Sign in";
+  const description = isSignUp
+    ? "Start a Field Ledger account for your personal property records."
+    : "Use your Field Ledger account to enter the authenticated app area.";
 
   return (
     <div className="w-full max-w-md rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
@@ -69,10 +65,33 @@ export function LoginForm() {
         <p className="text-sm font-medium text-muted-foreground">
           Field Ledger
         </p>
-        <h1 className="text-2xl font-semibold tracking-normal">Sign in</h1>
-        <p className="text-sm leading-6 text-muted-foreground">
-          Use your Field Ledger account to enter the authenticated app area.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-normal">{title}</h1>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+
+      <div
+        aria-label="Auth mode"
+        className="mt-5 grid grid-cols-2 rounded-md border bg-muted p-1"
+        role="tablist"
+      >
+        <button
+          aria-selected={!isSignUp}
+          className="h-9 rounded-sm text-sm font-medium text-muted-foreground transition-colors aria-selected:bg-background aria-selected:text-foreground aria-selected:shadow-xs focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none"
+          onClick={() => selectMode("sign-in")}
+          role="tab"
+          type="button"
+        >
+          Sign in
+        </button>
+        <button
+          aria-selected={isSignUp}
+          className="h-9 rounded-sm text-sm font-medium text-muted-foreground transition-colors aria-selected:bg-background aria-selected:text-foreground aria-selected:shadow-xs focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none"
+          onClick={() => selectMode("sign-up")}
+          role="tab"
+          type="button"
+        >
+          Register
+        </button>
       </div>
 
       <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
@@ -90,7 +109,7 @@ export function LoginForm() {
         <label className="grid gap-2 text-sm font-medium">
           Password
           <input
-            autoComplete="current-password"
+            autoComplete={isSignUp ? "new-password" : "current-password"}
             className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
             minLength={8}
             onChange={(event) => setPassword(event.target.value)}
@@ -99,19 +118,9 @@ export function LoginForm() {
             value={password}
           />
         </label>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button disabled={isSubmitting} type="submit">
-            Sign in
-          </Button>
-          <Button
-            disabled={isSubmitting || !email || password.length < 8}
-            onClick={handleSignup}
-            type="button"
-            variant="outline"
-          >
-            Create account
-          </Button>
-        </div>
+        <Button className="w-full" disabled={isSubmitting} type="submit">
+          {isSignUp ? "Create account" : "Sign in"}
+        </Button>
       </form>
 
       {(message || authError) && (
