@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { BetterAuthSession } from "@/modules/provider-boundaries/auth/better-auth";
 
 export type AppSession = {
   userId: string;
@@ -12,7 +12,7 @@ export class MissingAppSessionError extends Error {
   }
 }
 
-function toAppSession(user: User): AppSession {
+function toAppSession(user: BetterAuthSession["user"]): AppSession {
   return {
     userId: user.id,
     email: user.email ?? null,
@@ -20,21 +20,17 @@ function toAppSession(user: User): AppSession {
 }
 
 export async function getAppSession(
-  supabaseClient: Pick<SupabaseClient, "auth">,
+  authSession: BetterAuthSession | null,
 ): Promise<AppSession | null> {
-  const { data, error } = await supabaseClient.auth.getUser();
-
-  if (error || !data.user) {
+  if (!authSession?.user) {
     return null;
   }
 
-  return toAppSession(data.user);
+  return toAppSession(authSession.user);
 }
 
-export async function requireAppSession(
-  supabaseClient: Pick<SupabaseClient, "auth">,
-): Promise<AppSession> {
-  const session = await getAppSession(supabaseClient);
+export async function requireAppSession(authSession: BetterAuthSession | null) {
+  const session = await getAppSession(authSession);
 
   if (!session) {
     throw new MissingAppSessionError();

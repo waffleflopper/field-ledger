@@ -6,8 +6,9 @@ async function signInNewLocalUser(page: Page) {
 
   await page.goto("/auth/login?next=/app");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: "Create local user" }).click();
+  await page.getByLabel("Password").fill("password123");
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
 }
 

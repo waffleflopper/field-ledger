@@ -50,27 +50,19 @@ local Supabase project can run at the same time.
    pnpm supabase:start
    ```
 
-5. Copy the local publishable key from:
-
-   ```sh
-   pnpm supabase:status
-   ```
-
-   Paste it into `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
-
-6. Verify the local Postgres connection:
+5. Verify the local Postgres connection:
 
    ```sh
    pnpm db:check:local
    ```
 
-7. Apply local database migrations:
+6. Apply local database migrations:
 
    ```sh
    pnpm db:migrate
    ```
 
-8. Start the app:
+7. Start the app:
 
    ```sh
    pnpm dev
@@ -146,13 +138,13 @@ boundary instead of importing Better Auth directly.
 
 Local Supabase is still required for database, Storage, RLS, and local service
 testing, but it is no longer the intended auth provider. Better Auth session
-management replaces Supabase Auth session handling in future implementation
-slices.
+management replaces Supabase Auth session handling.
 
 Route shape:
 
 - `/auth/login` is the public sign-in surface.
-- `/auth/callback` handles magic-link callbacks.
+- `/api/auth/[...all]` is the Better Auth route handler behind the app-owned
+  auth boundary.
 - `/auth/signout` signs out the current browser session.
 - `/app/...` routes are authenticated product routes and redirect signed-out
   users to `/auth/login`.
@@ -167,22 +159,11 @@ For local email/password testing after the Better Auth implementation lands:
    ```
 
 2. Open `http://localhost:3000/auth/login`.
-3. Enter a local email address and a password of at least six characters.
-4. Use **Create local user** once, then use **Sign in** for later sessions.
+3. Enter a local email address and a password of at least eight characters.
+4. Use **Create account** once, then use **Sign in** for later sessions.
 
-Local email confirmation behavior will be owned by the Better Auth
-configuration. The previous Supabase Auth implementation disabled email
-confirmations in `supabase/config.toml`; future auth work should not treat that
-as the product auth contract.
-
-Magic-link sign-in remains a desired auth surface where feasible. If Better
-Auth local email delivery uses the Supabase dev mail service, local emails can
-still be captured by Inbucket at `SUPABASE_INBUCKET_URL`:
-
-Visit `http://127.0.0.1:54334` in your browser.
-
-Click the generated sign-in link from that mailbox to complete the callback
-flow configured by the Better Auth slice.
+Local email/password auth does not require Supabase Auth publishable keys.
+Email confirmation and magic-link sign-in are outside the current auth slice.
 
 ## RLS Expectations
 
