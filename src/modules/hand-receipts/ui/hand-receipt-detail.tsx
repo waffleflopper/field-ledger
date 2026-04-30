@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  Archive,
   ArrowLeft,
   CalendarDays,
   ClipboardList,
@@ -10,9 +11,18 @@ import {
   History,
   Pencil,
   PackageSearch,
+  RotateCcw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import { trpc } from "@/trpc/react";
 import { HandReceiptEditForm } from "./hand-receipt-edit-form";
@@ -80,10 +90,12 @@ function DetailSummary({
   handReceipt,
   isReadOnly,
   onEdit,
+  onArchive,
 }: {
   handReceipt: HandReceiptRecord;
   isReadOnly: boolean;
   onEdit: () => void;
+  onArchive: () => void;
 }) {
   return (
     <section className="rounded-lg border bg-card p-4 text-card-foreground">
@@ -106,10 +118,24 @@ function DetailSummary({
             Read only
           </span>
         ) : (
-          <Button onClick={onEdit} size="sm" type="button" variant="outline">
-            <Pencil aria-hidden="true" className="size-4" />
-            Edit details
-          </Button>
+          <div className="flex items-center gap-2">
+            {handReceipt.status === "active" ? (
+              <Button
+                aria-label="Archive hand receipt"
+                onClick={onArchive}
+                size="icon-sm"
+                title="Archive hand receipt"
+                type="button"
+                variant="destructive"
+              >
+                <Archive aria-hidden="true" className="size-4" />
+              </Button>
+            ) : null}
+            <Button onClick={onEdit} size="sm" type="button" variant="outline">
+              <Pencil aria-hidden="true" className="size-4" />
+              Edit details
+            </Button>
+          </div>
         )}
       </div>
       <dl className="grid gap-x-5 md:grid-cols-2">
@@ -132,12 +158,46 @@ function DetailSummary({
 
 export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const utilities = trpc.useUtils();
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
     id: handReceiptId,
   });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  const archiveMutation = trpc.handReceipts.archive.useMutation({
+    onSuccess: async (archived) => {
+      setLifecycleError(null);
+      setIsArchiveDialogOpen(false);
+      utilities.handReceipts.getById.setData({ id: handReceiptId }, archived);
+      await Promise.all([
+        utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
+        utilities.handReceipts.list.invalidate(),
+        utilities.handReceipts.listArchived.invalidate(),
+        utilities.billing.capabilities.invalidate(),
+      ]);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
+  const restoreMutation = trpc.handReceipts.restore.useMutation({
+    onSuccess: async (restored) => {
+      setLifecycleError(null);
+      utilities.handReceipts.getById.setData({ id: handReceiptId }, restored);
+      await Promise.all([
+        utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
+        utilities.handReceipts.list.invalidate(),
+        utilities.handReceipts.listArchived.invalidate(),
+        utilities.billing.capabilities.invalidate(),
+      ]);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
 
   if (handReceiptQuery.isLoading) {
     return (
@@ -182,7 +242,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           </Button>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Active receipt
+              {handReceipt.status} receipt
             </p>
             <h1 className="max-w-3xl text-2xl font-semibold tracking-normal md:text-3xl">
               {handReceipt.name}
@@ -190,9 +250,23 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           </div>
         </div>
 
-        <div className="flex w-fit items-center gap-2 rounded-lg border bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground">
-          <CalendarDays aria-hidden="true" className="size-4" />
-          Updated {formatDate(handReceipt.updatedAt)}
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <div className="flex w-fit items-center gap-2 rounded-lg border bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground">
+            <CalendarDays aria-hidden="true" className="size-4" />
+            Updated {formatDate(handReceipt.updatedAt)}
+          </div>
+          {!isReadOnly && handReceipt.status === "archived" ? (
+            <Button
+              disabled={restoreMutation.isPending}
+              onClick={() => restoreMutation.mutate({ id: handReceipt.id })}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              {restoreMutation.isPending ? "Restoring" : "Restore"}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -202,6 +276,44 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           are paused until access is restored.
         </p>
       ) : null}
+
+      {lifecycleError ? (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          {lifecycleError}
+        </p>
+      ) : null}
+
+      <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Archive this hand receipt?</DialogTitle>
+            <DialogDescription>
+              {handReceipt.name} will leave active workflows and disappear from
+              normal hand receipt lists. It stays reviewable in Archived and can
+              be restored later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              disabled={archiveMutation.isPending}
+              onClick={() => setIsArchiveDialogOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={archiveMutation.isPending}
+              onClick={() => archiveMutation.mutate({ id: handReceipt.id })}
+              type="button"
+              variant="destructive"
+            >
+              <Archive aria-hidden="true" className="size-4" />
+              {archiveMutation.isPending ? "Archiving" : "Archive"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-5">
         {isEditing ? (
@@ -215,6 +327,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           <DetailSummary
             handReceipt={handReceipt}
             isReadOnly={isReadOnly}
+            onArchive={() => setIsArchiveDialogOpen(true)}
             onEdit={() => setIsEditing(true)}
           />
         )}

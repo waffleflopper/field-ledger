@@ -64,6 +64,9 @@ Every account-owned table should have tests proving one account cannot read or
 write another account's rows.
 
 Hand receipt RLS tests cover owner-scoped select, insert, and update behavior.
+Archive and restore are update behaviors, so RLS coverage must prove status
+changes cannot cross account boundaries while application tests prove lifecycle
+rules and read-only blocking.
 Application-service tests still cover read-only capability blocking because RLS
 protects row ownership, not product access state.
 

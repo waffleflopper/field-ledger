@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarDays, ClipboardList } from "lucide-react";
+import { CalendarDays, ClipboardList, RotateCcw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 
 function formatCreatedDate(date: Date) {
@@ -13,16 +14,22 @@ function formatCreatedDate(date: Date) {
 
 type HandReceiptListProps = {
   handReceipts: HandReceiptRecord[];
+  canRestore?: boolean;
+  onRestore?: (handReceipt: HandReceiptRecord) => void;
+  restorePendingId?: string | null;
 };
 
-export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
+export function HandReceiptList({
+  handReceipts,
+  canRestore = false,
+  onRestore,
+  restorePendingId = null,
+}: HandReceiptListProps) {
   return (
     <div className="space-y-2">
       {handReceipts.map((handReceipt) => (
-        <Link
-          aria-label={`Open ${handReceipt.name}`}
-          className="group block rounded-lg border bg-card p-4 text-card-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          href={`/app/hand-receipts/${handReceipt.id}`}
+        <article
+          className="rounded-lg border bg-card p-4 text-card-foreground transition-colors hover:bg-secondary/40"
           key={handReceipt.id}
         >
           <div className="flex items-start gap-3">
@@ -31,11 +38,17 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
             </span>
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                <h2 className="truncate text-base font-semibold tracking-normal group-hover:text-primary">
-                  {handReceipt.name}
-                </h2>
+                <Link
+                  aria-label={`Open ${handReceipt.name}`}
+                  className="min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  href={`/app/hand-receipts/${handReceipt.id}`}
+                >
+                  <h2 className="truncate text-base font-semibold tracking-normal hover:text-primary">
+                    {handReceipt.name}
+                  </h2>
+                </Link>
                 <span className="w-fit rounded-sm border bg-secondary px-1.5 py-0.5 font-mono text-[0.68rem] uppercase text-muted-foreground">
-                  Active
+                  {handReceipt.status}
                 </span>
               </div>
 
@@ -56,9 +69,25 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
                   </span>
                 ) : null}
               </div>
+              {handReceipt.status === "archived" && canRestore && onRestore ? (
+                <div className="pt-1">
+                  <Button
+                    disabled={restorePendingId === handReceipt.id}
+                    onClick={() => onRestore(handReceipt)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <RotateCcw aria-hidden="true" className="size-4" />
+                    {restorePendingId === handReceipt.id
+                      ? "Restoring"
+                      : "Restore"}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
-        </Link>
+        </article>
       ))}
     </div>
   );

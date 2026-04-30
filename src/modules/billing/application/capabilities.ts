@@ -22,3 +22,14 @@ export function canCreateHandReceipt(
 
   return currentActiveHandReceiptCount < capabilities.activeHandReceiptLimit;
 }
+
+export function canArchiveHandReceipt(capabilities: AccountCapabilities) {
+  return !capabilities.isReadOnly;
+}
+
+export function canRestoreHandReceipt(
+  capabilities: AccountCapabilities,
+  currentActiveHandReceiptCount: number,
+) {
+  return canCreateHandReceipt(capabilities, currentActiveHandReceiptCount);
+}

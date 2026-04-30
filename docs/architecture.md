@@ -57,6 +57,12 @@ The audit logger boundary is app-owned. Product modules emit meaningful events
 through audit application services and repository ports; routes, UI components,
 and future provider adapters must not insert audit records directly.
 
+Hand receipt lifecycle behavior is owned by the hand receipts module. Archive
+and restore are reversible application-service behaviors, emit audit events, and
+must not be reimplemented in route components or UI-only code. See
+`docs/hand-receipt-archive-behavior.md` for deferred requirement and 2062
+boundaries.
+
 ## App Shell
 
 Authenticated product routes live under the literal `/app` URL path. The

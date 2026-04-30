@@ -11,6 +11,7 @@ const ownerOneAccountId = "1b6bdb8d-2202-4f00-a195-5917168807e3";
 const ownerTwoAccountId = "ec6b6623-bb5d-423c-9291-5a2ed631c639";
 const ownerOneHandReceiptId = "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082";
 const ownerTwoHandReceiptId = "31b51b49-7831-4104-91e6-78c350a04668";
+const ownerTwoArchivedHandReceiptId = "65451fb3-90a2-4584-830c-a399e846660c";
 const ownerOneInsertAllowedHandReceiptId =
   "7f4a6515-75a3-4b98-94e2-3192602532eb";
 
@@ -58,11 +59,17 @@ describe("hand receipts RLS", () => {
         account_id: ownerTwoAccountId,
         name: "Owner two receipt",
       },
+      {
+        id: ownerTwoArchivedHandReceiptId,
+        account_id: ownerTwoAccountId,
+        name: "Owner two archived receipt",
+        status: "archived",
+      },
     ])} on conflict (id) do nothing`;
   });
 
   afterAll(async () => {
-    await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId}, ${ownerOneInsertAllowedHandReceiptId})`;
+    await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId}, ${ownerTwoArchivedHandReceiptId}, ${ownerOneInsertAllowedHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
   });
@@ -139,6 +146,51 @@ describe("hand receipts RLS", () => {
     );
 
     expect(rows).toEqual([]);
+  });
+
+  it("allows an owner to archive and restore their own hand receipts", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update hand_receipts set status = 'archived' where id = ${ownerOneHandReceiptId} returning id, status`,
+      ),
+    ).resolves.toEqual([
+      {
+        id: ownerOneHandReceiptId,
+        status: "archived",
+      },
+    ]);
+
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update hand_receipts set status = 'active' where id = ${ownerOneHandReceiptId} returning id, status`,
+      ),
+    ).resolves.toEqual([
+      {
+        id: ownerOneHandReceiptId,
+        status: "active",
+      },
+    ]);
+  });
+
+  it("prevents an owner from archiving or restoring another account's hand receipts", async () => {
+    const archiveRows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update hand_receipts set status = 'archived' where id = ${ownerTwoHandReceiptId} returning id`,
+    );
+
+    const restoreRows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update hand_receipts set status = 'active' where id = ${ownerTwoArchivedHandReceiptId} returning id`,
+    );
+
+    expect(archiveRows).toEqual([]);
+    expect(restoreRows).toEqual([]);
   });
 
   it("prevents an owner from moving a hand receipt to another account", async () => {

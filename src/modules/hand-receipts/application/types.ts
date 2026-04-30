@@ -41,5 +41,6 @@ export type UpdateHandReceiptRecord = {
   unitName?: string | null;
   uic?: string | null;
   effectiveDate?: string | null;
+  status?: HandReceiptStatus;
   updatedAt?: Date;
 };

@@ -69,6 +69,58 @@ describe("handReceiptsRouter", () => {
     await expect(createCaller().handReceipts.list()).resolves.toEqual([]);
   });
 
+  it("keeps archived hand receipts out of the default list and exposes a deliberate archived view", async () => {
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: "6dc73e86-07f4-4a84-9031-eed996710fe7",
+        accountId: "account-1",
+        name: "Active receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+      {
+        id: "144823dd-a4a8-4854-8c4b-e271ba8723c3",
+        accountId: "account-1",
+        name: "Archived receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "archived",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({ handReceiptRepository: repository });
+
+    await expect(caller.handReceipts.list()).resolves.toMatchObject([
+      {
+        id: "6dc73e86-07f4-4a84-9031-eed996710fe7",
+      },
+    ]);
+    await expect(
+      caller.handReceipts.list({ status: "archived" }),
+    ).resolves.toMatchObject([
+      {
+        id: "144823dd-a4a8-4854-8c4b-e271ba8723c3",
+      },
+    ]);
+    await expect(caller.handReceipts.listArchived()).resolves.toMatchObject([
+      {
+        id: "144823dd-a4a8-4854-8c4b-e271ba8723c3",
+      },
+    ]);
+  });
+
   it("validates required names through the typed procedure", async () => {
     await expect(
       createCaller().handReceipts.create({
@@ -274,5 +326,119 @@ describe("handReceiptsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
+  });
+
+  it("archives and restores through the typed procedures with audit history", async () => {
+    const handReceiptId = "ce34705f-369b-45f0-91fd-c5f03f18b952";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: handReceiptId,
+        accountId: "account-1",
+        name: "Lifecycle receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({ handReceiptRepository: repository });
+
+    await expect(
+      caller.handReceipts.archive({ id: handReceiptId }),
+    ).resolves.toMatchObject({
+      id: handReceiptId,
+      status: "archived",
+    });
+    await expect(caller.handReceipts.list()).resolves.toEqual([]);
+    await expect(caller.handReceipts.listArchived()).resolves.toMatchObject([
+      {
+        id: handReceiptId,
+        status: "archived",
+      },
+    ]);
+
+    await expect(
+      caller.handReceipts.restore({ id: handReceiptId }),
+    ).resolves.toMatchObject({
+      id: handReceiptId,
+      status: "active",
+    });
+    expect(repository.auditEvents).toMatchObject([
+      {
+        action: "hand_receipt.archived",
+        targetId: handReceiptId,
+        metadata: {
+          name: "Lifecycle receipt",
+        },
+      },
+      {
+        action: "hand_receipt.restored",
+        targetId: handReceiptId,
+        metadata: {
+          name: "Lifecycle receipt",
+        },
+      },
+    ]);
+  });
+
+  it("blocks archive and restore mutations for read-only accounts without audit history", async () => {
+    const activeId = "b09c3dc7-02fe-4205-80ec-712dd7567347";
+    const archivedId = "b12b070b-4f35-48db-b3d2-ddc36f5ee5cd";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: activeId,
+        accountId: "account-1",
+        name: "Active receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+      {
+        id: archivedId,
+        accountId: "account-1",
+        name: "Archived receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "archived",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      account: createAccount({
+        accessState: "paused_read_only",
+        subscriptionTier: "pro",
+      }),
+      handReceiptRepository: repository,
+    });
+
+    await expect(
+      caller.handReceipts.archive({ id: activeId }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.handReceipts.restore({ id: archivedId }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    expect(repository.auditEvents).toEqual([]);
   });
 });

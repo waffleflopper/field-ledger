@@ -103,3 +103,43 @@ test("users can open and edit hand receipt details", async ({ page }) => {
   await expect(page.getByText("HR-101")).toBeVisible();
   await expect(page.getByText("SSG Rivera")).toBeVisible();
 });
+
+test("users can archive, review, and restore a hand receipt", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Lifecycle receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Lifecycle receipt" }).click();
+  await page.waitForLoadState("networkidle");
+
+  await expect(page.getByText(/will leave active workflows/)).toBeHidden();
+  await page.getByRole("button", { name: "Archive hand receipt" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive this hand receipt?",
+  });
+  await expect(
+    archiveDialog.getByText(/will leave active workflows/),
+  ).toBeVisible();
+  await archiveDialog.getByRole("button", { name: "Archive" }).click();
+
+  await expect(page.getByText("archived receipt")).toBeVisible();
+  await page.getByRole("link", { name: "Hand Receipts" }).first().click();
+  await expect(
+    page.getByRole("link", { name: "Open Lifecycle receipt" }),
+  ).toBeHidden();
+
+  await page.getByRole("button", { name: "Archived" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open Lifecycle receipt" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Restore" }).click();
+  await page.getByRole("button", { name: "Active" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open Lifecycle receipt" }),
+  ).toBeVisible();
+});
