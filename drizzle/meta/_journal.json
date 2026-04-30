@@ -85,6 +85,13 @@
       "when": 1777520555414,
       "tag": "0011_curious_kulan_gath",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777595500000,
+      "tag": "0012_hand_receipts_owner_update",
+      "breakpoints": true
     }
   ]
 }

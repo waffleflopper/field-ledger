@@ -30,6 +30,12 @@ async function main() {
       async findByAccountId() {
         return [];
       },
+      async findById() {
+        return null;
+      },
+      async updateWithAuditEvent() {
+        throw new Error("Foundation check should not update hand receipts.");
+      },
       async countActiveByAccountId() {
         return 0;
       },

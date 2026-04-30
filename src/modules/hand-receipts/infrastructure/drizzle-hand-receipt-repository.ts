@@ -77,6 +77,55 @@ export function createDrizzleHandReceiptRepository(
 
       return rows.map(toHandReceiptRecord);
     },
+    async findById(accountId, handReceiptId) {
+      const [row] = await runWithAuthenticatedDatabaseSession(
+        db,
+        session,
+        (transaction) =>
+          transaction
+            .select()
+            .from(handReceipts)
+            .where(
+              and(
+                eq(handReceipts.accountId, accountId),
+                eq(handReceipts.id, handReceiptId),
+              ),
+            )
+            .limit(1),
+      );
+
+      return row ? toHandReceiptRecord(row) : null;
+    },
+    async updateWithAuditEvent(accountId, handReceiptId, updates, auditEvent) {
+      const [updatedHandReceipt] = await runWithAuthenticatedDatabaseSession(
+        db,
+        session,
+        async (transaction) => {
+          const [updated] = await transaction
+            .update(handReceipts)
+            .set(updates)
+            .where(
+              and(
+                eq(handReceipts.accountId, accountId),
+                eq(handReceipts.id, handReceiptId),
+              ),
+            )
+            .returning();
+
+          if (!updated) {
+            return [null];
+          }
+
+          await transaction.insert(auditEvents).values(auditEvent);
+
+          return [updated];
+        },
+      );
+
+      return updatedHandReceipt
+        ? toHandReceiptRecord(updatedHandReceipt)
+        : null;
+    },
     async countActiveByAccountId(accountId) {
       const [row] = await runWithAuthenticatedDatabaseSession(
         db,

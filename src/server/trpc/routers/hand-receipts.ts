@@ -3,7 +3,9 @@ import { z } from "zod";
 
 import {
   createHandReceipt,
+  getHandReceipt,
   listActiveHandReceipts,
+  updateHandReceipt,
 } from "@/modules/hand-receipts";
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 
@@ -32,6 +34,14 @@ const createHandReceiptInput = z.object({
     .optional()
     .nullable()
     .transform((value) => value ?? null),
+});
+
+const handReceiptIdInput = z.object({
+  id: z.uuid(),
+});
+
+const updateHandReceiptInput = createHandReceiptInput.extend({
+  id: z.uuid(),
 });
 
 function toTRPCError(error: unknown): never {
@@ -68,6 +78,24 @@ export const handReceiptsRouter = createTRPCRouter({
       repository: ctx.handReceiptRepository,
     }),
   ),
+  getById: protectedProcedure
+    .input(handReceiptIdInput)
+    .query(async ({ ctx, input }) => {
+      const handReceipt = await getHandReceipt({
+        accountId: ctx.account.id,
+        handReceiptId: input.id,
+        repository: ctx.handReceiptRepository,
+      });
+
+      if (!handReceipt) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Hand receipt was not found.",
+        });
+      }
+
+      return handReceipt;
+    }),
   create: protectedProcedure
     .input(createHandReceiptInput)
     .mutation(async ({ ctx, input }) => {
@@ -87,6 +115,42 @@ export const handReceiptsRouter = createTRPCRouter({
           handReceiptRepository: ctx.handReceiptRepository,
         });
       } catch (error) {
+        toTRPCError(error);
+      }
+    }),
+  update: protectedProcedure
+    .input(updateHandReceiptInput)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const updated = await updateHandReceipt({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          handReceiptId: input.id,
+          input: {
+            name: input.name,
+            notes: input.notes,
+            handReceiptNumber: input.handReceiptNumber,
+            holderName: input.holderName,
+            unitName: input.unitName,
+            uic: input.uic,
+            effectiveDate: input.effectiveDate,
+          },
+          handReceiptRepository: ctx.handReceiptRepository,
+        });
+
+        if (!updated) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Hand receipt was not found.",
+          });
+        }
+
+        return updated;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         toTRPCError(error);
       }
     }),

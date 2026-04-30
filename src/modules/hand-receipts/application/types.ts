@@ -32,3 +32,14 @@ export type NewHandReceiptRecord = Omit<
   createdAt?: Date;
   updatedAt?: Date;
 };
+
+export type UpdateHandReceiptRecord = {
+  name: string;
+  notes?: string | null;
+  handReceiptNumber?: string | null;
+  holderName?: string | null;
+  unitName?: string | null;
+  uic?: string | null;
+  effectiveDate?: string | null;
+  updatedAt?: Date;
+};

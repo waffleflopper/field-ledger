@@ -59,3 +59,34 @@ test("hand receipt list uses desktop space without horizontal overflow", async (
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(1280);
 });
+
+test("users can open and edit hand receipt details", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Detail edit receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await page.getByRole("link", { name: "Open Detail edit receipt" }).click();
+  await expect(page).toHaveURL(/\/app\/hand-receipts\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { name: "Detail edit receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Linked Items" }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("textbox", { name: "Name", exact: true })
+    .fill("Updated detail receipt");
+  await page.getByLabel("Hand receipt number").fill("HR-101");
+  await page.getByLabel("Holder name").fill("SSG Rivera");
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Updated detail receipt" }),
+  ).toBeVisible();
+  await expect(page.getByText("HR-101")).toBeVisible();
+  await expect(page.getByText("SSG Rivera")).toBeVisible();
+});

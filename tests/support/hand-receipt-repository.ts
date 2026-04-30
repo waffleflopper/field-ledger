@@ -3,6 +3,7 @@ import type {
   HandReceiptRecord,
   HandReceiptRepository,
   NewHandReceiptRecord,
+  UpdateHandReceiptRecord,
 } from "@/modules/hand-receipts";
 
 export class InMemoryHandReceiptRepository implements HandReceiptRepository {
@@ -58,6 +59,57 @@ export class InMemoryHandReceiptRepository implements HandReceiptRepository {
       .sort(
         (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
       );
+  }
+
+  async findById(accountId: string, handReceiptId: string) {
+    return (
+      this.handReceipts.find(
+        (handReceipt) =>
+          handReceipt.accountId === accountId &&
+          handReceipt.id === handReceiptId,
+      ) ?? null
+    );
+  }
+
+  async updateWithAuditEvent(
+    accountId: string,
+    handReceiptId: string,
+    updates: UpdateHandReceiptRecord,
+    auditEvent: NewAuditEventRecord,
+  ) {
+    if (this.failAuditRecording) {
+      throw new Error("Audit event was not recorded.");
+    }
+
+    const index = this.handReceipts.findIndex(
+      (handReceipt) =>
+        handReceipt.accountId === accountId && handReceipt.id === handReceiptId,
+    );
+
+    if (index === -1) {
+      return null;
+    }
+
+    const existing = this.handReceipts[index];
+
+    if (!existing) {
+      return null;
+    }
+
+    const updatedHandReceipt: HandReceiptRecord = {
+      ...existing,
+      ...updates,
+      updatedAt: updates.updatedAt ?? new Date(),
+    };
+
+    this.handReceipts[index] = updatedHandReceipt;
+    this.auditEvents.push({
+      id: `event-${this.auditEvents.length + 1}`,
+      createdAt: auditEvent.createdAt ?? auditEvent.occurredAt,
+      ...auditEvent,
+    });
+
+    return updatedHandReceipt;
   }
 
   async countActiveByAccountId(accountId: string) {

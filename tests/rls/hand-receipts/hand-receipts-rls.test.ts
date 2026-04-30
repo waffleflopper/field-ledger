@@ -121,12 +121,32 @@ describe("hand receipts RLS", () => {
     ).rejects.toThrow();
   });
 
-  it("does not allow hand receipt updates in the create/list slice", async () => {
+  it("allows an owner to update their own hand receipts", async () => {
     await expect(
       asAuthenticatedOwner(
         ownerOneId,
         async (transaction) =>
-          transaction`update hand_receipts set name = 'Blocked update' where id = ${ownerOneHandReceiptId} returning id`,
+          transaction`update hand_receipts set name = 'Updated owner receipt' where id = ${ownerOneHandReceiptId} returning id`,
+      ),
+    ).resolves.toEqual([{ id: ownerOneHandReceiptId }]);
+  });
+
+  it("prevents an owner from updating another account's hand receipts", async () => {
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update hand_receipts set name = 'Blocked update' where id = ${ownerTwoHandReceiptId} returning id`,
+    );
+
+    expect(rows).toEqual([]);
+  });
+
+  it("prevents an owner from moving a hand receipt to another account", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update hand_receipts set account_id = ${ownerTwoAccountId} where id = ${ownerOneHandReceiptId} returning id`,
       ),
     ).rejects.toThrow();
   });

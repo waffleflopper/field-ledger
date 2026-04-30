@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarDays, ClipboardList } from "lucide-react";
 
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
@@ -18,8 +19,10 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
   return (
     <div className="space-y-2">
       {handReceipts.map((handReceipt) => (
-        <article
+        <Link
+          aria-label={`Open ${handReceipt.name}`}
           className="rounded-lg border bg-card p-4 text-card-foreground"
+          href={`/app/hand-receipts/${handReceipt.id}`}
           key={handReceipt.id}
         >
           <div className="flex items-start gap-3">
@@ -55,7 +58,7 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
               </div>
             </div>
           </div>
-        </article>
+        </Link>
       ))}
     </div>
   );

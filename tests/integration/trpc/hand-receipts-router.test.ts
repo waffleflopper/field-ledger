@@ -132,4 +132,147 @@ describe("handReceiptsRouter", () => {
       message: "Active hand receipt limit reached.",
     });
   });
+
+  it("returns a single hand receipt through the typed detail procedure", async () => {
+    const handReceiptId = "2c4d5d97-1610-493d-baa5-8bc80b2dce01";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: handReceiptId,
+        accountId: "account-1",
+        name: "Detail receipt",
+        notes: "Visible on detail.",
+        handReceiptNumber: "HR-001",
+        holderName: "SSG Rivera",
+        unitName: "A Co",
+        uic: "W123AA",
+        effectiveDate: "2026-04-30",
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({ handReceiptRepository: repository }).handReceipts.getById({
+        id: handReceiptId,
+      }),
+    ).resolves.toMatchObject({
+      id: handReceiptId,
+      name: "Detail receipt",
+      holderName: "SSG Rivera",
+    });
+  });
+
+  it("returns NOT_FOUND when a detail read crosses account boundaries", async () => {
+    const handReceiptId = "0c27378f-6ca6-42d2-ae06-6c6c3ab96faa";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: handReceiptId,
+        accountId: "account-2",
+        name: "Other owner",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({ handReceiptRepository: repository }).handReceipts.getById({
+        id: handReceiptId,
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Hand receipt was not found.",
+    });
+  });
+
+  it("updates hand receipt details and records update audit history", async () => {
+    const handReceiptId = "895c4267-19a7-4629-a873-3e7224d00528";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: handReceiptId,
+        accountId: "account-1",
+        name: "Original receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+
+    const updated = await createCaller({
+      handReceiptRepository: repository,
+    }).handReceipts.update({
+      id: handReceiptId,
+      name: "Updated receipt",
+      notes: "Edited in detail.",
+      holderName: "SSG Rivera",
+    });
+
+    expect(updated).toMatchObject({
+      id: handReceiptId,
+      name: "Updated receipt",
+      notes: "Edited in detail.",
+      holderName: "SSG Rivera",
+    });
+    expect(repository.auditEvents).toMatchObject([
+      {
+        accountId: "account-1",
+        actorId: "owner-1",
+        action: "hand_receipt.updated",
+        targetType: "hand_receipt",
+        targetId: handReceiptId,
+        metadata: {
+          changedFields: ["name", "notes", "holderName"],
+        },
+      },
+    ]);
+  });
+
+  it("blocks updates for paused or read-only accounts", async () => {
+    const handReceiptId = "1e2801fc-6f50-40a7-9ba0-45b456d8300c";
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: handReceiptId,
+        accountId: "account-1",
+        name: "Read-only receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+        handReceiptRepository: repository,
+      }).handReceipts.update({
+        id: handReceiptId,
+        name: "Blocked",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+  });
 });

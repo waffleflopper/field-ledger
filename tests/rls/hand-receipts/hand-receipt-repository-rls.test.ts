@@ -52,6 +52,7 @@ describe("hand receipt repository RLS boundary", () => {
   });
 
   afterAll(async () => {
+    await sql`delete from audit_events where target_id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
@@ -106,5 +107,56 @@ describe("hand receipt repository RLS boundary", () => {
         },
       ),
     ).rejects.toThrow();
+  });
+
+  it("updates only rows allowed by the authenticated database session", async () => {
+    const repository = createDrizzleHandReceiptRepository(db, {
+      authSubject: ownerOneId,
+    });
+
+    await expect(
+      repository.updateWithAuditEvent(
+        ownerOneAccountId,
+        ownerOneHandReceiptId,
+        {
+          name: "Updated owner one receipt",
+        },
+        {
+          accountId: ownerOneAccountId,
+          actorId: ownerOneId,
+          action: "hand_receipt.updated",
+          targetType: "hand_receipt",
+          targetId: ownerOneHandReceiptId,
+          occurredAt: new Date("2026-04-30T14:30:00.000Z"),
+          metadata: {
+            changedFields: ["name"],
+          },
+        },
+      ),
+    ).resolves.toMatchObject({
+      id: ownerOneHandReceiptId,
+      name: "Updated owner one receipt",
+    });
+
+    await expect(
+      repository.updateWithAuditEvent(
+        ownerTwoAccountId,
+        ownerTwoHandReceiptId,
+        {
+          name: "Blocked owner two update",
+        },
+        {
+          accountId: ownerTwoAccountId,
+          actorId: ownerOneId,
+          action: "hand_receipt.updated",
+          targetType: "hand_receipt",
+          targetId: ownerTwoHandReceiptId,
+          occurredAt: new Date("2026-04-30T14:35:00.000Z"),
+          metadata: {
+            changedFields: ["name"],
+          },
+        },
+      ),
+    ).resolves.toBeNull();
   });
 });

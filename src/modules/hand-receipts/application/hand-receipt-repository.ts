@@ -3,6 +3,7 @@ import type {
   HandReceiptRecord,
   HandReceiptStatus,
   NewHandReceiptRecord,
+  UpdateHandReceiptRecord,
 } from "./types";
 
 export interface HandReceiptRepository {
@@ -14,6 +15,16 @@ export interface HandReceiptRepository {
     accountId: string,
     options?: { status?: HandReceiptStatus },
   ): Promise<HandReceiptRecord[]>;
+  findById(
+    accountId: string,
+    handReceiptId: string,
+  ): Promise<HandReceiptRecord | null>;
+  updateWithAuditEvent(
+    accountId: string,
+    handReceiptId: string,
+    updates: UpdateHandReceiptRecord,
+    auditEvent: NewAuditEventRecord,
+  ): Promise<HandReceiptRecord | null>;
   countActiveByAccountId(accountId: string): Promise<number>;
 }
 
@@ -23,6 +34,12 @@ export function createUnavailableHandReceiptRepository(): HandReceiptRepository 
       throw new Error("An authenticated database session is required.");
     },
     async findByAccountId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findById() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async updateWithAuditEvent() {
       throw new Error("An authenticated database session is required.");
     },
     async countActiveByAccountId() {

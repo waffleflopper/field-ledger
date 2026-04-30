@@ -34,6 +34,7 @@ Use integration-style tests for module workflows and typed application paths:
 
 - Better Auth session context through the app-owned auth boundary
 - create hand receipt
+- view and edit hand receipt details
 - archive/restore hand receipt
 - create/edit/archive/restore/move item
 - upload/link single-item 2062
@@ -61,6 +62,10 @@ database rules that restrict which rows a user can access.
 
 Every account-owned table should have tests proving one account cannot read or
 write another account's rows.
+
+Hand receipt RLS tests cover owner-scoped select, insert, and update behavior.
+Application-service tests still cover read-only capability blocking because RLS
+protects row ownership, not product access state.
 
 Command:
 

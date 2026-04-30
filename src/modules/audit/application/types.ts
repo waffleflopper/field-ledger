@@ -1,7 +1,8 @@
 export type AuditAction =
   | "system.initialized"
   | "account.onboarding_completed"
-  | "hand_receipt.created";
+  | "hand_receipt.created"
+  | "hand_receipt.updated";
 
 export type AuditMetadata = Record<string, unknown> | null;
 
