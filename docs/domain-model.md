@@ -191,6 +191,13 @@ Dashboard windows:
 
 ## Activity and Audit
 
-Meaningful state changes create audit events. Activity is the user-visible version of that history.
+Meaningful state changes create audit events. Activity is the user-visible
+version of that history. The Audit Log is the internal append-only record; the
+Activity surface is the readable recent-history view derived from it.
 
 Events include create/edit/archive/restore, assignment link/close, requirement complete, document upload, location/contact changes, and subscription access changes.
+
+Future workflow slices must call the audit logger boundary from application
+services for meaningful create, update, archive, restore, close, completion,
+upload, and subscription access changes. Routes and UI components should read
+Activity through the typed app API rather than writing audit records directly.

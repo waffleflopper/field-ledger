@@ -43,6 +43,13 @@
       "when": 1777444245786,
       "tag": "0005_overrated_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777497582117,
+      "tag": "0006_medical_warbound",
+      "breakpoints": true
     }
   ]
 }

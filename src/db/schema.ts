@@ -2,9 +2,11 @@ import { sql } from "drizzle-orm";
 import {
   check,
   integer,
+  jsonb,
   pgEnum,
   pgSchema,
   pgTable,
+  text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -60,3 +62,21 @@ export const accounts = pgTable(
     ),
   ],
 ).enableRLS();
+
+export const auditEvents = pgTable("audit_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id),
+  actorId: uuid("actor_id").notNull(),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}).enableRLS();

@@ -46,6 +46,10 @@ Required boundaries:
 
 Supabase Auth, Supabase Storage, and Stripe are implementation details behind boundaries.
 
+The audit logger boundary is app-owned. Product modules emit meaningful events
+through audit application services and repository ports; routes, UI components,
+and future provider adapters must not insert audit records directly.
+
 ## App Shell
 
 Authenticated product routes live under the literal `/app` URL path. The
@@ -77,9 +81,12 @@ belongs in domain modules; shell pages are only composition surfaces.
 - Service-role or privileged database access must be rare, isolated, and documented.
 - Temporary Phase 1 scaffold exception: local runtime database access currently
   uses the local `postgres` role so the server can initialize the first owner
-  account while the app-role/RLS session boundary is still thin. Replace this
-  with a non-superuser runtime role, or per-request RLS claim handling, before
-  adding additional account-owned runtime tables.
+  account while the app-role/RLS session boundary is still thin.
+- Account-owned runtime repositories after `accounts` must execute through the
+  authenticated database-session boundary so Supabase RLS evaluates
+  `auth.uid()` for the current app session. New account-owned repositories
+  should include a repository-level RLS regression test proving they cannot read
+  or write another account's rows through the app adapter.
 
 ## Import/Export Boundary
 

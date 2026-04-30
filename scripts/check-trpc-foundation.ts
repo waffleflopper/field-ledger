@@ -15,6 +15,14 @@ async function main() {
         return null;
       },
     },
+    auditRepository: {
+      async record() {
+        throw new Error("Foundation check should not record audit events.");
+      },
+      async listByAccountId() {
+        return [];
+      },
+    },
   });
   const health = await caller.foundation.health();
 
