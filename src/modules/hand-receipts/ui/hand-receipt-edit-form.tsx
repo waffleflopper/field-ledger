@@ -12,6 +12,8 @@ import { trpc } from "@/trpc/react";
 type HandReceiptEditFormProps = {
   handReceipt: HandReceiptRecord;
   isReadOnly: boolean;
+  onCancel: () => void;
+  onSaved: () => void;
 };
 
 type FormState = {
@@ -44,6 +46,8 @@ function blankToNull(value: string) {
 export function HandReceiptEditForm({
   handReceipt,
   isReadOnly,
+  onCancel,
+  onSaved,
 }: HandReceiptEditFormProps) {
   const utilities = trpc.useUtils();
   const [form, setForm] = useState<FormState>(() => toFormState(handReceipt));
@@ -57,6 +61,7 @@ export function HandReceiptEditForm({
         utilities.handReceipts.getById.invalidate({ id: handReceipt.id }),
         utilities.handReceipts.list.invalidate(),
       ]);
+      onSaved();
     },
     onError: (mutationError) => {
       setError(mutationError.message);
@@ -195,6 +200,7 @@ export function HandReceiptEditForm({
           onClick={() => {
             setError(null);
             setForm(toFormState(handReceipt));
+            onCancel();
           }}
           type="button"
           variant="outline"

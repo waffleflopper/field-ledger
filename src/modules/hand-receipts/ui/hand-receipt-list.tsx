@@ -21,7 +21,7 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
       {handReceipts.map((handReceipt) => (
         <Link
           aria-label={`Open ${handReceipt.name}`}
-          className="rounded-lg border bg-card p-4 text-card-foreground"
+          className="group block rounded-lg border bg-card p-4 text-card-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           href={`/app/hand-receipts/${handReceipt.id}`}
           key={handReceipt.id}
         >
@@ -31,7 +31,7 @@ export function HandReceiptList({ handReceipts }: HandReceiptListProps) {
             </span>
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                <h2 className="truncate text-base font-semibold tracking-normal">
+                <h2 className="truncate text-base font-semibold tracking-normal group-hover:text-primary">
                   {handReceipt.name}
                 </h2>
                 <span className="w-fit rounded-sm border bg-secondary px-1.5 py-0.5 font-mono text-[0.68rem] uppercase text-muted-foreground">

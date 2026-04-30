@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -7,10 +8,12 @@ import {
   ClipboardList,
   FileUp,
   History,
+  Pencil,
   PackageSearch,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import { trpc } from "@/trpc/react";
 import { HandReceiptEditForm } from "./hand-receipt-edit-form";
 
@@ -73,7 +76,62 @@ function FutureSection({
   );
 }
 
+function DetailSummary({
+  handReceipt,
+  isReadOnly,
+  onEdit,
+}: {
+  handReceipt: HandReceiptRecord;
+  isReadOnly: boolean;
+  onEdit: () => void;
+}) {
+  return (
+    <section className="rounded-lg border bg-card p-4 text-card-foreground">
+      <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
+            <ClipboardList aria-hidden="true" className="size-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold tracking-normal">
+              Receipt Details
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Current formal metadata for this bucket.
+            </p>
+          </div>
+        </div>
+        {isReadOnly ? (
+          <span className="w-fit rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">
+            Read only
+          </span>
+        ) : (
+          <Button onClick={onEdit} size="sm" type="button" variant="outline">
+            <Pencil aria-hidden="true" className="size-4" />
+            Edit details
+          </Button>
+        )}
+      </div>
+      <dl className="grid gap-x-5 md:grid-cols-2">
+        <MetadataRow
+          label="Hand receipt number"
+          value={handReceipt.handReceiptNumber}
+        />
+        <MetadataRow label="Holder" value={handReceipt.holderName} />
+        <MetadataRow label="Unit" value={handReceipt.unitName} />
+        <MetadataRow label="UIC" value={handReceipt.uic} />
+        <MetadataRow
+          label="Effective date"
+          value={formatDate(handReceipt.effectiveDate)}
+        />
+        <MetadataRow label="Notes" value={handReceipt.notes} />
+      </dl>
+    </section>
+  );
+}
+
 export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
     id: handReceiptId,
   });
@@ -145,61 +203,39 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
         </p>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-5">
+      <div className="space-y-5">
+        {isEditing ? (
           <HandReceiptEditForm
             handReceipt={handReceipt}
             isReadOnly={isReadOnly}
+            onCancel={() => setIsEditing(false)}
+            onSaved={() => setIsEditing(false)}
           />
+        ) : (
+          <DetailSummary
+            handReceipt={handReceipt}
+            isReadOnly={isReadOnly}
+            onEdit={() => setIsEditing(true)}
+          />
+        )}
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <FutureSection
-              icon={PackageSearch}
-              label="Linked Items"
-              text="Item records for this hand receipt will appear here after the item slice lands."
-            />
-            <FutureSection
-              icon={FileUp}
-              label="Upload 2062"
-              text="The future upload flow starts from this receipt and keeps the selected bucket in context."
-            />
-            <FutureSection
-              icon={History}
-              label="Recent Activity"
-              text="Scoped activity will show changes for this hand receipt when the activity slice connects it."
-            />
-          </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <FutureSection
+            icon={PackageSearch}
+            label="Linked Items"
+            text="Item records for this hand receipt will appear here after the item slice lands."
+          />
+          <FutureSection
+            icon={FileUp}
+            label="Upload 2062"
+            text="The future upload flow starts from this receipt and keeps the selected bucket in context."
+          />
+          <FutureSection
+            icon={History}
+            label="Recent Activity"
+            text="Scoped activity will show changes for this hand receipt when the activity slice connects it."
+          />
         </div>
-
-        <aside className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-3 border-b pb-4">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-              <ClipboardList aria-hidden="true" className="size-4" />
-            </span>
-            <div>
-              <h2 className="text-sm font-semibold tracking-normal">
-                Snapshot
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Current formal metadata.
-              </p>
-            </div>
-          </div>
-          <dl>
-            <MetadataRow
-              label="Hand receipt number"
-              value={handReceipt.handReceiptNumber}
-            />
-            <MetadataRow label="Holder" value={handReceipt.holderName} />
-            <MetadataRow label="Unit" value={handReceipt.unitName} />
-            <MetadataRow label="UIC" value={handReceipt.uic} />
-            <MetadataRow
-              label="Effective date"
-              value={formatDate(handReceipt.effectiveDate)}
-            />
-            <MetadataRow label="Notes" value={handReceipt.notes} />
-          </dl>
-        </aside>
       </div>
     </section>
   );

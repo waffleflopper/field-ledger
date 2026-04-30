@@ -77,6 +77,19 @@ test("users can open and edit hand receipt details", async ({ page }) => {
     page.getByRole("heading", { name: "Linked Items" }),
   ).toBeVisible();
 
+  await page.getByRole("button", { name: "Edit details" }).click();
+  await page
+    .getByRole("textbox", { name: "Name", exact: true })
+    .fill("Unsaved detail receipt");
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Detail edit receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Name", exact: true }),
+  ).toBeHidden();
+
+  await page.getByRole("button", { name: "Edit details" }).click();
   await page
     .getByRole("textbox", { name: "Name", exact: true })
     .fill("Updated detail receipt");
