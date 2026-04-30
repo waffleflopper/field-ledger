@@ -6,7 +6,7 @@ This plan creates the first real user-facing foundation: sign-in, account record
 
 ## Architectural Decisions
 
-- **Auth provider**: Supabase Auth.
+- **Auth provider**: Better Auth behind the app-owned auth/session boundary.
 - **Account ownership**: one owner account owns all user data.
 - **Access model**: access state is separate from subscription tier.
 - **Trial**: 30-day trial with Pro-like access.
@@ -18,13 +18,13 @@ This plan creates the first real user-facing foundation: sign-in, account record
 
 ---
 
-## Phase 1: Supabase Sign-In and Session Boundary
+## Phase 1: Better Auth Sign-In and Session Boundary
 
 **User stories covered**: As a user, I can sign in to Field Ledger and reach the app area securely.
 
 ### What To Build
 
-Add Supabase Auth sign-in using email/password and magic link support where feasible for the scaffold stage. Create an internal session boundary so app code does not spread provider-specific session logic.
+Add Better Auth sign-in using email/password support for the scaffold stage. Create an internal session boundary so app code does not spread provider-specific session logic.
 
 ### Acceptance Criteria
 
