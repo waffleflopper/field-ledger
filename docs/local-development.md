@@ -1,7 +1,8 @@
 # Local Development
 
-Field Ledger uses local Supabase from the beginning. The local stack is
-configured in `supabase/config.toml`.
+Field Ledger uses local Supabase from the beginning for Postgres, Storage, RLS,
+and supporting development services. The local stack is configured in
+`supabase/config.toml`.
 
 No hosted Supabase project is required for local development.
 
@@ -138,9 +139,15 @@ pnpm api:check:local
 
 ## Auth Routes and Local Users
 
-Supabase Auth is wrapped by the app-owned auth/session provider boundary under
+Better Auth is the selected auth/session provider and must stay wrapped by the
+app-owned auth/session provider boundary under
 `src/modules/provider-boundaries/auth/`. Product routes and UI should use that
-boundary instead of importing Supabase Auth directly.
+boundary instead of importing Better Auth directly.
+
+Local Supabase is still required for database, Storage, RLS, and local service
+testing, but it is no longer the intended auth provider. Better Auth session
+management replaces Supabase Auth session handling in future implementation
+slices.
 
 Route shape:
 
@@ -150,7 +157,7 @@ Route shape:
 - `/app/...` routes are authenticated product routes and redirect signed-out
   users to `/auth/login`.
 
-For local email/password testing:
+For local email/password testing after the Better Auth implementation lands:
 
 1. Start local Supabase and the app:
 
@@ -163,16 +170,19 @@ For local email/password testing:
 3. Enter a local email address and a password of at least six characters.
 4. Use **Create local user** once, then use **Sign in** for later sessions.
 
-Supabase email confirmations are disabled for local development in
-`supabase/config.toml`, so the local user can sign in immediately.
+Local email confirmation behavior will be owned by the Better Auth
+configuration. The previous Supabase Auth implementation disabled email
+confirmations in `supabase/config.toml`; future auth work should not treat that
+as the product auth contract.
 
-Magic-link sign-in is included on the same auth surface. Local emails are
-captured by Inbucket at `SUPABASE_INBUCKET_URL`:
+Magic-link sign-in remains a desired auth surface where feasible. If Better
+Auth local email delivery uses the Supabase dev mail service, local emails can
+still be captured by Inbucket at `SUPABASE_INBUCKET_URL`:
 
 Visit `http://127.0.0.1:54334` in your browser.
 
-Click the generated sign-in link from that mailbox to complete the
-`/auth/callback` flow.
+Click the generated sign-in link from that mailbox to complete the callback
+flow configured by the Better Auth slice.
 
 ## RLS Expectations
 
@@ -184,6 +194,11 @@ read or write another account's rows.
 
 The scaffold-only `app_internal.scaffold_migration_checks` table is not
 account-owned user data and does not need RLS.
+
+Because Better Auth replaces Supabase Auth as the provider contract, RLS
+policies use application-set session context instead of `auth.uid()`. Current
+account-owned policies read `app.current_auth_subject`, which the authenticated
+database-session boundary sets transaction-locally.
 
 ## Stop Local Supabase
 

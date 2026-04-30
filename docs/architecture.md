@@ -44,7 +44,14 @@ Required boundaries:
 - notifications
 - import/export
 
-Supabase Auth, Supabase Storage, and Stripe are implementation details behind boundaries.
+Better Auth is the selected auth/session provider. Supabase Auth was used in
+the first Phase 1 implementation, but ADR 0005 replaces it as the intended auth
+provider before future auth/account work continues.
+
+Supabase Postgres, Supabase Storage, and Supabase RLS remain the database,
+private file storage, and ownership-enforcement layer. Better Auth, Supabase
+Storage, Supabase Postgres access, and Stripe are implementation details behind
+boundaries.
 
 The audit logger boundary is app-owned. Product modules emit meaningful events
 through audit application services and repository ports; routes, UI components,
@@ -69,13 +76,15 @@ belongs in domain modules; shell pages are only composition surfaces.
 
 ## Database Access
 
-- Supabase provides Postgres/Auth/Storage.
+- Supabase provides Postgres, Storage, RLS, and local development services.
+- Better Auth provides auth/session behavior behind the app-owned auth boundary.
 - Drizzle owns app schema and migrations.
 - RLS is required for account-owned data.
-- The `accounts` table has an app-owned primary key and a unique `user_id`
-  mapping to the Supabase Auth user id, establishing the
+- The `accounts` table has an app-owned primary key and a unique
+  `auth_user_id` mapping to the Better Auth user identifier, establishing the
   one-login-to-one-owner-account boundary without making auth ids the product
   ownership id.
+- Auth identity values are opaque provider identifiers, not Supabase UUIDs.
 - User-owned tables after `accounts` must include `account_id`.
 - RLS protects ownership. App services protect behavior.
 - Service-role or privileged database access must be rare, isolated, and documented.
@@ -83,10 +92,20 @@ belongs in domain modules; shell pages are only composition surfaces.
   uses the local `postgres` role so the server can initialize the first owner
   account while the app-role/RLS session boundary is still thin.
 - Account-owned runtime repositories after `accounts` must execute through the
-  authenticated database-session boundary so Supabase RLS evaluates
-  `auth.uid()` for the current app session. New account-owned repositories
+  authenticated database-session boundary so Supabase RLS can evaluate the
+  application-set current auth/account context. New account-owned repositories
   should include a repository-level RLS regression test proving they cannot read
   or write another account's rows through the app adapter.
+
+## RLS Session Context
+
+RLS remains mandatory for account-owned data even though Supabase Auth is no
+longer the auth-provider contract. Policies should use application-set session
+context instead of `auth.uid()`. Current policies read the
+`app.current_auth_subject` transaction setting through the
+`app.current_auth_subject()` SQL function. The app-owned database-session
+boundary is responsible for setting that context before account-owned
+repositories read or write data.
 
 ## Import/Export Boundary
 

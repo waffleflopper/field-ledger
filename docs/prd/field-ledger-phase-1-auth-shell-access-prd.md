@@ -27,7 +27,7 @@ experience. Users will be able to sign in, enter authenticated product routes,
 receive an initialized owner account, and see trial/access behavior represented
 through an internal capability layer.
 
-The app will use Supabase Auth behind an internal session boundary so UI,
+The app will use Better Auth behind an internal session boundary so UI,
 routes, and product modules do not spread provider-specific auth details. On
 first entry, a signed-in user will receive a single owner account with trial
 state initialized. Access state will distinguish trialing, active, and
@@ -56,7 +56,7 @@ data. This should be lightweight and useful, not a long tour.
 6. As a signed-out visitor, I want protected product routes to redirect me toward sign-in, so that private property-accountability screens are not exposed.
 7. As a signed-in user, I want to enter the app area after authentication, so that I can begin managing my account.
 8. As a signed-in user, I want my session to persist appropriately, so that I do not have to sign in on every navigation.
-9. As a developer, I want auth provider details hidden behind an internal session boundary, so that product code does not directly depend on Supabase Auth everywhere.
+9. As a developer, I want auth provider details hidden behind an internal session boundary, so that product code does not directly depend on Better Auth everywhere.
 10. As a developer, I want session checks to be usable from server-side workflows, so that protected operations do not rely only on client UI checks.
 11. As a developer, I want session checks to be usable from the app shell, so that navigation and route protection can reflect the current user.
 12. As a new user, I want an owner account created for me when I first enter Field Ledger, so that my property data has a clear ownership boundary.
@@ -100,7 +100,7 @@ data. This should be lightweight and useful, not a long tour.
 ## Implementation Decisions
 
 - Build Phase 1 on the existing Next.js, TypeScript, Tailwind v4, shadcn/ui, tRPC, TanStack Query, Drizzle, and local Supabase foundation.
-- Use Supabase Auth as the auth provider for this phase.
+- Use Better Auth as the auth provider for this phase.
 - Keep auth/session behavior behind an app-owned boundary rather than using raw provider calls across routes and UI.
 - Support email/password sign-in in the initial auth surface.
 - Support magic-link sign-in where feasible without delaying the core session boundary.
@@ -121,7 +121,9 @@ data. This should be lightweight and useful, not a long tour.
 - Do not wire real Stripe checkout, webhooks, invoices, customer portal, or subscription automation.
 - Make capability checks available to server workflows and UI workflows without exposing billing-provider details.
 - Ensure expired trial with no active plan resolves to paused/read-only behavior.
-- Use RLS for account-owned data created in this phase.
+- Use RLS for account-owned data created in this phase, with auth/account
+  context set by the app rather than relying on `auth.uid()` as the
+  auth-provider contract.
 - Keep product rules in application services rather than route components, client-only checks, or RLS alone.
 - Emit audit/activity only where the audit foundation exists or add explicit follow-up notes if this phase lands before that foundation.
 - Implement the mock-derived responsive shell as the real product frame.
@@ -179,7 +181,7 @@ work begins. Each issue should land in the real app shell and include schema,
 service behavior, API, UI, tests, and docs where relevant.
 
 The most important guardrail for this phase is avoiding provider and route
-drift. Supabase Auth, account access, and future billing concepts should be
+drift. Better Auth, account access, and future billing concepts should be
 wrapped in Field Ledger-owned boundaries from the start. Later product modules
 should be able to ask simple questions such as "who is the current owner
 account?" and "can this account perform this action?" without knowing how auth

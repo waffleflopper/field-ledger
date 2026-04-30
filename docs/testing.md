@@ -32,6 +32,7 @@ Current scaffold proof:
 
 Use integration-style tests for module workflows and typed application paths:
 
+- Better Auth session context through the app-owned auth boundary
 - create hand receipt
 - archive/restore hand receipt
 - create/edit/archive/restore/move item
@@ -96,6 +97,9 @@ Current scaffold proof:
 - `tests/e2e/scaffold.spec.ts`
 - `tests/e2e/auth.spec.ts`
 
+Auth-related browser tests should verify the app-owned auth/session boundary
+and Better Auth flow, not route or UI calls to provider internals.
+
 ## API and Database Checks
 
 Use these checks for scaffold/provider foundations:
@@ -107,6 +111,10 @@ pnpm db:check:local
 
 `pnpm db:check:local` expects Field Ledger's local Supabase stack to be running
 on the non-default database port `54332`.
+
+RLS tests remain database-backed and should prove that account-owned rows are
+isolated using the app-owned `app.current_auth_subject` session context rather
+than Supabase-only `auth.uid()` behavior.
 
 ## CI-Ready Verification
 

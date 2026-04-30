@@ -18,7 +18,7 @@ Recurring item requirements will help the user track maintenance, inspections, c
 
 The MVP will include account/trial/access state, simulated billing capabilities, audit/activity history, global search, hand receipt and item management, contacts, locations, requirements, document upload, 2062 assignment workflows, and a responsive app shell. The UI will be mobile-first, with phone bottom navigation and a collapsible desktop/tablet sidebar. The design mock is layout and workflow truth, but not pixel-perfect law.
 
-The codebase will use a single Next.js app repo with strong domain-first modules, Supabase Auth/Postgres/Storage, Drizzle migrations, tRPC, TanStack Query, Tailwind v4, shadcn/ui, local Supabase development, and explicit provider boundaries for auth, account access, billing, file storage, audit, notifications, and future import/export.
+The codebase will use a single Next.js app repo with strong domain-first modules, Better Auth for auth/session behavior, Supabase Postgres/Storage, Drizzle migrations, tRPC, TanStack Query, Tailwind v4, shadcn/ui, local Supabase development, and explicit provider boundaries for auth, account access, billing, file storage, audit, notifications, and future import/export.
 
 ## User Stories
 
@@ -144,13 +144,15 @@ The codebase will use a single Next.js app repo with strong domain-first modules
 ## Implementation Decisions
 
 - Build Field Ledger as a single Next.js App Router application, not a monorepo.
-- Use TypeScript, Tailwind v4, shadcn/ui, pnpm, tRPC, TanStack Query, Drizzle, Supabase Auth, Supabase Postgres, Supabase Storage, and local Supabase development.
+- Use TypeScript, Tailwind v4, shadcn/ui, pnpm, tRPC, TanStack Query, Drizzle, Better Auth, Supabase Postgres, Supabase Storage, and local Supabase development.
 - Use Vercel, hosted Supabase, and Stripe as the production direction.
 - Start from a modern Next/shadcn foundation and add selected T3-style pieces manually rather than relying on a scaffold to define the architecture.
-- Use Supabase Auth as the default auth provider.
+- Use Better Auth as the default auth provider.
 - Preserve room for future social sign-in and linked auth identities.
 - Keep auth/session behavior behind an app-owned boundary.
-- Use Supabase RLS as the database ownership backstop for account-owned data.
+- Use Supabase RLS as the database ownership backstop for account-owned data,
+  with application-set auth/account context rather than `auth.uid()` as the
+  auth-provider contract.
 - Keep product behavior in application services rather than relying on UI checks or RLS alone.
 - Use Drizzle for app schema and migrations.
 - Store user-owned app data with account ownership.
@@ -275,4 +277,3 @@ The project should preserve the distinction between current MVP behavior and res
 The product should stay personal, operational, and practical. Field Ledger should feel like a professional field utility for repeated accountability work, not a generic SaaS dashboard or a marketing shell.
 
 Because AI agents are expected to help build this project, the docs, ADRs, issue templates, and repo-local skills are not optional ceremony. They are part of the product’s engineering strategy.
-
