@@ -7,12 +7,27 @@ type ListRecentActivityInput = {
   limit?: number;
 };
 
+export const DEFAULT_RECENT_ACTIVITY_LIMIT = 20;
+export const MAX_RECENT_ACTIVITY_LIMIT = 50;
+
+export function normalizeRecentActivityLimit(
+  limit: number | undefined,
+): number {
+  if (limit === undefined || !Number.isInteger(limit)) {
+    return DEFAULT_RECENT_ACTIVITY_LIMIT;
+  }
+
+  return Math.min(Math.max(limit, 1), MAX_RECENT_ACTIVITY_LIMIT);
+}
+
 export async function listRecentActivity({
   accountId,
   repository,
-  limit = 20,
+  limit,
 }: ListRecentActivityInput) {
-  const events = await repository.listByAccountId(accountId, { limit });
+  const events = await repository.listByAccountId(accountId, {
+    limit: normalizeRecentActivityLimit(limit),
+  });
 
   return events.map((event) => ({
     id: event.id,

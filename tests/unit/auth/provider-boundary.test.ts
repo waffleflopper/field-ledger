@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const workspaceRoot = process.cwd();
@@ -18,10 +18,11 @@ function collectSourceFiles(directory: string): string[] {
 }
 
 const sourceFiles = collectSourceFiles(join(workspaceRoot, "src")).filter(
-  (path) =>
-    !relative(workspaceRoot, path).startsWith(
-      "src/modules/provider-boundaries/auth/",
-    ),
+  (path) => {
+    const normalizedPath = relative(workspaceRoot, path).split(sep).join("/");
+
+    return !normalizedPath.startsWith("src/modules/provider-boundaries/auth/");
+  },
 );
 const authBoundaryFiles = collectSourceFiles(
   join(workspaceRoot, "src/modules/provider-boundaries/auth"),
@@ -34,7 +35,7 @@ function readWorkspaceFile(path: string) {
 describe("auth provider boundary", () => {
   it("keeps Better Auth imports inside the app-owned auth boundary", () => {
     const leakingFiles = sourceFiles.filter((path) =>
-      readWorkspaceFile(path).includes('"better-auth'),
+      /["']better-auth(?:["'/])/.test(readWorkspaceFile(path)),
     );
 
     expect(leakingFiles.map((path) => relative(workspaceRoot, path))).toEqual(

@@ -7,6 +7,7 @@ import type {
   AuditEventRecord,
   AuditMetadata,
 } from "@/modules/audit/application/types";
+import { normalizeRecentActivityLimit } from "@/modules/audit/application/list-activity";
 import type { AuthenticatedDatabaseSession } from "@/modules/provider-boundaries/database/authenticated-session";
 import { runWithAuthenticatedDatabaseSession } from "@/modules/provider-boundaries/database/authenticated-session";
 import type { createDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
@@ -48,6 +49,7 @@ export function createDrizzleAuditRepository(
       return toAuditEventRecord(createdEvent);
     },
     async listByAccountId(accountId, options = {}) {
+      const limit = normalizeRecentActivityLimit(options.limit);
       const rows = await runWithAuthenticatedDatabaseSession(
         db,
         session,
@@ -57,7 +59,7 @@ export function createDrizzleAuditRepository(
             .from(auditEvents)
             .where(eq(auditEvents.accountId, accountId))
             .orderBy(desc(auditEvents.occurredAt))
-            .limit(options.limit ?? 20),
+            .limit(limit),
       );
 
       return rows.map(toAuditEventRecord);

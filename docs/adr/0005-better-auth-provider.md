@@ -42,10 +42,10 @@ on `auth.uid()`.
   not the auth provider id.
 - Auth identity columns use `auth_user_id` and model that value as an opaque
   string from Better Auth.
-- Future account-owned repositories must execute through a database-session
-  boundary that sets the current auth/account context before RLS policies run.
-- This ADR records the decision only; it does not implement Better Auth or
-  migrate the existing Supabase Auth code path.
+- Account-owned repositories execute through a database-session boundary that
+  sets the current auth/account context before RLS policies run.
+- The Better Auth migration is implemented behind the app-owned auth/session
+  boundary; future work should preserve that provider isolation.
 
 ## Rejected Alternatives
 

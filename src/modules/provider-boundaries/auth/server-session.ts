@@ -14,5 +14,7 @@ export async function getCurrentServerAppSession() {
 }
 
 export function hasMiddlewareAppSession(request: NextRequest) {
+  // Better Auth documents this as an optimistic proxy gate. Protected pages and
+  // tRPC still validate the real session through auth.api.getSession.
   return Boolean(getSessionCookie(request));
 }

@@ -71,6 +71,13 @@
       "when": 1777513684813,
       "tag": "0009_naive_stingray",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777518791225,
+      "tag": "0010_common_vance_astro",
+      "breakpoints": true
     }
   ]
 }

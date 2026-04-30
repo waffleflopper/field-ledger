@@ -16,6 +16,12 @@ export async function runWithAuthenticatedDatabaseSession<T>(
   session: AuthenticatedDatabaseSession,
   operation: (transaction: DrizzleTransaction) => Promise<T>,
 ) {
+  if (!session.authSubject.trim()) {
+    throw new Error(
+      "Authenticated database session requires a non-empty authSubject.",
+    );
+  }
+
   return db.transaction(async (transaction) => {
     await transaction.execute(sql`set local role authenticated`);
     await transaction.execute(

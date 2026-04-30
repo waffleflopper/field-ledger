@@ -9,6 +9,9 @@ import {
   signUpWithEmailPassword,
 } from "@/modules/provider-boundaries/auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AuthMode = "sign-in" | "sign-up";
 
@@ -69,55 +72,43 @@ export function LoginForm() {
         <p className="text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
 
-      <div
-        aria-label="Auth mode"
-        className="mt-5 grid grid-cols-2 rounded-md border bg-muted p-1"
-        role="tablist"
+      <Tabs
+        className="mt-5"
+        onValueChange={(value) => selectMode(value as AuthMode)}
+        value={mode}
       >
-        <button
-          aria-selected={!isSignUp}
-          className="h-9 rounded-sm text-sm font-medium text-muted-foreground transition-colors aria-selected:bg-background aria-selected:text-foreground aria-selected:shadow-xs focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none"
-          onClick={() => selectMode("sign-in")}
-          role="tab"
-          type="button"
-        >
-          Sign in
-        </button>
-        <button
-          aria-selected={isSignUp}
-          className="h-9 rounded-sm text-sm font-medium text-muted-foreground transition-colors aria-selected:bg-background aria-selected:text-foreground aria-selected:shadow-xs focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none"
-          onClick={() => selectMode("sign-up")}
-          role="tab"
-          type="button"
-        >
-          Register
-        </button>
-      </div>
+        <TabsList aria-label="Auth mode" className="grid w-full grid-cols-2">
+          <TabsTrigger value="sign-in">Sign in</TabsTrigger>
+          <TabsTrigger value="sign-up">Register</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
-        <label className="grid gap-2 text-sm font-medium">
-          Email
-          <input
+        <div className="grid gap-2">
+          <Label htmlFor="field-ledger-auth-email">Email</Label>
+          <Input
             autoComplete="email"
-            className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+            className="h-10 bg-background"
+            id="field-ledger-auth-email"
             onChange={(event) => setEmail(event.target.value)}
             required
             type="email"
             value={email}
           />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Password
-          <input
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="field-ledger-auth-password">Password</Label>
+          <Input
             autoComplete={isSignUp ? "new-password" : "current-password"}
-            className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+            className="h-10 bg-background"
+            id="field-ledger-auth-password"
             minLength={8}
             onChange={(event) => setPassword(event.target.value)}
             required
             type="password"
             value={password}
           />
-        </label>
+        </div>
         <Button className="w-full" disabled={isSubmitting} type="submit">
           {isSignUp ? "Create account" : "Sign in"}
         </Button>
