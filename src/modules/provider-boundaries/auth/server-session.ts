@@ -1,27 +1,20 @@
-import { cookies } from "next/headers";
-import type { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+import { headers } from "next/headers";
+import type { NextRequest } from "next/server";
 
+import { auth } from "@/modules/provider-boundaries/auth/better-auth";
 import { getAppSession } from "@/modules/provider-boundaries/auth/session";
-import {
-  createMiddlewareSupabaseClient,
-  createServerSupabaseClient,
-} from "@/modules/provider-boundaries/auth/supabase-server";
 
 export async function getCurrentServerAppSession() {
-  const cookieStore = await cookies();
-  const supabase = createServerSupabaseClient(cookieStore);
+  const authSession = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  return getAppSession(supabase);
+  return getAppSession(authSession);
 }
 
-export async function getMiddlewareAppSession({
-  request,
-  response,
-}: {
-  request: NextRequest;
-  response: NextResponse;
-}) {
-  const supabase = createMiddlewareSupabaseClient({ request, response });
-
-  return getAppSession(supabase);
+export function hasMiddlewareAppSession(request: NextRequest) {
+  // Better Auth documents this as an optimistic proxy gate. Protected pages and
+  // tRPC still validate the real session through auth.api.getSession.
+  return Boolean(getSessionCookie(request));
 }

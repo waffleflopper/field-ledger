@@ -26,7 +26,7 @@
 
 ## Phase 2: App Shell + Auth/Account/Access
 
-- Supabase Auth
+- Better Auth
 - account record
 - trial/access state
 - responsive app shell from mock
@@ -83,4 +83,3 @@
 - OCR exploration
 - item photos
 - requirement templates
-

@@ -6,10 +6,12 @@ An account owns all user data. One login identity maps to exactly one owner
 account, with room for multiple linked auth identities later.
 
 Account records use an app-owned `accounts.id` as the product ownership id and
-a unique `accounts.user_id` mapping to the Supabase Auth user id. Account
-initialization is idempotent: repeated first-run checks for the same auth user
-return the existing account instead of resetting trial dates or creating another
-ownership record.
+a unique `accounts.auth_user_id` mapping to the Better Auth user identifier.
+That identifier is an opaque provider subject, not a Supabase UUID.
+
+Account initialization is idempotent: repeated first-run checks for the same
+auth identity return the existing account instead of resetting trial dates or
+creating another ownership record.
 
 New accounts initialize with:
 
@@ -191,6 +193,13 @@ Dashboard windows:
 
 ## Activity and Audit
 
-Meaningful state changes create audit events. Activity is the user-visible version of that history.
+Meaningful state changes create audit events. Activity is the user-visible
+version of that history. The Audit Log is the internal append-only record; the
+Activity surface is the readable recent-history view derived from it.
 
 Events include create/edit/archive/restore, assignment link/close, requirement complete, document upload, location/contact changes, and subscription access changes.
+
+Future workflow slices must call the audit logger boundary from application
+services for meaningful create, update, archive, restore, close, completion,
+upload, and subscription access changes. Routes and UI components should read
+Activity through the typed app API rather than writing audit records directly.

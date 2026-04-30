@@ -5,9 +5,14 @@ async function signInNewLocalUser(page: Page) {
   const email = `onboarding-${suffix}@example.test`;
 
   await page.goto("/auth/login?next=/app");
+  await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: "Create local user" }).click();
+  await page.getByLabel("Password").fill("password123");
+  const createAccountButton = page.getByRole("button", {
+    name: "Create account",
+  });
+  await expect(createAccountButton).toBeEnabled();
+  await createAccountButton.click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
 }
 

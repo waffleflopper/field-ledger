@@ -3,6 +3,11 @@ import {
   type AccountRecord,
 } from "@/modules/accounts/application/ensure-account";
 import { createDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
+import {
+  createUnavailableAuditRepository,
+  type AuditRepository,
+} from "@/modules/audit";
+import { createDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
 import { type AppSession } from "@/modules/provider-boundaries/auth";
 import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
 import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
@@ -11,6 +16,7 @@ export async function createTRPCContext(): Promise<{
   session: AppSession | null;
   account: AccountRecord | null;
   accountRepository: ReturnType<typeof createDrizzleAccountRepository>;
+  auditRepository: AuditRepository;
 }> {
   const db = getDrizzleClient();
   const accountRepository = createDrizzleAccountRepository(db);
@@ -21,6 +27,7 @@ export async function createTRPCContext(): Promise<{
       session: null,
       account: null,
       accountRepository,
+      auditRepository: createUnavailableAuditRepository(),
     };
   }
 
@@ -33,6 +40,9 @@ export async function createTRPCContext(): Promise<{
     session,
     account,
     accountRepository,
+    auditRepository: createDrizzleAuditRepository(db, {
+      authSubject: session.userId,
+    }),
   };
 }
 

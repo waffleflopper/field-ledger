@@ -1,15 +1,11 @@
-import { createBrowserSupabaseClient } from "@/modules/provider-boundaries/auth/supabase-browser";
+import { createAuthClient } from "better-auth/react";
 
-function isSameOriginRedirect(redirectTo: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
+const authClient = createAuthClient();
 
-  try {
-    return new URL(redirectTo).origin === window.location.origin;
-  } catch {
-    return false;
-  }
+function getAuthErrorMessage(
+  error: { message?: string | undefined } | null | undefined,
+) {
+  return error?.message ?? "Field Ledger could not complete that auth request.";
 }
 
 export async function signInWithEmailPassword({
@@ -19,11 +15,10 @@ export async function signInWithEmailPassword({
   email: string;
   password: string;
 }) {
-  const supabase = createBrowserSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await authClient.signIn.email({ email, password });
 
   if (error) {
-    return { ok: false as const, message: error.message };
+    return { ok: false as const, message: getAuthErrorMessage(error) };
   }
 
   return { ok: true as const };
@@ -36,38 +31,14 @@ export async function signUpWithEmailPassword({
   email: string;
   password: string;
 }) {
-  const supabase = createBrowserSupabaseClient();
-  const { error } = await supabase.auth.signUp({ email, password });
-
-  if (error) {
-    return { ok: false as const, message: error.message };
-  }
-
-  return { ok: true as const };
-}
-
-export async function requestMagicLink({
-  email,
-  redirectTo,
-}: {
-  email: string;
-  redirectTo: string;
-}) {
-  if (!isSameOriginRedirect(redirectTo)) {
-    return {
-      ok: false as const,
-      message: "Magic-link redirects must stay on this Field Ledger origin.",
-    };
-  }
-
-  const supabase = createBrowserSupabaseClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await authClient.signUp.email({
     email,
-    options: { emailRedirectTo: redirectTo },
+    password,
+    name: email,
   });
 
   if (error) {
-    return { ok: false as const, message: error.message };
+    return { ok: false as const, message: getAuthErrorMessage(error) };
   }
 
   return { ok: true as const };

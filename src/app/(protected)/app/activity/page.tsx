@@ -1,14 +1,27 @@
-import { Activity } from "lucide-react";
+import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { createTRPCContext } from "@/server/trpc/context";
+import { appRouter } from "@/server/trpc/router";
 
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+export default async function ActivityPage() {
+  const caller = appRouter.createCaller(await createTRPCContext());
+  const activity = await caller.audit.listRecentActivity({ limit: 20 });
 
-export default function ActivityPage() {
   return (
-    <PlaceholderPage
-      description="Activity will surface meaningful state changes so accountable records remain reviewable as feature slices add behavior."
-      icon={Activity}
-      sections={["Recent changes", "Record history", "Audit-facing events"]}
-      title="Activity"
-    />
+    <section className="space-y-6">
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          Account history
+        </p>
+        <h1 className="text-2xl font-semibold tracking-normal md:text-3xl">
+          Activity
+        </h1>
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          Recent account activity appears here as Field Ledger records
+          meaningful property-accountability changes.
+        </p>
+      </div>
+
+      <ActivityList activity={activity} />
+    </section>
   );
 }

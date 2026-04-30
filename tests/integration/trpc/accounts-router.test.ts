@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "@/server/trpc/router";
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import { InMemoryAccountRepository } from "../../support/account-repository";
+import { createEmptyAuditRepository } from "../../support/audit-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -26,6 +27,7 @@ describe("accountsRouter", () => {
       },
       account,
       accountRepository: new InMemoryAccountRepository([account]),
+      auditRepository: createEmptyAuditRepository(),
     });
 
     await expect(caller.accounts.getOnboardingStatus()).resolves.toMatchObject({

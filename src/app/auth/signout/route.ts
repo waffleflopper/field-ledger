@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { signOutCurrentSession } from "@/modules/provider-boundaries/auth";
+import { signOutCurrentSession } from "@/modules/provider-boundaries/auth/server-actions";
 
 export async function POST(request: NextRequest) {
-  const result = await signOutCurrentSession(await cookies());
+  const result = await signOutCurrentSession();
 
   if (!result.ok) {
     console.error("Sign-out failed.", { error: result.message });

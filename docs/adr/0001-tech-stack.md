@@ -16,7 +16,7 @@ Use:
 - TypeScript
 - Tailwind v4
 - shadcn/ui
-- Supabase Auth
+- Better Auth
 - Supabase Postgres
 - Supabase Storage
 - Drizzle for app schema and migrations
@@ -32,7 +32,8 @@ Start with `create-next-app@latest` plus shadcn, then add selected T3-style piec
 ## Consequences
 
 - Strong current Next/Tailwind/shadcn foundation.
-- Supabase Auth/Storage/RLS integration stays straightforward.
+- Auth stays app-owned through Better Auth while Supabase Storage/RLS
+  integration remains straightforward.
 - Drizzle keeps schema/migrations visible.
 - Provider boundaries still protect against vendor logic leaking everywhere.
 
@@ -40,6 +41,7 @@ Start with `create-next-app@latest` plus shadcn, then add selected T3-style piec
 
 - `create-t3-app` scaffold: useful stack inspiration, but less control over initial repo shape.
 - Prisma: good tool, but Drizzle better fits visible schema ownership and Supabase/Postgres-first work.
-- Better Auth: strong app-owned auth option, but Supabase Auth is a better fit because Supabase is already the planned DB/auth/storage platform.
+- Supabase Auth: initially attractive because Supabase remains the planned
+  database/storage platform, but replaced by Better Auth in ADR 0005 for
+  stronger app-owned schema control and session customization.
 - Monorepo: unnecessary overhead for MVP.
-

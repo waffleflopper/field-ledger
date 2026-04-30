@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 import { createEmptyAccountRepository } from "../../support/account-repository";
+import { createEmptyAuditRepository } from "../../support/audit-repository";
 
 const authProbeRouter = createTRPCRouter({
   currentUserEmail: protectedProcedure.query(({ ctx }) => ctx.session.email),
@@ -14,6 +15,7 @@ describe("protectedProcedure", () => {
       session: null,
       account: null,
       accountRepository: createEmptyAccountRepository(),
+      auditRepository: createEmptyAuditRepository(),
     });
 
     await expect(caller.currentUserEmail()).rejects.toMatchObject({
@@ -29,6 +31,7 @@ describe("protectedProcedure", () => {
       },
       account: null,
       accountRepository: createEmptyAccountRepository(),
+      auditRepository: createEmptyAuditRepository(),
     });
 
     await expect(caller.currentUserEmail()).rejects.toMatchObject({
@@ -51,6 +54,7 @@ describe("protectedProcedure", () => {
         trialEndsAt: new Date("2026-05-29T12:00:00.000Z"),
       },
       accountRepository: createEmptyAccountRepository(),
+      auditRepository: createEmptyAuditRepository(),
     });
 
     await expect(caller.currentUserEmail()).resolves.toBe("owner@example.com");

@@ -4,7 +4,7 @@ MVP means the app is personally useful for managing real hand receipt data. It d
 
 ## In Scope
 
-- Supabase Auth sign-in.
+- Better Auth sign-in.
 - Account/trial/access state.
 - Simulated billing capability checks.
 - Real responsive app shell.
@@ -38,4 +38,3 @@ MVP means the app is personally useful for managing real hand receipt data. It d
 ## MVP UI Standard
 
 MVP UI must build into the real app shell and mock-derived route plan. Temporary placeholders may exist inside unfinished routes only when clearly part of scaffold work. Feature slices must not land as one giant proof-of-concept page.
-

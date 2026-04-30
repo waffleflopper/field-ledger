@@ -1,37 +1,30 @@
 "use client";
 
-import { KeyRound, Mail } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import {
   getSafeAuthRedirectPath,
-  requestMagicLink,
   signInWithEmailPassword,
   signUpWithEmailPassword,
 } from "@/modules/provider-boundaries/auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type AuthMode = "password" | "magic";
+type AuthMode = "sign-in" | "sign-up";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeAuthRedirectPath(searchParams.get("next"));
   const authError = searchParams.get("error");
-  const [mode, setMode] = useState<AuthMode>("password");
+  const [mode, setMode] = useState<AuthMode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const callbackUrl = useMemo(() => {
-    if (typeof window === "undefined") {
-      return "/auth/callback";
-    }
-
-    return `${window.location.origin}/auth/callback`;
-  }, []);
 
   async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,7 +32,10 @@ export function LoginForm() {
     setMessage(null);
 
     try {
-      const result = await signInWithEmailPassword({ email, password });
+      const result =
+        mode === "sign-up"
+          ? await signUpWithEmailPassword({ email, password })
+          : await signInWithEmailPassword({ email, password });
 
       if (!result.ok) {
         setMessage(result.message);
@@ -55,49 +51,16 @@ export function LoginForm() {
     }
   }
 
-  async function handleLocalSignup() {
-    setIsSubmitting(true);
+  function selectMode(nextMode: AuthMode) {
+    setMode(nextMode);
     setMessage(null);
-
-    try {
-      const result = await signUpWithEmailPassword({ email, password });
-
-      if (!result.ok) {
-        setMessage(result.message);
-        return;
-      }
-
-      router.replace(nextPath);
-      router.refresh();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
-  async function handleMagicSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setMessage(null);
-
-    try {
-      const result = await requestMagicLink({
-        email,
-        redirectTo: callbackUrl,
-      });
-
-      setMessage(
-        result.ok
-          ? "Check the local Inbucket inbox for your sign-in link."
-          : result.message,
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+  const isSignUp = mode === "sign-up";
+  const title = isSignUp ? "Create account" : "Sign in";
+  const description = isSignUp
+    ? "Start a Field Ledger account for your personal property records."
+    : "Use your Field Ledger account to enter the authenticated app area.";
 
   return (
     <div className="w-full max-w-md rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
@@ -105,90 +68,51 @@ export function LoginForm() {
         <p className="text-sm font-medium text-muted-foreground">
           Field Ledger
         </p>
-        <h1 className="text-2xl font-semibold tracking-normal">Sign in</h1>
-        <p className="text-sm leading-6 text-muted-foreground">
-          Use your local Supabase account to enter the authenticated app area.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-normal">{title}</h1>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
-        <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-background px-3 text-sm font-medium data-[active=false]:bg-transparent data-[active=false]:text-muted-foreground"
-          data-active={mode === "password"}
-          onClick={() => setMode("password")}
-          type="button"
-        >
-          <KeyRound aria-hidden="true" />
-          Password
-        </button>
-        <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-background px-3 text-sm font-medium data-[active=false]:bg-transparent data-[active=false]:text-muted-foreground"
-          data-active={mode === "magic"}
-          onClick={() => setMode("magic")}
-          type="button"
-        >
-          <Mail aria-hidden="true" />
-          Magic link
-        </button>
-      </div>
+      <Tabs
+        className="mt-5"
+        onValueChange={(value) => selectMode(value as AuthMode)}
+        value={mode}
+      >
+        <TabsList aria-label="Auth mode" className="grid w-full grid-cols-2">
+          <TabsTrigger value="sign-in">Sign in</TabsTrigger>
+          <TabsTrigger value="sign-up">Register</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      {mode === "password" ? (
-        <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
-          <label className="grid gap-2 text-sm font-medium">
-            Email
-            <input
-              autoComplete="email"
-              className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Password
-            <input
-              autoComplete="current-password"
-              className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
-              minLength={6}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Button disabled={isSubmitting} type="submit">
-              Sign in
-            </Button>
-            <Button
-              disabled={isSubmitting || !email || password.length < 6}
-              onClick={handleLocalSignup}
-              type="button"
-              variant="outline"
-            >
-              Create local user
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <form className="mt-5 space-y-4" onSubmit={handleMagicSubmit}>
-          <label className="grid gap-2 text-sm font-medium">
-            Email
-            <input
-              autoComplete="email"
-              className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-          <Button disabled={isSubmitting} type="submit">
-            Send magic link
-          </Button>
-        </form>
-      )}
+      <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
+        <div className="grid gap-2">
+          <Label htmlFor="field-ledger-auth-email">Email</Label>
+          <Input
+            autoComplete="email"
+            className="h-10 bg-background"
+            id="field-ledger-auth-email"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            type="email"
+            value={email}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="field-ledger-auth-password">Password</Label>
+          <Input
+            autoComplete={isSignUp ? "new-password" : "current-password"}
+            className="h-10 bg-background"
+            id="field-ledger-auth-password"
+            minLength={8}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            type="password"
+            value={password}
+          />
+        </div>
+        <Button className="w-full" disabled={isSubmitting} type="submit">
+          {isSignUp ? "Create account" : "Sign in"}
+        </Button>
+      </form>
 
       {(message || authError) && (
         <p className="mt-4 rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">

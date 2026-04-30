@@ -1,7 +1,8 @@
 # Local Development
 
-Field Ledger uses local Supabase from the beginning. The local stack is
-configured in `supabase/config.toml`.
+Field Ledger uses local Supabase from the beginning for Postgres, Storage, RLS,
+and supporting development services. The local stack is configured in
+`supabase/config.toml`.
 
 No hosted Supabase project is required for local development.
 
@@ -49,27 +50,19 @@ local Supabase project can run at the same time.
    pnpm supabase:start
    ```
 
-5. Copy the local publishable key from:
-
-   ```sh
-   pnpm supabase:status
-   ```
-
-   Paste it into `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
-
-6. Verify the local Postgres connection:
+5. Verify the local Postgres connection:
 
    ```sh
    pnpm db:check:local
    ```
 
-7. Apply local database migrations:
+6. Apply local database migrations:
 
    ```sh
    pnpm db:migrate
    ```
 
-8. Start the app:
+7. Start the app:
 
    ```sh
    pnpm dev
@@ -138,19 +131,25 @@ pnpm api:check:local
 
 ## Auth Routes and Local Users
 
-Supabase Auth is wrapped by the app-owned auth/session provider boundary under
+Better Auth is the selected auth/session provider and must stay wrapped by the
+app-owned auth/session provider boundary under
 `src/modules/provider-boundaries/auth/`. Product routes and UI should use that
-boundary instead of importing Supabase Auth directly.
+boundary instead of importing Better Auth directly.
+
+Local Supabase is still required for database, Storage, RLS, and local service
+testing, but it is no longer the intended auth provider. Better Auth session
+management replaces Supabase Auth session handling.
 
 Route shape:
 
 - `/auth/login` is the public sign-in surface.
-- `/auth/callback` handles magic-link callbacks.
+- `/api/auth/[...all]` is the Better Auth route handler behind the app-owned
+  auth boundary.
 - `/auth/signout` signs out the current browser session.
 - `/app/...` routes are authenticated product routes and redirect signed-out
   users to `/auth/login`.
 
-For local email/password testing:
+For local email/password testing after the Better Auth implementation lands:
 
 1. Start local Supabase and the app:
 
@@ -160,19 +159,11 @@ For local email/password testing:
    ```
 
 2. Open `http://localhost:3000/auth/login`.
-3. Enter a local email address and a password of at least six characters.
-4. Use **Create local user** once, then use **Sign in** for later sessions.
+3. Enter a local email address and a password of at least eight characters.
+4. Use **Create account** once, then use **Sign in** for later sessions.
 
-Supabase email confirmations are disabled for local development in
-`supabase/config.toml`, so the local user can sign in immediately.
-
-Magic-link sign-in is included on the same auth surface. Local emails are
-captured by Inbucket at `SUPABASE_INBUCKET_URL`:
-
-Visit `http://127.0.0.1:54334` in your browser.
-
-Click the generated sign-in link from that mailbox to complete the
-`/auth/callback` flow.
+Local email/password auth does not require Supabase Auth publishable keys.
+Email confirmation and magic-link sign-in are outside the current auth slice.
 
 ## RLS Expectations
 
@@ -184,6 +175,11 @@ read or write another account's rows.
 
 The scaffold-only `app_internal.scaffold_migration_checks` table is not
 account-owned user data and does not need RLS.
+
+Because Better Auth replaces Supabase Auth as the provider contract, RLS
+policies use application-set session context instead of `auth.uid()`. Current
+account-owned policies read `app.current_auth_subject`, which the authenticated
+database-session boundary sets transaction-locally.
 
 ## Stop Local Supabase
 

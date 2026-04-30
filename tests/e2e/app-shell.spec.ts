@@ -5,9 +5,11 @@ async function signInLocalUser(page: Page) {
   const email = `shell-${suffix}@example.test`;
 
   await page.goto("/auth/login?next=/app");
+  await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: "Create local user" }).click();
+  await page.getByLabel("Password").fill("password123");
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
   await acknowledgeOnboardingIfPresent(page);
 }
@@ -80,4 +82,24 @@ test("desktop shell uses a collapsible sidebar for app navigation", async ({
       return signOutBox?.width ?? 0;
     })
     .toBeLessThanOrEqual(48);
+});
+
+test("signed-in users can open the Activity route empty state", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await signInLocalUser(page);
+
+  await page.getByRole("link", { name: "Activity" }).click();
+
+  await expect(page).toHaveURL(/\/app\/activity$/);
+  await expect(
+    page.getByRole("heading", { name: "Activity", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "No activity yet" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Events will appear here as you use Field Ledger."),
+  ).toBeVisible();
 });

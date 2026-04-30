@@ -1,0 +1,1 @@
+CREATE INDEX "audit_events_account_id_occurred_at_idx" ON "audit_events" USING btree ("account_id","occurred_at" DESC NULLS LAST);

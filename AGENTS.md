@@ -25,8 +25,8 @@ Field Ledger is a mobile-first web app for individual Army property accountabili
 - Routes compose module UI and call typed procedures; routes do not own business rules.
 - tRPC is the primary app API layer. tRPC procedures call module application services.
 - Server Actions are allowed only for narrow framework needs and must still call module services.
-- Supabase Auth, Supabase Storage, Stripe, email, and future notification providers must stay behind provider boundaries.
-- UI/domain code must not call Supabase or Stripe directly.
+- Better Auth, Supabase Storage, Stripe, email, and future notification providers must stay behind provider boundaries.
+- UI/domain code must not call Better Auth, Supabase, or Stripe directly.
 - Supabase RLS (row-level security: database rules that restrict row access) is required for account-owned data.
 - App services enforce business rules such as trial access, hand receipt limits, archive behavior, assignment rules, and reminder behavior.
 
