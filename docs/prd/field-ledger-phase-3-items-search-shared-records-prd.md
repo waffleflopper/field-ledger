@@ -54,13 +54,14 @@ which hand receipt owns the item while preserving audit history. Because formal
 leave a clear constraint hook for the future rule that an item with active 2062
 coverage cannot move to another hand receipt until that coverage is closed.
 
-The Items surface will become global search by default. Users will be able to
-search across all active hand receipts by ECN, serial number, generated ID,
-nomenclature, hand receipt name, location, and signed-to contact. Results will
-show the hand receipt context and the strongest matching identifiers so the user
-can understand the result without opening every record. Archived items and
-archived hand receipts will be excluded by default, with a deliberate option to
-include archived records.
+The Items surface will become global search by default. Normal search will
+search across active hand receipts and active items by ECN, serial number,
+generated ID, nomenclature, hand receipt name, location, and signed-to contact.
+Results will show the hand receipt context and the strongest matching
+identifiers so the user can understand the result without opening every record.
+Archived items and archived hand receipts will be excluded by default, with a
+deliberate option to include archived items and items that belong to archived
+hand receipts.
 
 Contacts and locations will be account-wide, lightweight shared records.
 Contacts require only display name and are used for manual signed-to state now
@@ -111,7 +112,7 @@ assign records.
 31. As a user, I want to archive an item, so that turned-in, transferred, or inactive property leaves normal workflows without being deleted.
 32. As a user, I want archived items hidden from normal hand receipt lists, so that day-to-day property work stays focused.
 33. As a user, I want archived items excluded from normal search by default, so that active results stay useful.
-34. As a user, I want to include archived items deliberately, so that historical records remain findable.
+34. As a user, I want to include archived items and archived hand receipts deliberately, so that historical records remain findable.
 35. As a user, I want to restore an archived item, so that I can recover from mistakes or resume tracking the item.
 36. As a user, I want archive and restore to emit activity, so that item lifecycle changes are preserved.
 37. As a user, I want to move an item between my hand receipts, so that Field Ledger can reflect property moving between buckets I manage.
@@ -195,8 +196,8 @@ assign records.
 - Archive items instead of deleting them.
 - Hide archived items from normal active hand receipt lists and global search by
   default.
-- Provide a deliberate include-archived option for item search and archived item
-  review.
+- Provide a deliberate include-archived option for item search across archived
+  items and items that belong to archived hand receipts.
 - Restore archived items to active workflows.
 - Move items between hand receipts while preserving the item record and audit
   history.

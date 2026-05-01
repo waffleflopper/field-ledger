@@ -90,10 +90,11 @@ Implement global item search across identifiers, nomenclature, hand receipt name
 - [x] Search route builds into `/app/items`.
 - [x] Search is usable on mobile and desktop.
 
-Implemented in issue #44. Search matches item identifiers, nomenclature, hand
-receipt name, signed-to contact, and location through the items application
-boundary. The include-archived option includes archived item records while
-archived hand receipts remain excluded from normal search.
+Implemented in issue #44. Normal search matches active item identifiers,
+nomenclature, hand receipt name, signed-to contact, and location through the
+items application boundary, limited to active hand receipts and active items.
+The include-archived option expands search to archived item records and items
+that belong to archived hand receipts.
 
 ---
 
