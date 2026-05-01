@@ -7,6 +7,7 @@ const auditActionLabels: Record<KnownAuditAction, string> = {
   "hand_receipt.restored": "Hand receipt restored",
   "hand_receipt.updated": "Hand receipt updated",
   "item.created": "Item created",
+  "item.updated": "Item updated",
   "system.initialized": "System initialized",
 };
 

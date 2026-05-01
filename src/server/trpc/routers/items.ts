@@ -2,9 +2,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  checkDuplicateIdentifiers,
   createItem,
+  getItem,
   listActiveItemsByHandReceipt,
   listItems,
+  updateItem,
 } from "@/modules/items";
 import type {
   AppUnitOfWork,
@@ -47,6 +50,34 @@ const listItemsInput = z
 
 const listByHandReceiptInput = z.object({
   handReceiptId: z.uuid(),
+});
+
+const itemIdInput = z.object({
+  id: z.uuid(),
+});
+
+const updateItemInput = z.object({
+  id: z.uuid(),
+  nomenclature: z
+    .string()
+    .trim()
+    .min(1, "Item nomenclature is required.")
+    .max(160),
+  ecn: optionalText,
+  serialNumber: optionalText,
+  notes: z
+    .string()
+    .max(1000)
+    .optional()
+    .nullable()
+    .transform((value) => value ?? null),
+  confirmDuplicate: z.boolean().optional(),
+});
+
+const checkDuplicateIdentifierInput = z.object({
+  itemId: z.uuid().optional(),
+  ecn: optionalText,
+  serialNumber: optionalText,
 });
 
 function toTRPCError(error: unknown): never {
@@ -116,6 +147,35 @@ export const itemsRouter = createTRPCRouter({
         repository: ctx.itemRepository,
       }),
     ),
+  getById: protectedProcedure
+    .input(itemIdInput)
+    .query(async ({ ctx, input }) => {
+      const item = await getItem({
+        accountId: ctx.account.id,
+        itemId: input.id,
+        repository: ctx.itemRepository,
+      });
+
+      if (!item) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return item;
+    }),
+  checkDuplicateIdentifier: protectedProcedure
+    .input(checkDuplicateIdentifierInput)
+    .query(({ ctx, input }) =>
+      checkDuplicateIdentifiers({
+        accountId: ctx.account.id,
+        ecn: input.ecn,
+        serialNumber: input.serialNumber,
+        ...(input.itemId ? { excludeItemId: input.itemId } : {}),
+        repository: ctx.itemRepository,
+      }),
+    ),
   create: protectedProcedure.input(createItemInput).mutation(({ ctx, input }) =>
     runInUnitOfWork(ctx, (repositories) =>
       createItem({
@@ -141,4 +201,35 @@ export const itemsRouter = createTRPCRouter({
       }),
     ),
   ),
+  update: protectedProcedure
+    .input(updateItemInput)
+    .mutation(async ({ ctx, input }) => {
+      const result = await runInUnitOfWork(ctx, (repositories) =>
+        updateItem({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          input: {
+            nomenclature: input.nomenclature,
+            ecn: input.ecn,
+            serialNumber: input.serialNumber,
+            notes: input.notes,
+            ...(input.confirmDuplicate !== undefined
+              ? { confirmDuplicate: input.confirmDuplicate }
+              : {}),
+          },
+          auditRepository: repositories.auditRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (result.item === null) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return result;
+    }),
 });

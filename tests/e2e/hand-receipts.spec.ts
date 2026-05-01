@@ -74,7 +74,7 @@ test("users can open and edit hand receipt details", async ({ page }) => {
     page.getByRole("heading", { name: "Detail edit receipt" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Linked Items" }),
+    page.getByRole("heading", { name: "Property Items" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Edit details" }).click();
@@ -102,6 +102,58 @@ test("users can open and edit hand receipt details", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("HR-101")).toBeVisible();
   await expect(page.getByText("SSG Rivera")).toBeVisible();
+});
+
+test("users can open and edit item details from a hand receipt", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Item detail receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Item detail receipt" }).click();
+  await page.waitForLoadState("networkidle");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("M4 carbine");
+  await createDialog.getByLabel("ECN").fill("ECN-101");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open M4 carbine" }).click();
+  await expect(page).toHaveURL(
+    /\/app\/hand-receipts\/[0-9a-f-]+\/items\/[0-9a-f-]+$/,
+  );
+  await expect(page.getByRole("heading", { name: "M4 carbine" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hand Receipt Context" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Item detail receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Requirements" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Active 2062s" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit item" }).click();
+  await page.getByLabel("Nomenclature").fill("Updated M4 carbine");
+  await page.getByLabel("Serial number").fill("SER-101");
+  await page.getByLabel("Notes").fill("Rack 3");
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Updated M4 carbine" }),
+  ).toBeVisible();
+  await expect(page.getByText("SER-101")).toBeVisible();
+  await expect(page.getByText("Rack 3")).toBeVisible();
+  await expect(page.getByText("Item updated")).toBeVisible();
 });
 
 test("hand receipt activity appears in detail, dashboard, and Activity route", async ({

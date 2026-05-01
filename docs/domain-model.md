@@ -111,7 +111,10 @@ Rules:
 - Duplicate nomenclature is allowed.
 - Duplicate ECN/serial warns but can be confirmed.
 - Creating an item emits `item.created` with hand receipt and identifier metadata.
-- ECN/serial edits are allowed and audited in the later edit slice.
+- Editing nomenclature, ECN, serial number, and notes emits `item.updated` with
+  changed field metadata.
+- Identifier edits cannot leave the item without ECN, serial number, or a
+  generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
 - Generated IDs are account-sequential and allocated from the account record.
 - Item with active 2062 cannot move to another hand receipt until the active 2062 link is closed.

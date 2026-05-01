@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Hash, PackageSearch } from "lucide-react";
 
 import type { ItemRecord } from "@/modules/items";
@@ -35,9 +36,13 @@ export function ItemList({ items }: { items: ItemRecord[] }) {
             <PackageSearch aria-hidden="true" className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-semibold tracking-normal">
+            <Link
+              aria-label={`Open ${item.nomenclature}`}
+              className="block truncate text-sm font-semibold tracking-normal underline-offset-4 hover:underline"
+              href={`/app/hand-receipts/${item.handReceiptId}/items/${item.id}`}
+            >
               {item.nomenclature}
-            </h3>
+            </Link>
             <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1 font-mono">
                 <Hash aria-hidden="true" className="size-3" />

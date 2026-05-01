@@ -178,4 +178,121 @@ describe("itemsRouter", () => {
       }),
     ).rejects.toBeInstanceOf(TRPCError);
   });
+
+  it("gets and updates item details with audit history", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Original radio",
+        ecn: "ECN-001",
+        serialNumber: null,
+        generatedId: "FL-000001",
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({ auditRepository, itemRepository });
+
+    await expect(
+      caller.items.getById({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
+    ).resolves.toMatchObject({
+      nomenclature: "Original radio",
+      generatedId: "FL-000001",
+    });
+
+    await expect(
+      caller.items.update({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        nomenclature: "Updated radio",
+        ecn: "ECN-002",
+        serialNumber: null,
+        notes: "Shelf B",
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        nomenclature: "Updated radio",
+        ecn: "ECN-002",
+        notes: "Shelf B",
+      },
+    });
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "item.updated",
+        targetType: "item",
+        targetId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        metadata: {
+          changedFields: ["nomenclature", "ecn", "notes"],
+        },
+      },
+    ]);
+  });
+
+  it("checks duplicate identifiers and maps read-only updates to FORBIDDEN", async () => {
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Original radio",
+        ecn: "ECN-001",
+        serialNumber: null,
+        generatedId: "FL-000001",
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+      {
+        id: "209de9cc-73cc-4f2c-99d8-0af00d94574c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Existing duplicate",
+        ecn: "ECN-DUP",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({ itemRepository }).items.checkDuplicateIdentifier({
+        itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        ecn: "ECN-DUP",
+      }),
+    ).resolves.toMatchObject({
+      hasDuplicate: true,
+      existingItems: [
+        {
+          id: "209de9cc-73cc-4f2c-99d8-0af00d94574c",
+        },
+      ],
+    });
+
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+        itemRepository,
+      }).items.update({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        nomenclature: "Blocked update",
+        ecn: "ECN-001",
+        serialNumber: null,
+        notes: null,
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+  });
 });

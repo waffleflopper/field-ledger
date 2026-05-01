@@ -47,3 +47,13 @@ export type CreateItemResult =
       item?: never;
       duplicateWarning: DuplicateCheckResult;
     };
+
+export type UpdateItemResult =
+  | {
+      item: ItemRecord | null;
+      duplicateWarning?: never;
+    }
+  | {
+      item?: never;
+      duplicateWarning: DuplicateCheckResult;
+    };
