@@ -13,7 +13,7 @@ For each branch:
 
 Do not run `pnpm install`, `npm install`, `corepack install`, or any other dependency install/refresh command inside the sandbox.
 
-Do not run `pnpm test`, `pnpm test:*`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests. If verification is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, report it as a verification limitation and do not try to repair sandbox dependencies.
+Do not run `pnpm test`, `pnpm test:*`, `pnpm exec vitest`, `pnpm exec playwright`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests. If verification is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, report it as a verification limitation and do not try to repair sandbox dependencies.
 
 After all branches are merged, make a single commit summarizing the merge.
 
