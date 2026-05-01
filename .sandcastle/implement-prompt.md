@@ -51,7 +51,11 @@ Do not invent product decisions or architecture changes that are not supported b
 
 Before committing, run `pnpm verify:sandcastle`.
 
-Run additional targeted tests when the issue clearly touches a test-covered behavior. Do not require local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests unless the issue explicitly depends on those surfaces.
+Do not run `pnpm install`, `npm install`, `corepack install`, or any other dependency install/refresh command inside the sandbox.
+
+Do not run `pnpm test`, `pnpm test:*`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests unless the issue explicitly requires those surfaces and the needed dependencies/services already work without install repair.
+
+If a targeted test is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, stop that check and record it as a verification limitation in the commit message. Do not try to repair sandbox dependencies.
 
 # COMMIT
 
