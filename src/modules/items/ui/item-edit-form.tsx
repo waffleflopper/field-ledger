@@ -93,6 +93,7 @@ export function ItemEditForm({
       utilities.items.getById.setData({ id: item.id }, result.item);
       await Promise.all([
         utilities.items.getById.invalidate({ id: item.id }),
+        utilities.items.search.invalidate(),
         utilities.items.list.invalidate(),
         utilities.items.listByHandReceipt.invalidate({
           handReceiptId: item.handReceiptId,

@@ -1,8 +1,12 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
-import { contacts, items, locations } from "@/db/schema";
+import { contacts, handReceipts, items, locations } from "@/db/schema";
 import type { ItemRepository } from "@/modules/items";
-import type { ItemRecord } from "@/modules/items/application/types";
+import type {
+  ItemRecord,
+  ItemSearchResult,
+  SearchableItemField,
+} from "@/modules/items/application/types";
 import type {
   AuthenticatedDatabaseSession,
   AuthenticatedDatabaseTransaction,
@@ -16,6 +20,9 @@ type ItemRowWithContact = {
   item: ItemRow;
   contact: typeof contacts.$inferSelect | null;
   location: typeof locations.$inferSelect | null;
+};
+type ItemSearchRow = ItemRowWithContact & {
+  handReceipt: typeof handReceipts.$inferSelect;
 };
 type ItemOperation = <T>(
   operation: (transaction: AuthenticatedDatabaseTransaction) => Promise<T>,
@@ -51,6 +58,65 @@ function toItemRecordFromJoinedRow(row: ItemRowWithContact): ItemRecord {
     row.contact?.displayName ?? null,
     row.location?.name ?? null,
   );
+}
+
+function valueMatches(value: string | null | undefined, query: string) {
+  return value?.toLocaleLowerCase().includes(query) ?? false;
+}
+
+function toSearchResult(row: ItemSearchRow, query: string): ItemSearchResult {
+  const item = toItemRecordFromJoinedRow(row);
+  const matchedFields: SearchableItemField[] = [];
+
+  if (valueMatches(item.ecn, query)) {
+    matchedFields.push("ecn");
+  }
+
+  if (valueMatches(item.serialNumber, query)) {
+    matchedFields.push("serialNumber");
+  }
+
+  if (valueMatches(item.generatedId, query)) {
+    matchedFields.push("generatedId");
+  }
+
+  if (valueMatches(item.nomenclature, query)) {
+    matchedFields.push("nomenclature");
+  }
+
+  if (valueMatches(row.handReceipt.name, query)) {
+    matchedFields.push("handReceiptName");
+  }
+
+  if (valueMatches(row.contact?.displayName, query)) {
+    matchedFields.push("contact");
+  }
+
+  if (valueMatches(row.location?.name, query)) {
+    matchedFields.push("location");
+  }
+
+  return {
+    item,
+    handReceipt: {
+      id: row.handReceipt.id,
+      name: row.handReceipt.name,
+      status: row.handReceipt.status,
+    },
+    contact: row.contact
+      ? {
+          id: row.contact.id,
+          displayName: row.contact.displayName,
+        }
+      : null,
+    location: row.location
+      ? {
+          id: row.location.id,
+          name: row.location.name,
+        }
+      : null,
+    matchedFields,
+  };
 }
 
 function createItemRepository(run: ItemOperation): ItemRepository {
@@ -203,6 +269,54 @@ function createItemRepository(run: ItemOperation): ItemRepository {
       );
 
       return row?.count ?? 0;
+    },
+    async search(accountId, input) {
+      const trimmedQuery = input.query.trim();
+
+      if (trimmedQuery.length === 0) {
+        return [];
+      }
+
+      const pattern = `%${trimmedQuery}%`;
+      const filters = [
+        eq(items.accountId, accountId),
+        eq(handReceipts.accountId, accountId),
+        eq(handReceipts.status, "active" as const),
+        or(
+          ilike(items.ecn, pattern),
+          ilike(items.serialNumber, pattern),
+          ilike(items.generatedId, pattern),
+          ilike(items.nomenclature, pattern),
+          ilike(handReceipts.name, pattern),
+          ilike(contacts.displayName, pattern),
+          ilike(locations.name, pattern),
+        ),
+      ];
+
+      if (!input.includeArchived) {
+        filters.push(eq(items.status, "active"));
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            item: items,
+            handReceipt: handReceipts,
+            contact: contacts,
+            location: locations,
+          })
+          .from(items)
+          .innerJoin(handReceipts, eq(items.handReceiptId, handReceipts.id))
+          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(locations, eq(items.locationId, locations.id))
+          .where(and(...filters))
+          .orderBy(desc(items.updatedAt))
+          .limit(50),
+      );
+
+      return rows.map((row) =>
+        toSearchResult(row, trimmedQuery.toLocaleLowerCase()),
+      );
     },
   };
 }

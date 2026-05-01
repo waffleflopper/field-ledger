@@ -14,6 +14,7 @@ import {
   listItems,
   moveItem,
   restoreItem,
+  searchItems,
   updateItem,
 } from "@/modules/items";
 import type {
@@ -59,6 +60,11 @@ const listItemsInput = z
 const listByHandReceiptInput = z.object({
   handReceiptId: z.uuid(),
   status: z.enum(["active", "archived"]).optional(),
+});
+
+const searchItemsInput = z.object({
+  query: z.string().max(160),
+  includeArchived: z.boolean().optional(),
 });
 
 const itemIdInput = z.object({
@@ -197,6 +203,14 @@ export const itemsRouter = createTRPCRouter({
         repository: ctx.itemRepository,
       });
     }),
+  search: protectedProcedure.input(searchItemsInput).query(({ ctx, input }) =>
+    searchItems({
+      accountId: ctx.account.id,
+      query: input.query,
+      includeArchived: input.includeArchived ?? false,
+      repository: ctx.itemRepository,
+    }),
+  ),
   getById: protectedProcedure
     .input(itemIdInput)
     .query(async ({ ctx, input }) => {

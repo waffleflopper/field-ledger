@@ -217,6 +217,76 @@ describe("itemsRouter", () => {
     ).rejects.toBeInstanceOf(TRPCError);
   });
 
+  it("searches active items globally with context through the typed procedure", async () => {
+    const handReceiptRepository = createHandReceiptRepository();
+    const itemRepository = new InMemoryItemRepository(
+      [
+        {
+          id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          accountId: "account-1",
+          handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+          nomenclature: "Night vision device",
+          ecn: "ECN-NVG",
+          serialNumber: "SER-NVG",
+          generatedId: "FL-000111",
+          notes: null,
+          status: "active",
+          signedToContactId: null,
+          signedToContactName: null,
+          locationId: "5e61a92a-ae42-4f8f-a6ef-ae50858a404a",
+          locationName: "Arms room",
+          createdAt: new Date("2026-05-01T11:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T11:00:00.000Z"),
+        },
+        {
+          id: "f22b8a9f-2a61-474f-a970-11fa0e2d6204",
+          accountId: "account-1",
+          handReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+          nomenclature: "Archived arms room radio",
+          ecn: "ECN-OLD",
+          serialNumber: null,
+          generatedId: "FL-000112",
+          notes: null,
+          status: "archived",
+          signedToContactId: null,
+          signedToContactName: null,
+          locationId: "5e61a92a-ae42-4f8f-a6ef-ae50858a404a",
+          locationName: "Arms room",
+          createdAt: new Date("2026-05-01T10:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T10:00:00.000Z"),
+        },
+      ],
+      handReceiptRepository,
+    );
+    const caller = createCaller({ handReceiptRepository, itemRepository });
+
+    await expect(
+      caller.items.search({
+        query: "arms",
+      }),
+    ).resolves.toMatchObject([
+      {
+        item: {
+          id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        },
+        handReceipt: {
+          name: "HQ hand receipt",
+        },
+        location: {
+          name: "Arms room",
+        },
+        matchedFields: ["location"],
+      },
+    ]);
+
+    await expect(
+      caller.items.search({
+        query: "arms",
+        includeArchived: true,
+      }),
+    ).resolves.toHaveLength(2);
+  });
+
   it("gets and updates item details with audit history", async () => {
     const auditRepository = new InMemoryAuditRepository();
     const itemRepository = new InMemoryItemRepository([

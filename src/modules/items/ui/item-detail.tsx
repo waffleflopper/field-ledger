@@ -359,6 +359,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
     utilities.items.getById.setData({ id: itemId }, updated);
     await Promise.all([
       utilities.items.getById.invalidate({ id: itemId }),
+      utilities.items.search.invalidate(),
       utilities.items.list.invalidate(),
       utilities.items.listByHandReceipt.invalidate({
         handReceiptId: previousHandReceiptId,

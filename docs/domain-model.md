@@ -135,6 +135,15 @@ Rules:
   generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
 - Generated IDs are account-sequential and allocated from the account record.
+- The Items route is global search by default. Search matches ECN, serial
+  number, generated ID, nomenclature, hand receipt name, manual signed-to
+  contact, and location across the account's active hand receipts.
+- Global search excludes archived items by default. A deliberate
+  include-archived option includes archived item records, but archived hand
+  receipts remain outside normal search.
+- Search results show hand receipt context and the strongest available
+  identifier matches so users can confirm the correct property record before
+  opening detail.
 - Item with active 2062 cannot move to another hand receipt until the active
   2062 link is closed. Until formal 2062 assignment enforcement lands, item
   movement keeps a dedicated application-service hook for this future block but

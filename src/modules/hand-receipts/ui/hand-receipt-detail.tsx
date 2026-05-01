@@ -221,6 +221,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
         targetId: handReceiptId,
       }),
       utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
+      utilities.items.search.invalidate(),
       utilities.billing.capabilities.invalidate(),
     ]);
   }
@@ -230,6 +231,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     utilities.items.getById.setData({ id: updated.id }, updated);
     await Promise.all([
       utilities.items.getById.invalidate({ id: updated.id }),
+      utilities.items.search.invalidate(),
       utilities.items.list.invalidate(),
       utilities.items.listByHandReceipt.invalidate({
         handReceiptId,
@@ -276,6 +278,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
             handReceiptId,
             status: "active",
           }),
+          utilities.items.search.invalidate(),
           utilities.audit.listRecentActivity.invalidate(),
           utilities.audit.listTargetActivity.invalidate({
             targetType: "hand_receipt",

@@ -1,4 +1,6 @@
 import type {
+  ItemSearchInput,
+  ItemSearchResult,
   ItemRecord,
   ItemStatus,
   NewItemRecord,
@@ -32,6 +34,10 @@ export interface ItemRepository {
     accountId: string,
     handReceiptId: string,
   ): Promise<number>;
+  search(
+    accountId: string,
+    input: ItemSearchInput,
+  ): Promise<ItemSearchResult[]>;
 }
 
 export function createUnavailableItemRepository(): ItemRepository {
@@ -61,6 +67,9 @@ export function createUnavailableItemRepository(): ItemRepository {
       throw new Error("An authenticated database session is required.");
     },
     async countActiveByHandReceiptId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async search() {
       throw new Error("An authenticated database session is required.");
     },
   };

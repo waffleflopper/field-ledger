@@ -1,16 +1,28 @@
 import type {
+  ItemSearchInput,
+  ItemSearchResult,
   ItemRecord,
   ItemRepository,
   ItemStatus,
   NewItemRecord,
   UpdateItemRecord,
 } from "@/modules/items";
+import type { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
+
+function includesQuery(value: string | null | undefined, query: string) {
+  return value?.toLocaleLowerCase().includes(query) ?? false;
+}
 
 export class InMemoryItemRepository implements ItemRepository {
   items: ItemRecord[] = [];
+  handReceiptRepository: InMemoryHandReceiptRepository | null = null;
 
-  constructor(items: ItemRecord[] = []) {
+  constructor(
+    items: ItemRecord[] = [],
+    handReceiptRepository: InMemoryHandReceiptRepository | null = null,
+  ) {
     this.items = [...items];
+    this.handReceiptRepository = handReceiptRepository;
   }
 
   async create(item: NewItemRecord) {
@@ -114,6 +126,104 @@ export class InMemoryItemRepository implements ItemRepository {
         item.handReceiptId === handReceiptId &&
         item.status === "active",
     ).length;
+  }
+
+  async search(accountId: string, input: ItemSearchInput) {
+    const normalizedQuery = input.query.trim().toLocaleLowerCase();
+
+    if (normalizedQuery.length === 0) {
+      return [];
+    }
+
+    const handReceipts =
+      this.handReceiptRepository?.handReceipts.filter(
+        (handReceipt) => handReceipt.accountId === accountId,
+      ) ?? [];
+
+    const results: ItemSearchResult[] = [];
+
+    for (const item of this.items) {
+      if (item.accountId !== accountId) {
+        continue;
+      }
+
+      const handReceipt = handReceipts.find(
+        (candidate) => candidate.id === item.handReceiptId,
+      );
+
+      if (!handReceipt || handReceipt.status === "archived") {
+        continue;
+      }
+
+      if (!input.includeArchived && item.status === "archived") {
+        continue;
+      }
+
+      const matchedFields: ItemSearchResult["matchedFields"] = [];
+
+      if (includesQuery(item.ecn, normalizedQuery)) {
+        matchedFields.push("ecn");
+      }
+
+      if (includesQuery(item.serialNumber, normalizedQuery)) {
+        matchedFields.push("serialNumber");
+      }
+
+      if (includesQuery(item.generatedId, normalizedQuery)) {
+        matchedFields.push("generatedId");
+      }
+
+      if (includesQuery(item.nomenclature, normalizedQuery)) {
+        matchedFields.push("nomenclature");
+      }
+
+      if (includesQuery(handReceipt.name, normalizedQuery)) {
+        matchedFields.push("handReceiptName");
+      }
+
+      if (includesQuery(item.signedToContactName, normalizedQuery)) {
+        matchedFields.push("contact");
+      }
+
+      if (includesQuery(item.locationName, normalizedQuery)) {
+        matchedFields.push("location");
+      }
+
+      if (matchedFields.length === 0) {
+        continue;
+      }
+
+      results.push({
+        item,
+        handReceipt: {
+          id: handReceipt.id,
+          name: handReceipt.name,
+          status: handReceipt.status,
+        },
+        contact:
+          item.signedToContactId && item.signedToContactName
+            ? {
+                id: item.signedToContactId,
+                displayName: item.signedToContactName,
+              }
+            : null,
+        location:
+          item.locationId && item.locationName
+            ? {
+                id: item.locationId,
+                name: item.locationName,
+              }
+            : null,
+        matchedFields,
+      });
+    }
+
+    return results
+      .sort(
+        (left, right) =>
+          right.item.updatedAt.getTime() - left.item.updatedAt.getTime(),
+      )
+      .slice(0, 50);
   }
 }
 

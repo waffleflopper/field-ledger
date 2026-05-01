@@ -83,12 +83,17 @@ Implement global item search across identifiers, nomenclature, hand receipt name
 
 ### Acceptance Criteria
 
-- [ ] Search is global by default.
-- [ ] Results show which hand receipt each item belongs to.
-- [ ] Results show strongest matching identifiers.
-- [ ] Archived records are excluded by default with a clear include-archived option.
-- [ ] Search route builds into `/app/items`.
-- [ ] Search is usable on mobile and desktop.
+- [x] Search is global by default.
+- [x] Results show which hand receipt each item belongs to.
+- [x] Results show strongest matching identifiers.
+- [x] Archived records are excluded by default with a clear include-archived option.
+- [x] Search route builds into `/app/items`.
+- [x] Search is usable on mobile and desktop.
+
+Implemented in issue #44. Search matches item identifiers, nomenclature, hand
+receipt name, signed-to contact, and location through the items application
+boundary. The include-archived option includes archived item records while
+archived hand receipts remain excluded from normal search.
 
 ---
 
@@ -127,4 +132,3 @@ Implement account-wide reusable locations and item location assignment.
 - [ ] Location changes emit audit events.
 - [ ] Search/filtering can use location context.
 - [ ] Read-only/paused accounts cannot change locations.
-

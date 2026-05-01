@@ -88,6 +88,9 @@ async function main() {
       async countActiveByHandReceiptId() {
         return 0;
       },
+      async search() {
+        return [];
+      },
     },
     locationRepository: {
       async create() {

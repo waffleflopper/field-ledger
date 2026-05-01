@@ -66,3 +66,35 @@ export type UpdateItemResult =
       item?: never;
       duplicateWarning: DuplicateCheckResult;
     };
+
+export type SearchableItemField =
+  | "ecn"
+  | "serialNumber"
+  | "generatedId"
+  | "nomenclature"
+  | "handReceiptName"
+  | "contact"
+  | "location";
+
+export type ItemSearchInput = {
+  query: string;
+  includeArchived?: boolean;
+};
+
+export type ItemSearchResult = {
+  item: ItemRecord;
+  handReceipt: {
+    id: string;
+    name: string;
+    status: "active" | "archived";
+  };
+  contact: {
+    id: string;
+    displayName: string;
+  } | null;
+  location: {
+    id: string;
+    name: string;
+  } | null;
+  matchedFields: SearchableItemField[];
+};
