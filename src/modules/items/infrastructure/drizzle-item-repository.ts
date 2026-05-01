@@ -2,7 +2,7 @@ import { and, count, desc, eq } from "drizzle-orm";
 
 import { items } from "@/db/schema";
 import type { ItemRepository } from "@/modules/items";
-import type { ItemRecord, ItemStatus } from "@/modules/items/application/types";
+import type { ItemRecord } from "@/modules/items/application/types";
 import type {
   AuthenticatedDatabaseSession,
   AuthenticatedDatabaseTransaction,
@@ -26,16 +26,41 @@ function toItemRecord(row: ItemRow): ItemRecord {
     serialNumber: row.serialNumber,
     generatedId: row.generatedId,
     notes: row.notes,
-    status: row.status as ItemStatus,
+    status: row.status,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
 function createItemRepository(run: ItemOperation): ItemRepository {
+  const findByAccountId: ItemRepository["findByAccountId"] = async (
+    accountId,
+    options = {},
+  ) => {
+    const filters = [eq(items.accountId, accountId)];
+
+    if (options.status) {
+      filters.push(eq(items.status, options.status));
+    }
+
+    if (options.handReceiptId) {
+      filters.push(eq(items.handReceiptId, options.handReceiptId));
+    }
+
+    const rows = await run((transaction) =>
+      transaction
+        .select()
+        .from(items)
+        .where(and(...filters))
+        .orderBy(desc(items.createdAt)),
+    );
+
+    return rows.map(toItemRecord);
+  };
+
   return {
     async create(item) {
-      const [createdItem] = await run(async (transaction) => {
+      const createdItem = await run(async (transaction) => {
         const [created] = await transaction
           .insert(items)
           .values(item)
@@ -45,32 +70,12 @@ function createItemRepository(run: ItemOperation): ItemRepository {
           throw new Error("Item was not created.");
         }
 
-        return [created];
+        return created;
       });
 
       return toItemRecord(createdItem);
     },
-    async findByAccountId(accountId, options = {}) {
-      const filters = [eq(items.accountId, accountId)];
-
-      if (options.status) {
-        filters.push(eq(items.status, options.status));
-      }
-
-      if (options.handReceiptId) {
-        filters.push(eq(items.handReceiptId, options.handReceiptId));
-      }
-
-      const rows = await run((transaction) =>
-        transaction
-          .select()
-          .from(items)
-          .where(and(...filters))
-          .orderBy(desc(items.createdAt)),
-      );
-
-      return rows.map(toItemRecord);
-    },
+    findByAccountId,
     async findById(accountId, itemId) {
       const [row] = await run((transaction) =>
         transaction
@@ -83,24 +88,20 @@ function createItemRepository(run: ItemOperation): ItemRepository {
       return row ? toItemRecord(row) : null;
     },
     async findByHandReceiptId(accountId, handReceiptId, options = {}) {
-      return this.findByAccountId(accountId, {
+      return findByAccountId(accountId, {
         handReceiptId,
         ...(options.status ? { status: options.status } : {}),
       });
     },
     async update(accountId, itemId, updates) {
-      const [updatedItem] = await run(async (transaction) => {
+      const updatedItem = await run(async (transaction) => {
         const [updated] = await transaction
           .update(items)
           .set(updates)
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .returning();
 
-        if (!updated) {
-          return [null];
-        }
-
-        return [updated];
+        return updated ?? null;
       });
 
       return updatedItem ? toItemRecord(updatedItem) : null;

@@ -53,41 +53,34 @@ function toTRPCError(error: unknown): never {
   const message =
     error instanceof Error ? error.message : "Unable to update item.";
 
-  if (message === "This account is read-only.") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message,
-    });
+  switch (message) {
+    case "This account is read-only.":
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message,
+      });
+    case "Item nomenclature is required.":
+    case "Provide an ECN, serial number, or generated ID.":
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message,
+      });
+    case "Hand receipt was not found.":
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message,
+      });
+    case "Hand receipt is not active.":
+      throw new TRPCError({
+        code: "CONFLICT",
+        message,
+      });
+    default:
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message,
+      });
   }
-
-  if (
-    message === "Item nomenclature is required." ||
-    message === "Provide an ECN, serial number, or generated ID."
-  ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message,
-    });
-  }
-
-  if (message === "Hand receipt was not found.") {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message,
-    });
-  }
-
-  if (message === "Hand receipt is not active.") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message,
-    });
-  }
-
-  throw new TRPCError({
-    code: "INTERNAL_SERVER_ERROR",
-    message,
-  });
 }
 
 async function runInUnitOfWork<T>(

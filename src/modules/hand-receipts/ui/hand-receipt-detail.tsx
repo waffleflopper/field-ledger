@@ -158,6 +158,24 @@ function DetailSummary({
   );
 }
 
+function getCreateItemDisabledReason({
+  handReceipt,
+  isReadOnly,
+}: {
+  handReceipt: HandReceiptRecord;
+  isReadOnly: boolean;
+}) {
+  if (isReadOnly) {
+    return "This account is read-only. Existing records remain available.";
+  }
+
+  if (handReceipt.status !== "active") {
+    return "Archived hand receipts cannot receive new items.";
+  }
+
+  return null;
+}
+
 export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
@@ -177,6 +195,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+
   async function refreshHandReceiptContext(updated: HandReceiptRecord) {
     setLifecycleError(null);
     utilities.handReceipts.getById.setData({ id: handReceiptId }, updated);
@@ -193,6 +212,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
       utilities.billing.capabilities.invalidate(),
     ]);
   }
+
+  const createItemDisabledReason = handReceipt
+    ? getCreateItemDisabledReason({ handReceipt, isReadOnly })
+    : null;
 
   const archiveMutation = trpc.handReceipts.archive.useMutation({
     onSuccess: async (archived) => {
@@ -372,13 +395,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
               </div>
               <CreateItemForm
                 canCreate={!isReadOnly && handReceipt.status === "active"}
-                disabledReason={
-                  isReadOnly
-                    ? "This account is read-only. Existing records remain available."
-                    : handReceipt.status !== "active"
-                      ? "Archived hand receipts cannot receive new items."
-                      : null
-                }
+                disabledReason={createItemDisabledReason}
                 onSubmit={(input) =>
                   createItemMutation.mutateAsync({
                     handReceiptId,

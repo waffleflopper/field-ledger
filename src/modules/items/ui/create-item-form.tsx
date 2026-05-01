@@ -31,6 +31,28 @@ type CreateItemFormProps = {
   }) => Promise<CreateItemResult>;
 };
 
+function blankStringToNull(value: string) {
+  return value.trim() ? value : null;
+}
+
+function getSubmitButtonLabel({
+  duplicateWarning,
+  submitting,
+}: {
+  duplicateWarning: CreateItemResult["duplicateWarning"];
+  submitting: boolean;
+}) {
+  if (submitting) {
+    return "Saving";
+  }
+
+  if (duplicateWarning) {
+    return "Confirm duplicate";
+  }
+
+  return "Create item";
+}
+
 export function CreateItemForm({
   canCreate,
   disabledReason,
@@ -53,6 +75,11 @@ export function CreateItemForm({
   const generatedIdId = useId();
   const notesId = useId();
 
+  const submitButtonLabel = getSubmitButtonLabel({
+    duplicateWarning,
+    submitting,
+  });
+
   function resetForm() {
     setNomenclature("");
     setEcn("");
@@ -62,6 +89,14 @@ export function CreateItemForm({
     setConfirmDuplicate(false);
     setDuplicateWarning(undefined);
     setError(null);
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (!nextOpen) {
+      resetForm();
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -83,9 +118,9 @@ export function CreateItemForm({
     try {
       const result = await onSubmit({
         nomenclature,
-        ecn: ecn.trim() ? ecn : null,
-        serialNumber: serialNumber.trim() ? serialNumber : null,
-        notes: notes.trim() ? notes : null,
+        ecn: blankStringToNull(ecn),
+        serialNumber: blankStringToNull(serialNumber),
+        notes: blankStringToNull(notes),
         generateFieldLedgerId,
         confirmDuplicate,
       });
@@ -110,16 +145,7 @@ export function CreateItemForm({
   }
 
   return (
-    <Dialog
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-
-        if (!nextOpen) {
-          resetForm();
-        }
-      }}
-      open={open}
-    >
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
         <Button
           disabled={!canCreate}
@@ -249,11 +275,7 @@ export function CreateItemForm({
               Cancel
             </Button>
             <Button disabled={submitting || !canCreate} type="submit">
-              {submitting
-                ? "Saving"
-                : duplicateWarning
-                  ? "Confirm duplicate"
-                  : "Create item"}
+              {submitButtonLabel}
             </Button>
           </DialogFooter>
         </form>

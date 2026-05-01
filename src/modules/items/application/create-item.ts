@@ -1,5 +1,7 @@
-import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
-import type { AccountRepository } from "@/modules/accounts/application/ensure-account";
+import type {
+  AccountRecord,
+  AccountRepository,
+} from "@/modules/accounts/application/ensure-account";
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
