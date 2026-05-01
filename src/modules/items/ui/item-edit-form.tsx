@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { DuplicateCheckResult, ItemRecord } from "@/modules/items";
+import { LocationPicker } from "@/modules/locations/ui/location-picker";
 import { trpc } from "@/trpc/react";
 
 type ItemEditFormProps = {
@@ -31,6 +32,8 @@ type FormState = {
   serialNumber: string;
   generatedId: string;
   notes: string;
+  locationId: string | null;
+  locationName: string | null;
 };
 
 function toFormState(item: ItemRecord): FormState {
@@ -40,6 +43,8 @@ function toFormState(item: ItemRecord): FormState {
     serialNumber: item.serialNumber ?? "",
     generatedId: item.generatedId ?? "",
     notes: item.notes ?? "",
+    locationId: item.locationId ?? null,
+    locationName: item.locationName ?? null,
   };
 }
 
@@ -156,6 +161,7 @@ export function ItemEditForm({
       ecn,
       serialNumber,
       notes,
+      locationId: form.locationId,
       ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
     });
   }
@@ -242,6 +248,21 @@ export function ItemEditForm({
               maxLength={1000}
               onChange={(event) => updateField("notes", event.target.value)}
               value={form.notes}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <LocationPicker
+              currentLocationName={form.locationName}
+              disabled={isReadOnly || updateMutation.isPending}
+              isPending={updateMutation.isPending}
+              onChange={(nextLocation) => {
+                setForm((current) => ({
+                  ...current,
+                  locationId: nextLocation?.id ?? null,
+                  locationName: nextLocation?.name ?? null,
+                }));
+              }}
+              value={form.locationId}
             />
           </div>
         </div>

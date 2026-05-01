@@ -128,6 +128,9 @@ Rules:
   emits `item.signed_to_cleared`.
 - Manual signed-to state is labeled as `No 2062` in item surfaces until formal
   2062 assignment conversion lands.
+- Location state stores `location_id` on the item and optionally references an
+  account location. Items can have no location.
+- Changing or clearing location emits `item.location_changed`.
 - Identifier edits cannot leave the item without ECN, serial number, or a
   generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
@@ -167,6 +170,10 @@ Locations are optional, reusable, account-wide records.
 Required:
 
 - name
+
+Creating a location emits `location.created`. Locations can be created inline
+from item create and edit flows, selected from existing account locations, or
+cleared from an item when the place is unknown.
 
 Optional later:
 

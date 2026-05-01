@@ -1,6 +1,7 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
+import type { LocationRepository } from "@/modules/locations";
 import { checkDuplicateIdentifiers } from "./check-duplicate-identifiers";
 import type { ItemRepository } from "./item-repository";
 import type { ItemRecord, UpdateItemResult } from "./types";
@@ -11,6 +12,7 @@ const editableItemFields = [
   "ecn",
   "serialNumber",
   "notes",
+  "locationId",
 ] as const;
 
 type EditableItemField = (typeof editableItemFields)[number];
@@ -25,9 +27,11 @@ type UpdateItemInput = {
     ecn?: string | null;
     serialNumber?: string | null;
     notes?: string | null;
+    locationId?: string | null;
     confirmDuplicate?: boolean;
   };
   itemRepository: ItemRepository;
+  locationRepository: LocationRepository;
   auditRepository: AuditRepository;
   now?: Date;
 };
@@ -56,6 +60,10 @@ function nextEditableItemValues(
       input.notes === undefined
         ? current.notes
         : normalizeOptionalText(input.notes),
+    locationId:
+      input.locationId === undefined
+        ? (current.locationId ?? null)
+        : input.locationId,
   };
 }
 
@@ -73,6 +81,7 @@ export async function updateItem({
   itemId,
   input,
   itemRepository,
+  locationRepository,
   auditRepository,
   now = new Date(),
 }: UpdateItemInput): Promise<UpdateItemResult> {
@@ -107,6 +116,17 @@ export async function updateItem({
 
   if (changedFieldNames.length === 0) {
     return { item: existing };
+  }
+
+  if (next.locationId) {
+    const location = await locationRepository.findById(
+      account.id,
+      next.locationId,
+    );
+
+    if (!location) {
+      throw new Error("Location was not found.");
+    }
   }
 
   if (identifiersChanged(existing, next)) {
@@ -148,6 +168,27 @@ export async function updateItem({
     occurredAt: now,
     repository: auditRepository,
   });
+
+  if (existing.locationId !== updated.locationId) {
+    await recordAuditEvent({
+      accountId: account.id,
+      actorId,
+      action: "item.location_changed",
+      target: {
+        type: "item",
+        id: itemId,
+      },
+      metadata: {
+        name: updated.nomenclature,
+        previousLocationId: existing.locationId ?? null,
+        previousLocationName: existing.locationName ?? null,
+        newLocationId: updated.locationId ?? null,
+        newLocationName: updated.locationName ?? null,
+      },
+      occurredAt: now,
+      repository: auditRepository,
+    });
+  }
 
   return { item: updated };
 }

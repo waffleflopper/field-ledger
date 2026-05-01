@@ -89,6 +89,20 @@ async function main() {
         return 0;
       },
     },
+    locationRepository: {
+      async create() {
+        throw new Error("Foundation check should not create locations.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async searchByName() {
+        return [];
+      },
+    },
     unitOfWork: {
       async run() {
         throw new Error("Foundation check should not start a unit of work.");

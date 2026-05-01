@@ -8,6 +8,7 @@ import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
+import { createEmptyLocationRepository } from "../../support/location-repository";
 
 const authProbeRouter = createTRPCRouter({
   currentUserEmail: protectedProcedure.query(({ ctx }) => ctx.session.email),
@@ -23,6 +24,7 @@ describe("protectedProcedure", () => {
       contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -43,6 +45,7 @@ describe("protectedProcedure", () => {
       contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -70,6 +73,7 @@ describe("protectedProcedure", () => {
       contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

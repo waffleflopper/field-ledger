@@ -122,6 +122,8 @@ test("users can open and edit item details from a hand receipt", async ({
   });
   await createDialog.getByLabel("Nomenclature").fill("M4 carbine");
   await createDialog.getByLabel("ECN").fill("ECN-101");
+  await createDialog.getByLabel("Location").fill("Arms room");
+  await createDialog.getByRole("button", { name: "Create Arms room" }).click();
   await createDialog.getByRole("button", { name: "Create item" }).click();
 
   await page.getByRole("link", { name: "Open M4 carbine" }).click();
@@ -141,11 +143,15 @@ test("users can open and edit item details from a hand receipt", async ({
   await expect(
     page.getByRole("heading", { name: "Active 2062s" }),
   ).toBeVisible();
+  await expect(page.getByText("Arms room")).toBeVisible();
 
   await page.getByRole("button", { name: "Edit item" }).click();
   await page.getByLabel("Nomenclature").fill("Updated M4 carbine");
   await page.getByLabel("Serial number").fill("SER-101");
   await page.getByLabel("Notes").fill("Rack 3");
+  await page.getByRole("button", { name: "Clear" }).click();
+  await page.getByLabel("Location").fill("Motor pool");
+  await page.getByRole("button", { name: "Create Motor pool" }).click();
   await page.getByRole("button", { name: "Save changes" }).click();
 
   await expect(
@@ -153,6 +159,8 @@ test("users can open and edit item details from a hand receipt", async ({
   ).toBeVisible();
   await expect(page.getByText("SER-101")).toBeVisible();
   await expect(page.getByText("Rack 3")).toBeVisible();
+  await expect(page.getByText("Motor pool")).toBeVisible();
+  await expect(page.getByText("Item location changed")).toBeVisible();
   await expect(page.getByText("Item updated")).toBeVisible();
 });
 

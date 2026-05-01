@@ -12,13 +12,15 @@ export type ItemRecord = {
   status: ItemStatus;
   signedToContactId?: string | null;
   signedToContactName?: string | null;
+  locationId?: string | null;
+  locationName?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export type NewItemRecord = Omit<
   ItemRecord,
-  "createdAt" | "updatedAt" | "signedToContactName"
+  "createdAt" | "updatedAt" | "signedToContactName" | "locationName"
 > & {
   createdAt?: Date;
   updatedAt?: Date;
@@ -35,6 +37,7 @@ export type UpdateItemRecord = Partial<
     | "notes"
     | "status"
     | "signedToContactId"
+    | "locationId"
     | "updatedAt"
   >
 >;

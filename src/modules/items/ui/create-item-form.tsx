@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CreateItemResult } from "@/modules/items";
+import { LocationPicker } from "@/modules/locations/ui/location-picker";
 
 type CreateItemFormProps = {
   canCreate: boolean;
@@ -26,6 +27,7 @@ type CreateItemFormProps = {
     ecn: string | null;
     serialNumber: string | null;
     notes: string | null;
+    locationId: string | null;
     generateFieldLedgerId: boolean;
     confirmDuplicate?: boolean;
   }) => Promise<CreateItemResult>;
@@ -63,6 +65,10 @@ export function CreateItemForm({
   const [ecn, setEcn] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [location, setLocation] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [generateFieldLedgerId, setGenerateFieldLedgerId] = useState(false);
   const [confirmDuplicate, setConfirmDuplicate] = useState(false);
   const [duplicateWarning, setDuplicateWarning] =
@@ -85,6 +91,7 @@ export function CreateItemForm({
     setEcn("");
     setSerialNumber("");
     setNotes("");
+    setLocation(null);
     setGenerateFieldLedgerId(false);
     setConfirmDuplicate(false);
     setDuplicateWarning(undefined);
@@ -121,6 +128,7 @@ export function CreateItemForm({
         ecn: blankStringToNull(ecn),
         serialNumber: blankStringToNull(serialNumber),
         notes: blankStringToNull(notes),
+        locationId: location?.id ?? null,
         generateFieldLedgerId,
         confirmDuplicate,
       });
@@ -236,6 +244,14 @@ export function CreateItemForm({
               value={notes}
             />
           </div>
+
+          <LocationPicker
+            disabled={!canCreate || submitting}
+            isPending={submitting}
+            onChange={setLocation}
+            value={location?.id ?? null}
+            currentLocationName={location?.name ?? null}
+          />
 
           {duplicateWarning ? (
             <div

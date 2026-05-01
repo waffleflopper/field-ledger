@@ -23,6 +23,11 @@ import {
   type ItemRepository,
 } from "@/modules/items";
 import { createDrizzleItemRepository } from "@/modules/items/infrastructure/drizzle-item-repository";
+import {
+  createUnavailableLocationRepository,
+  type LocationRepository,
+} from "@/modules/locations";
+import { createDrizzleLocationRepository } from "@/modules/locations/infrastructure/drizzle-location-repository";
 import { type AppSession } from "@/modules/provider-boundaries/auth";
 import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
 import {
@@ -40,6 +45,7 @@ export async function createTRPCContext(): Promise<{
   contactRepository: ContactRepository;
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
+  locationRepository: LocationRepository;
   unitOfWork: AppUnitOfWork;
 }> {
   const db = getDrizzleClient();
@@ -55,6 +61,7 @@ export async function createTRPCContext(): Promise<{
       contactRepository: createUnavailableContactRepository(),
       handReceiptRepository: createUnavailableHandReceiptRepository(),
       itemRepository: createUnavailableItemRepository(),
+      locationRepository: createUnavailableLocationRepository(),
       unitOfWork: createUnavailableAppUnitOfWork(),
     };
   }
@@ -78,6 +85,9 @@ export async function createTRPCContext(): Promise<{
       authSubject: session.userId,
     }),
     itemRepository: createDrizzleItemRepository(db, {
+      authSubject: session.userId,
+    }),
+    locationRepository: createDrizzleLocationRepository(db, {
       authSubject: session.userId,
     }),
     unitOfWork: createDrizzleAppUnitOfWork(db, {

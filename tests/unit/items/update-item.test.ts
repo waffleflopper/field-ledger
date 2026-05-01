@@ -4,6 +4,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { updateItem, validateItemIdentifiers } from "@/modules/items";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
+import { InMemoryLocationRepository } from "../../support/location-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -77,6 +78,7 @@ describe("updateItem", () => {
         notes: "Shelf B",
       },
       itemRepository,
+      locationRepository: new InMemoryLocationRepository(),
       auditRepository,
       now: new Date("2026-04-30T13:00:00.000Z"),
     });
@@ -103,6 +105,109 @@ describe("updateItem", () => {
     ]);
   });
 
+  it("changes and clears item location with audit history", async () => {
+    const account = createAccount();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        ...createRepository().items[0]!,
+        locationId: "location-1",
+        locationName: "Arms room",
+      },
+    ]);
+    const locationRepository = new InMemoryLocationRepository([
+      {
+        id: "location-2",
+        accountId: "account-1",
+        name: "Motor pool",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+      {
+        id: "location-3",
+        accountId: "account-2",
+        name: "Other account location",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const changed = await updateItem({
+      account,
+      actorId: account.userId,
+      itemId: "item-1",
+      input: {
+        nomenclature: "Original radio",
+        ecn: "ECN-001",
+        serialNumber: null,
+        notes: "Shelf A",
+        locationId: "location-2",
+      },
+      itemRepository,
+      locationRepository,
+      auditRepository,
+      now: new Date("2026-05-01T13:00:00.000Z"),
+    });
+
+    expect(changed).toMatchObject({
+      item: {
+        id: "item-1",
+        locationId: "location-2",
+      },
+    });
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "item.updated",
+        metadata: {
+          changedFields: ["locationId"],
+        },
+      },
+      {
+        action: "item.location_changed",
+        metadata: {
+          previousLocationId: "location-1",
+          previousLocationName: "Arms room",
+          newLocationId: "location-2",
+        },
+      },
+    ]);
+
+    const cleared = await updateItem({
+      account,
+      actorId: account.userId,
+      itemId: "item-1",
+      input: {
+        nomenclature: "Original radio",
+        ecn: "ECN-001",
+        serialNumber: null,
+        notes: "Shelf A",
+        locationId: null,
+      },
+      itemRepository,
+      locationRepository,
+      auditRepository,
+    });
+
+    expect(cleared.item).toMatchObject({
+      id: "item-1",
+      locationId: null,
+    });
+
+    await expect(
+      updateItem({
+        account,
+        actorId: account.userId,
+        itemId: "item-1",
+        input: {
+          locationId: "location-3",
+        },
+        itemRepository,
+        locationRepository,
+        auditRepository,
+      }),
+    ).rejects.toThrow("Location was not found.");
+  });
+
   it("returns the existing item without audit history when nothing changed", async () => {
     const account = createAccount();
     const itemRepository = createRepository();
@@ -119,6 +224,7 @@ describe("updateItem", () => {
         notes: "Shelf A",
       },
       itemRepository,
+      locationRepository: new InMemoryLocationRepository(),
       auditRepository,
       now: new Date("2026-04-30T13:00:00.000Z"),
     });
@@ -137,6 +243,7 @@ describe("updateItem", () => {
       actorId: account.userId,
       itemId: "item-1",
       itemRepository: createRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       auditRepository: new InMemoryAuditRepository(),
     };
 
@@ -198,6 +305,7 @@ describe("updateItem", () => {
         notes: "Shelf A",
       },
       itemRepository,
+      locationRepository: new InMemoryLocationRepository(),
       auditRepository,
     });
 
@@ -227,6 +335,7 @@ describe("updateItem", () => {
           confirmDuplicate: true,
         },
         itemRepository,
+        locationRepository: new InMemoryLocationRepository(),
         auditRepository,
       }),
     ).resolves.toMatchObject({
@@ -250,6 +359,7 @@ describe("updateItem", () => {
           nomenclature: "Blocked update",
         },
         itemRepository: createRepository(),
+        locationRepository: new InMemoryLocationRepository(),
         auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("This account is read-only.");

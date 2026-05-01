@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 
-import { contacts, items } from "@/db/schema";
+import { contacts, items, locations } from "@/db/schema";
 import type { ItemRepository } from "@/modules/items";
 import type { ItemRecord } from "@/modules/items/application/types";
 import type {
@@ -15,6 +15,7 @@ type ItemRow = typeof items.$inferSelect;
 type ItemRowWithContact = {
   item: ItemRow;
   contact: typeof contacts.$inferSelect | null;
+  location: typeof locations.$inferSelect | null;
 };
 type ItemOperation = <T>(
   operation: (transaction: AuthenticatedDatabaseTransaction) => Promise<T>,
@@ -23,6 +24,7 @@ type ItemOperation = <T>(
 function toItemRecord(
   row: ItemRow,
   contactName: string | null = null,
+  locationName: string | null = null,
 ): ItemRecord {
   return {
     id: row.id,
@@ -36,13 +38,19 @@ function toItemRecord(
     status: row.status,
     signedToContactId: row.signedToContactId,
     signedToContactName: contactName,
+    locationId: row.locationId,
+    locationName,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
 function toItemRecordFromJoinedRow(row: ItemRowWithContact): ItemRecord {
-  return toItemRecord(row.item, row.contact?.displayName ?? null);
+  return toItemRecord(
+    row.item,
+    row.contact?.displayName ?? null,
+    row.location?.name ?? null,
+  );
 }
 
 function createItemRepository(run: ItemOperation): ItemRepository {
@@ -62,9 +70,10 @@ function createItemRepository(run: ItemOperation): ItemRepository {
 
     const rows = await run((transaction) =>
       transaction
-        .select({ item: items, contact: contacts })
+        .select({ item: items, contact: contacts, location: locations })
         .from(items)
         .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+        .leftJoin(locations, eq(items.locationId, locations.id))
         .where(and(...filters))
         .orderBy(desc(items.createdAt)),
     );
@@ -93,9 +102,10 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findById(accountId, itemId) {
       const [row] = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts })
+          .select({ item: items, contact: contacts, location: locations })
           .from(items)
           .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(locations, eq(items.locationId, locations.id))
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .limit(1),
       );
@@ -125,9 +135,10 @@ function createItemRepository(run: ItemOperation): ItemRepository {
 
       const [row] = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts })
+          .select({ item: items, contact: contacts, location: locations })
           .from(items)
           .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(locations, eq(items.locationId, locations.id))
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .limit(1),
       );
@@ -137,9 +148,10 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findByEcn(accountId, ecn) {
       const rows = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts })
+          .select({ item: items, contact: contacts, location: locations })
           .from(items)
           .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(locations, eq(items.locationId, locations.id))
           .where(and(eq(items.accountId, accountId), eq(items.ecn, ecn)))
           .orderBy(desc(items.createdAt)),
       );
@@ -149,9 +161,10 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findBySerialNumber(accountId, serialNumber) {
       const rows = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts })
+          .select({ item: items, contact: contacts, location: locations })
           .from(items)
           .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(locations, eq(items.locationId, locations.id))
           .where(
             and(
               eq(items.accountId, accountId),

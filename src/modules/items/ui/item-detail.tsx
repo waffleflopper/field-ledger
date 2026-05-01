@@ -176,6 +176,7 @@ function DetailSummary({
           label="Generated Field Ledger ID"
           value={item.generatedId}
         />
+        <MetadataRow label="Location" value={item.locationName ?? null} />
         <MetadataRow label="Updated" value={formatDate(item.updatedAt)} />
         <div className="md:col-span-2">
           <MetadataRow label="Notes" value={item.notes} />

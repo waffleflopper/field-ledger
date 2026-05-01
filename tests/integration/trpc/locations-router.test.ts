@@ -5,10 +5,10 @@ import { appRouter } from "@/server/trpc/router";
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
-import { InMemoryContactRepository } from "../../support/contact-repository";
+import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
-import { createEmptyLocationRepository } from "../../support/location-repository";
+import { InMemoryLocationRepository } from "../../support/location-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -26,16 +26,16 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
 function createCaller({
   account = createAccount(),
   auditRepository = new InMemoryAuditRepository(),
-  contactRepository = new InMemoryContactRepository(),
+  locationRepository = new InMemoryLocationRepository(),
 }: {
   account?: AccountRecord;
   auditRepository?: InMemoryAuditRepository;
-  contactRepository?: InMemoryContactRepository;
+  locationRepository?: InMemoryLocationRepository;
 } = {}) {
   const accountRepository = new InMemoryAccountRepository([account]);
+  const contactRepository = createEmptyContactRepository();
   const handReceiptRepository = createEmptyHandReceiptRepository();
   const itemRepository = createEmptyItemRepository();
-  const locationRepository = createEmptyLocationRepository();
 
   return appRouter.createCaller({
     session: {
@@ -60,45 +60,45 @@ function createCaller({
   });
 }
 
-describe("contactsRouter", () => {
-  it("creates, lists, and searches account contacts through tRPC", async () => {
-    const contactRepository = new InMemoryContactRepository();
+describe("locationsRouter", () => {
+  it("creates, lists, and searches account locations through tRPC", async () => {
+    const locationRepository = new InMemoryLocationRepository();
     const auditRepository = new InMemoryAuditRepository();
-    const caller = createCaller({ auditRepository, contactRepository });
+    const caller = createCaller({ auditRepository, locationRepository });
 
-    const contact = await caller.contacts.create({
-      displayName: "SSG Rivera",
+    const location = await caller.locations.create({
+      name: "Arms room",
     });
 
-    expect(contact).toMatchObject({
+    expect(location).toMatchObject({
       accountId: "account-1",
-      displayName: "SSG Rivera",
+      name: "Arms room",
     });
-    await expect(caller.contacts.list()).resolves.toMatchObject([
+    await expect(caller.locations.list()).resolves.toMatchObject([
       {
-        displayName: "SSG Rivera",
+        name: "Arms room",
       },
     ]);
     await expect(
-      caller.contacts.search({ query: "ssg" }),
+      caller.locations.search({ query: "arms" }),
     ).resolves.toMatchObject([
       {
-        displayName: "SSG Rivera",
+        name: "Arms room",
       },
     ]);
     expect(auditRepository.events).toMatchObject([
       {
-        action: "contact.created",
+        action: "location.created",
       },
     ]);
   });
 
-  it("maps read-only contact creation to FORBIDDEN while keeping reads available", async () => {
-    const contactRepository = new InMemoryContactRepository([
+  it("maps read-only location creation to FORBIDDEN while keeping reads available", async () => {
+    const locationRepository = new InMemoryLocationRepository([
       {
-        id: "contact-1",
+        id: "location-1",
         accountId: "account-1",
-        displayName: "SSG Rivera",
+        name: "Arms room",
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -108,17 +108,17 @@ describe("contactsRouter", () => {
         accessState: "paused_read_only",
         subscriptionTier: "pro",
       }),
-      contactRepository,
+      locationRepository,
     });
 
-    await expect(caller.contacts.list()).resolves.toMatchObject([
+    await expect(caller.locations.list()).resolves.toMatchObject([
       {
-        displayName: "SSG Rivera",
+        name: "Arms room",
       },
     ]);
     await expect(
-      caller.contacts.create({
-        displayName: "CPL Nguyen",
+      caller.locations.create({
+        name: "Motor pool",
       }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",

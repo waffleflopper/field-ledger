@@ -238,6 +238,26 @@ export const contacts = pgTable(
   ],
 ).enableRLS();
 
+export const locations = pgTable(
+  "locations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("locations_account_id_name_idx").on(table.accountId, table.name),
+  ],
+).enableRLS();
+
 export const items = pgTable(
   "items",
   {
@@ -260,6 +280,9 @@ export const items = pgTable(
         onDelete: "set null",
       },
     ),
+    locationId: uuid("location_id").references(() => locations.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -286,6 +309,10 @@ export const items = pgTable(
     uniqueIndex("items_account_id_generated_id_unique_idx").on(
       table.accountId,
       table.generatedId,
+    ),
+    index("items_account_id_location_id_idx").on(
+      table.accountId,
+      table.locationId,
     ),
   ],
 ).enableRLS();

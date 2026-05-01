@@ -27,6 +27,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       contactRepository: ctx.contactRepository,
       handReceiptRepository: ctx.handReceiptRepository,
       itemRepository: ctx.itemRepository,
+      locationRepository: ctx.locationRepository,
       unitOfWork: ctx.unitOfWork,
     },
   });

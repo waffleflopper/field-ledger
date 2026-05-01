@@ -12,7 +12,9 @@ export type KnownAuditAction =
   | "item.restored"
   | "item.signed_to_assigned"
   | "item.signed_to_cleared"
-  | "item.updated";
+  | "item.location_changed"
+  | "item.updated"
+  | "location.created";
 
 export type AuditAction = KnownAuditAction | (string & {});
 

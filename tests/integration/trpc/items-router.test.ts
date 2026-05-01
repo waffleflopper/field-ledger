@@ -9,6 +9,7 @@ import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { InMemoryContactRepository } from "../../support/contact-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
+import { InMemoryLocationRepository } from "../../support/location-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -77,6 +78,7 @@ function createCaller({
   contactRepository = new InMemoryContactRepository(),
   handReceiptRepository = createHandReceiptRepository(),
   itemRepository = new InMemoryItemRepository(),
+  locationRepository = new InMemoryLocationRepository(),
 }: {
   account?: AccountRecord;
   accountRepository?: InMemoryAccountRepository;
@@ -84,6 +86,7 @@ function createCaller({
   contactRepository?: InMemoryContactRepository;
   handReceiptRepository?: InMemoryHandReceiptRepository;
   itemRepository?: InMemoryItemRepository;
+  locationRepository?: InMemoryLocationRepository;
 } = {}) {
   return appRouter.createCaller({
     session: {
@@ -96,12 +99,14 @@ function createCaller({
     contactRepository,
     handReceiptRepository,
     itemRepository,
+    locationRepository,
     unitOfWork: createInMemoryAppUnitOfWork({
       accountRepository,
       auditRepository,
       contactRepository,
       handReceiptRepository,
       itemRepository,
+      locationRepository,
     }),
   });
 }
@@ -262,6 +267,104 @@ describe("itemsRouter", () => {
           changedFields: ["nomenclature", "ecn", "notes"],
         },
       },
+    ]);
+  });
+
+  it("creates, changes, and clears item location through the typed router", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const locationRepository = new InMemoryLocationRepository([
+      {
+        id: "5e61a92a-ae42-4f8f-a6ef-ae50858a404a",
+        accountId: "account-1",
+        name: "Arms room",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+      {
+        id: "95b41e31-bacc-48db-985f-ac03b7f8760f",
+        accountId: "account-1",
+        name: "Motor pool",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+      {
+        id: "7aa24bb9-5b46-4be3-a96c-62b927ad68cc",
+        accountId: "account-2",
+        name: "Other account location",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const itemRepository = new InMemoryItemRepository();
+    const caller = createCaller({
+      auditRepository,
+      itemRepository,
+      locationRepository,
+    });
+
+    const created = await caller.items.create({
+      handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      nomenclature: "Location radio",
+      ecn: "ECN-LOC",
+      locationId: "5e61a92a-ae42-4f8f-a6ef-ae50858a404a",
+    });
+
+    expect(created.item).toMatchObject({
+      locationId: "5e61a92a-ae42-4f8f-a6ef-ae50858a404a",
+    });
+
+    if (!created.item) {
+      throw new Error("Expected item to be created.");
+    }
+
+    const itemId = created.item.id;
+    await expect(
+      caller.items.update({
+        id: itemId,
+        nomenclature: "Location radio",
+        ecn: "ECN-LOC",
+        serialNumber: null,
+        notes: null,
+        locationId: "95b41e31-bacc-48db-985f-ac03b7f8760f",
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        locationId: "95b41e31-bacc-48db-985f-ac03b7f8760f",
+      },
+    });
+    await expect(
+      caller.items.update({
+        id: itemId,
+        nomenclature: "Location radio",
+        ecn: "ECN-LOC",
+        serialNumber: null,
+        notes: null,
+        locationId: null,
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        locationId: null,
+      },
+    });
+    await expect(
+      caller.items.update({
+        id: itemId,
+        nomenclature: "Location radio",
+        ecn: "ECN-LOC",
+        serialNumber: null,
+        notes: null,
+        locationId: "7aa24bb9-5b46-4be3-a96c-62b927ad68cc",
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Location was not found.",
+    });
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "item.created",
+      "item.updated",
+      "item.location_changed",
+      "item.updated",
+      "item.location_changed",
     ]);
   });
 

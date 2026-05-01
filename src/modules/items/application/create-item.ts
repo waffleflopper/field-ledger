@@ -5,6 +5,7 @@ import type {
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
+import type { LocationRepository } from "@/modules/locations";
 import { checkDuplicateIdentifiers } from "./check-duplicate-identifiers";
 import { allocateGeneratedId } from "./generated-id";
 import type { ItemRepository } from "./item-repository";
@@ -19,11 +20,13 @@ type CreateItemInput = {
     ecn?: string | null;
     serialNumber?: string | null;
     notes?: string | null;
+    locationId?: string | null;
     generateFieldLedgerId?: boolean;
     confirmDuplicate?: boolean;
   };
   itemRepository: ItemRepository;
   handReceiptRepository: HandReceiptRepository;
+  locationRepository: LocationRepository;
   accountRepository: Pick<AccountRepository, "incrementAndGetNextItemSequence">;
   auditRepository: AuditRepository;
   now?: Date;
@@ -41,6 +44,7 @@ export async function createItem({
   input,
   itemRepository,
   handReceiptRepository,
+  locationRepository,
   accountRepository,
   auditRepository,
   now = new Date(),
@@ -56,6 +60,7 @@ export async function createItem({
   const ecn = cleanOptionalText(input.ecn);
   const serialNumber = cleanOptionalText(input.serialNumber);
   const notes = cleanOptionalText(input.notes);
+  const locationId = input.locationId ?? null;
 
   if (!nomenclature) {
     throw new Error("Item nomenclature is required.");
@@ -76,6 +81,14 @@ export async function createItem({
 
   if (handReceipt.status !== "active") {
     throw new Error("Hand receipt is not active.");
+  }
+
+  if (locationId) {
+    const location = await locationRepository.findById(account.id, locationId);
+
+    if (!location) {
+      throw new Error("Location was not found.");
+    }
   }
 
   const duplicateWarning = await checkDuplicateIdentifiers({
@@ -108,6 +121,7 @@ export async function createItem({
     notes,
     status: "active",
     signedToContactId: null,
+    locationId,
     createdAt: now,
     updatedAt: now,
   });
@@ -128,6 +142,7 @@ export async function createItem({
         serialNumber,
         generatedId,
       },
+      locationId,
     },
     occurredAt: now,
     repository: auditRepository,

@@ -13,7 +13,9 @@ const auditActionLabels: Record<KnownAuditAction, string> = {
   "item.restored": "Item restored",
   "item.signed_to_assigned": "Item signed to contact",
   "item.signed_to_cleared": "Item signed-to cleared",
+  "item.location_changed": "Item location changed",
   "item.updated": "Item updated",
+  "location.created": "Location created",
   "system.initialized": "System initialized",
 };
 

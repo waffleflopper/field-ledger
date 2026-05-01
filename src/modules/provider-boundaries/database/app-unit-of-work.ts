@@ -8,6 +8,8 @@ import type { HandReceiptRepository } from "@/modules/hand-receipts";
 import { createTransactionalDrizzleHandReceiptRepository } from "@/modules/hand-receipts/infrastructure/drizzle-hand-receipt-repository";
 import type { ItemRepository } from "@/modules/items";
 import { createTransactionalDrizzleItemRepository } from "@/modules/items/infrastructure/drizzle-item-repository";
+import type { LocationRepository } from "@/modules/locations";
+import { createTransactionalDrizzleLocationRepository } from "@/modules/locations/infrastructure/drizzle-location-repository";
 import type { AuthenticatedDatabaseSession } from "./authenticated-session";
 import { runWithAuthenticatedDatabaseSession } from "./authenticated-session";
 import type { createDrizzleClient } from "./drizzle";
@@ -20,6 +22,7 @@ export type AppUnitOfWorkRepositories = {
   contactRepository: ContactRepository;
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
+  locationRepository: LocationRepository;
 };
 
 export type AppUnitOfWork = {
@@ -53,6 +56,8 @@ export function createDrizzleAppUnitOfWork(
           handReceiptRepository:
             createTransactionalDrizzleHandReceiptRepository(transaction),
           itemRepository: createTransactionalDrizzleItemRepository(transaction),
+          locationRepository:
+            createTransactionalDrizzleLocationRepository(transaction),
         }),
       );
     },

@@ -6,6 +6,7 @@ import { InMemoryAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
+import { InMemoryLocationRepository } from "../../support/location-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -57,6 +58,7 @@ describe("createItem", () => {
       },
       itemRepository,
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository,
       now: new Date("2026-04-30T14:00:00.000Z"),
@@ -101,6 +103,7 @@ describe("createItem", () => {
       actorId: account.userId,
       itemRepository: new InMemoryItemRepository(),
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: new InMemoryAuditRepository(),
     };
@@ -142,6 +145,7 @@ describe("createItem", () => {
       },
       itemRepository,
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository,
       auditRepository: new InMemoryAuditRepository(),
       createItemId: () => "item-1",
@@ -156,6 +160,7 @@ describe("createItem", () => {
       },
       itemRepository,
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository,
       auditRepository: new InMemoryAuditRepository(),
       createItemId: () => "item-2",
@@ -193,6 +198,7 @@ describe("createItem", () => {
       },
       itemRepository,
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: new InMemoryAuditRepository(),
       createItemId: () => "item-2",
@@ -222,6 +228,7 @@ describe("createItem", () => {
       },
       itemRepository,
       handReceiptRepository: createHandReceiptRepository(),
+      locationRepository: new InMemoryLocationRepository(),
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: new InMemoryAuditRepository(),
       createItemId: () => "item-2",
@@ -250,6 +257,7 @@ describe("createItem", () => {
         },
         itemRepository: new InMemoryItemRepository(),
         handReceiptRepository: createHandReceiptRepository(),
+        locationRepository: new InMemoryLocationRepository(),
         accountRepository: new InMemoryAccountRepository([account]),
         auditRepository: new InMemoryAuditRepository(),
       }),

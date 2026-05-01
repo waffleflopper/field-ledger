@@ -44,6 +44,7 @@ const createItemInput = z.object({
     .optional()
     .nullable()
     .transform((value) => value ?? null),
+  locationId: z.uuid().optional().nullable(),
   generateFieldLedgerId: z.boolean().optional(),
   confirmDuplicate: z.boolean().optional(),
 });
@@ -98,6 +99,7 @@ const updateItemInput = z.object({
     .optional()
     .nullable()
     .transform((value) => value ?? null),
+  locationId: z.uuid().optional().nullable(),
   confirmDuplicate: z.boolean().optional(),
 });
 
@@ -125,6 +127,7 @@ function toTRPCError(error: unknown): never {
       });
     case "Hand receipt was not found.":
     case "Contact was not found.":
+    case "Location was not found.":
       throw new TRPCError({
         code: "NOT_FOUND",
         message,
@@ -234,6 +237,7 @@ export const itemsRouter = createTRPCRouter({
           ecn: input.ecn,
           serialNumber: input.serialNumber,
           notes: input.notes,
+          locationId: input.locationId ?? null,
           ...(input.generateFieldLedgerId !== undefined
             ? { generateFieldLedgerId: input.generateFieldLedgerId }
             : {}),
@@ -245,6 +249,7 @@ export const itemsRouter = createTRPCRouter({
         auditRepository: repositories.auditRepository,
         handReceiptRepository: repositories.handReceiptRepository,
         itemRepository: repositories.itemRepository,
+        locationRepository: repositories.locationRepository,
       }),
     ),
   ),
@@ -261,12 +266,16 @@ export const itemsRouter = createTRPCRouter({
             ecn: input.ecn,
             serialNumber: input.serialNumber,
             notes: input.notes,
+            ...(input.locationId !== undefined
+              ? { locationId: input.locationId }
+              : {}),
             ...(input.confirmDuplicate !== undefined
               ? { confirmDuplicate: input.confirmDuplicate }
               : {}),
           },
           auditRepository: repositories.auditRepository,
           itemRepository: repositories.itemRepository,
+          locationRepository: repositories.locationRepository,
         }),
       );
 

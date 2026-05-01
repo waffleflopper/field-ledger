@@ -16,6 +16,8 @@ const ownerTwoItemId = "d75d214e-f428-40e2-87e3-c3de7f037cb8";
 const ownerOneInsertAllowedItemId = "961b8bf3-7b61-4e8a-a2fa-8340a42298fd";
 const ownerOneContactId = "dbbd04c1-8466-4498-9219-5108e864fc88";
 const ownerTwoContactId = "5ac2ca34-3070-4d17-b3c2-d4ed836a088e";
+const ownerOneLocationId = "99bf9a6f-85f8-4043-a829-09b697c2aab3";
+const ownerTwoLocationId = "5b3b274b-ef2a-4935-a5a3-d6b96e7c5748";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -76,6 +78,19 @@ describe("items RLS", () => {
       },
     ])} on conflict (id) do nothing`;
 
+    await sql`insert into locations ${sql([
+      {
+        id: ownerOneLocationId,
+        account_id: ownerOneAccountId,
+        name: "Owner one location",
+      },
+      {
+        id: ownerTwoLocationId,
+        account_id: ownerTwoAccountId,
+        name: "Owner two location",
+      },
+    ])} on conflict (id) do nothing`;
+
     await sql`insert into items ${sql([
       {
         id: ownerOneItemId,
@@ -96,6 +111,7 @@ describe("items RLS", () => {
 
   afterAll(async () => {
     await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertAllowedItemId})`;
+    await sql`delete from locations where id in (${ownerOneLocationId}, ${ownerTwoLocationId})`;
     await sql`delete from contacts where id in (${ownerOneContactId}, ${ownerTwoContactId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
@@ -250,6 +266,36 @@ describe("items RLS", () => {
           transaction`update items set signed_to_contact_id = ${ownerTwoContactId} where id = ${ownerOneItemId} returning id`,
       ),
     ).rejects.toThrow();
+  });
+
+  it("prevents an owner from assigning another account's location", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set location_id = ${ownerTwoLocationId} where id = ${ownerOneItemId} returning id`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("allows an owner to assign and clear their own item location", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set location_id = ${ownerOneLocationId} where id = ${ownerOneItemId} returning id, location_id`,
+      ),
+    ).resolves.toEqual([
+      { id: ownerOneItemId, location_id: ownerOneLocationId },
+    ]);
+
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set location_id = null where id = ${ownerOneItemId} returning id, location_id`,
+      ),
+    ).resolves.toEqual([{ id: ownerOneItemId, location_id: null }]);
   });
 
   it("keeps archived item reads scoped to the owner account", async () => {
