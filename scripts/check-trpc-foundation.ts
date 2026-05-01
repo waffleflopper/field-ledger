@@ -22,6 +22,26 @@ async function main() {
       async listByAccountId() {
         return [];
       },
+      async listByTarget() {
+        return [];
+      },
+    },
+    handReceiptRepository: {
+      async createWithAuditEvent() {
+        throw new Error("Foundation check should not create hand receipts.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async updateWithAuditEvent() {
+        throw new Error("Foundation check should not update hand receipts.");
+      },
+      async countActiveByAccountId() {
+        return 0;
+      },
     },
   });
   const health = await caller.foundation.health();

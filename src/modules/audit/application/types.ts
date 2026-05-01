@@ -1,4 +1,12 @@
-export type AuditAction = "system.initialized" | "account.onboarding_completed";
+export type KnownAuditAction =
+  | "system.initialized"
+  | "account.onboarding_completed"
+  | "hand_receipt.created"
+  | "hand_receipt.updated"
+  | "hand_receipt.archived"
+  | "hand_receipt.restored";
+
+export type AuditAction = KnownAuditAction | (string & {});
 
 export type AuditMetadata = Record<string, unknown> | null;
 
@@ -23,6 +31,7 @@ export type RecentActivityItem = {
   id: string;
   action: AuditAction;
   label: string;
+  targetLabel: string | null;
   targetType: string | null;
   targetId: string | null;
   occurredAt: Date;
