@@ -1,0 +1,181 @@
+import { TRPCError } from "@trpc/server";
+import { describe, expect, it } from "vitest";
+
+import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import { appRouter } from "@/server/trpc/router";
+import { InMemoryAccountRepository } from "../../support/account-repository";
+import { InMemoryAuditRepository } from "../../support/audit-repository";
+import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { InMemoryItemRepository } from "../../support/item-repository";
+
+function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
+  return {
+    id: "account-1",
+    userId: "owner-1",
+    accessState: "active",
+    subscriptionTier: "base",
+    trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    onboardingCompletedAt: null,
+    ...overrides,
+  };
+}
+
+function createHandReceiptRepository() {
+  return new InMemoryHandReceiptRepository([
+    {
+      id: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      accountId: "account-1",
+      name: "HQ hand receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "active",
+      createdAt: new Date("2026-04-30T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+    },
+  ]);
+}
+
+function createCaller({
+  account = createAccount(),
+  accountRepository = new InMemoryAccountRepository([account]),
+  auditRepository = new InMemoryAuditRepository(),
+  handReceiptRepository = createHandReceiptRepository(),
+  itemRepository = new InMemoryItemRepository(),
+}: {
+  account?: AccountRecord;
+  accountRepository?: InMemoryAccountRepository;
+  auditRepository?: InMemoryAuditRepository;
+  handReceiptRepository?: InMemoryHandReceiptRepository;
+  itemRepository?: InMemoryItemRepository;
+} = {}) {
+  return appRouter.createCaller({
+    session: {
+      userId: account.userId,
+      email: "owner@example.com",
+    },
+    account,
+    accountRepository,
+    auditRepository,
+    handReceiptRepository,
+    itemRepository,
+    unitOfWork: createInMemoryAppUnitOfWork({
+      accountRepository,
+      auditRepository,
+      handReceiptRepository,
+      itemRepository,
+    }),
+  });
+}
+
+describe("itemsRouter", () => {
+  it("creates an item inside a hand receipt and returns it from that receipt list", async () => {
+    const itemRepository = new InMemoryItemRepository();
+    const caller = createCaller({ itemRepository });
+
+    const result = await caller.items.create({
+      handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      nomenclature: "M4 carbine",
+      ecn: "ECN-001",
+      serialNumber: "SER-001",
+    });
+
+    expect(result.item).toMatchObject({
+      handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      nomenclature: "M4 carbine",
+      ecn: "ECN-001",
+      serialNumber: "SER-001",
+      status: "active",
+    });
+    await expect(
+      caller.items.listByHandReceipt({
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      }),
+    ).resolves.toMatchObject([
+      {
+        nomenclature: "M4 carbine",
+      },
+    ]);
+  });
+
+  it("returns duplicate warnings before confirmed creation", async () => {
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "existing-item",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Existing radio",
+        ecn: null,
+        serialNumber: "SER-DUP",
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({ itemRepository });
+
+    const warning = await caller.items.create({
+      handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      nomenclature: "Second radio",
+      serialNumber: "SER-DUP",
+    });
+
+    expect(warning.duplicateWarning).toMatchObject({
+      hasDuplicate: true,
+      existingItems: [
+        {
+          id: "existing-item",
+          nomenclature: "Existing radio",
+        },
+      ],
+    });
+    expect(itemRepository.items).toHaveLength(1);
+
+    await expect(
+      caller.items.create({
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Second radio",
+        serialNumber: "SER-DUP",
+        confirmDuplicate: true,
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        serialNumber: "SER-DUP",
+      },
+    });
+  });
+
+  it("maps read-only item creation to FORBIDDEN", async () => {
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+      }).items.create({
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Blocked item",
+        ecn: "ECN-001",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+  });
+
+  it("validates identifier input through the typed procedure", async () => {
+    await expect(
+      createCaller().items.create({
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Compass",
+      }),
+    ).rejects.toBeInstanceOf(TRPCError);
+  });
+});

@@ -6,6 +6,7 @@ import { InMemoryAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { createEmptyItemRepository } from "../../support/item-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -31,6 +32,7 @@ describe("accountsRouter", () => {
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: createEmptyAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

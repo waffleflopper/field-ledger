@@ -103,6 +103,11 @@ belongs in domain modules; shell pages are only composition surfaces.
   receipts currently allow authenticated owners to select, insert, and update
   rows where `account_id` belongs to `app.current_auth_subject`; app services
   still enforce read-only capability and lifecycle rules.
+- Item records are account-owned, belong to exactly one current hand receipt,
+  and use the same authenticated database-session boundary. Item RLS also
+  checks that the linked hand receipt belongs to the same account on insert and
+  update, while app services enforce read-only state, active receipt checks, and
+  identifier rules.
 - Service-role or privileged database access must be rare, isolated, and documented.
 - Temporary Phase 1 scaffold exception: local runtime database access currently
   uses the local `postgres` role so the server can initialize the first owner

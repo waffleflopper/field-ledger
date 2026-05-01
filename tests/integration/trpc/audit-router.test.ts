@@ -6,6 +6,7 @@ import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { createEmptyItemRepository } from "../../support/item-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -31,6 +32,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository: new InMemoryAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -72,6 +74,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -138,6 +141,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -190,6 +194,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 

@@ -5,6 +5,7 @@ import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { createEmptyItemRepository } from "../../support/item-repository";
 
 describe("foundationRouter", () => {
   it("serves health through the typed tRPC caller", async () => {
@@ -14,6 +15,7 @@ describe("foundationRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

@@ -10,7 +10,6 @@ import {
   FileUp,
   History,
   Pencil,
-  PackageSearch,
   RotateCcw,
 } from "lucide-react";
 
@@ -25,6 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
+import { CreateItemForm } from "@/modules/items/ui/create-item-form";
+import { ItemList } from "@/modules/items/ui/item-list";
 import { trpc } from "@/trpc/react";
 import { HandReceiptEditForm } from "./hand-receipt-edit-form";
 
@@ -68,7 +69,7 @@ function FutureSection({
   label,
   text,
 }: {
-  icon: typeof PackageSearch;
+  icon: typeof FileUp;
   label: string;
   text: string;
 }) {
@@ -170,6 +171,9 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     targetId: handReceiptId,
     limit: 6,
   });
+  const itemsQuery = trpc.items.listByHandReceipt.useQuery({
+    handReceiptId,
+  });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
@@ -185,6 +189,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
         targetType: "hand_receipt",
         targetId: handReceiptId,
       }),
+      utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
       utilities.billing.capabilities.invalidate(),
     ]);
   }
@@ -204,6 +209,20 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     },
     onError: (error) => {
       setLifecycleError(error.message);
+    },
+  });
+  const createItemMutation = trpc.items.create.useMutation({
+    onSuccess: async (result) => {
+      if (result.item) {
+        await Promise.all([
+          utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
+          utilities.audit.listRecentActivity.invalidate(),
+          utilities.audit.listTargetActivity.invalidate({
+            targetType: "hand_receipt",
+            targetId: handReceiptId,
+          }),
+        ]);
+      }
     },
   });
 
@@ -340,12 +359,40 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           />
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <FutureSection
-            icon={PackageSearch}
-            label="Linked Items"
-            text="Item records for this hand receipt will appear here after the item slice lands."
-          />
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.8fr)]">
+          <section className="space-y-3 rounded-lg border bg-card p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold tracking-normal">
+                  Property Items
+                </h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  One row is one physical accountable item in this receipt.
+                </p>
+              </div>
+              <CreateItemForm
+                canCreate={!isReadOnly && handReceipt.status === "active"}
+                disabledReason={
+                  isReadOnly
+                    ? "This account is read-only. Existing records remain available."
+                    : handReceipt.status !== "active"
+                      ? "Archived hand receipts cannot receive new items."
+                      : null
+                }
+                onSubmit={(input) =>
+                  createItemMutation.mutateAsync({
+                    handReceiptId,
+                    ...input,
+                  })
+                }
+              />
+            </div>
+            {itemsQuery.isLoading ? (
+              <div className="h-24 rounded-lg border bg-secondary" />
+            ) : (
+              <ItemList items={itemsQuery.data ?? []} />
+            )}
+          </section>
           <FutureSection
             icon={FileUp}
             label="Upload 2062"

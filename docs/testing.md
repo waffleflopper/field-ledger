@@ -63,10 +63,11 @@ database rules that restrict which rows a user can access.
 Every account-owned table should have tests proving one account cannot read or
 write another account's rows.
 
-Hand receipt RLS tests cover owner-scoped select, insert, and update behavior.
-Archive and restore are update behaviors, so RLS coverage must prove status
-changes cannot cross account boundaries while application tests prove lifecycle
-rules and read-only blocking.
+Hand receipt and item RLS tests cover owner-scoped select, insert, and update
+behavior. Item RLS also proves a row cannot be linked to another account's hand
+receipt. Archive and restore are update behaviors, so RLS coverage must prove
+status changes cannot cross account boundaries while application tests prove
+lifecycle rules and read-only blocking.
 Application-service tests still cover read-only capability blocking because RLS
 protects row ownership, not product access state.
 
@@ -83,6 +84,8 @@ The account foundation includes the first RLS-protected production table, so
 Current account RLS proof:
 
 - `tests/rls/accounts/accounts-rls.test.ts`
+- `tests/rls/hand-receipts/hand-receipts-rls.test.ts`
+- `tests/rls/items/items-rls.test.ts`
 
 ## Browser/UI Tests
 

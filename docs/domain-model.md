@@ -19,6 +19,7 @@ New accounts initialize with:
 - `trial_starts_at`: first initialization time
 - `trial_ends_at`: 30 days after trial start
 - `onboarding_completed_at`: null until the first-run boundary notice is acknowledged
+- `next_item_sequence`: the next account-local generated item identifier sequence
 
 Account access state is separate from subscription tier.
 
@@ -109,8 +110,10 @@ Rules:
 
 - Duplicate nomenclature is allowed.
 - Duplicate ECN/serial warns but can be confirmed.
-- ECN/serial edits are allowed and audited.
+- Creating an item emits `item.created` with hand receipt and identifier metadata.
+- ECN/serial edits are allowed and audited in the later edit slice.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
+- Generated IDs are account-sequential and allocated from the account record.
 - Item with active 2062 cannot move to another hand receipt until the active 2062 link is closed.
 
 ## Contacts

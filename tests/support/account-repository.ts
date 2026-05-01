@@ -5,6 +5,7 @@ import type {
 
 export class InMemoryAccountRepository implements AccountRepository {
   private accounts = new Map<string, AccountRecord>();
+  private itemSequences = new Map<string, number>();
 
   constructor(accounts: AccountRecord[] = []) {
     for (const account of accounts) {
@@ -41,6 +42,13 @@ export class InMemoryAccountRepository implements AccountRepository {
 
     this.accounts.set(account.userId, updatedAccount);
     return updatedAccount;
+  }
+
+  async incrementAndGetNextItemSequence(accountId: string) {
+    const currentSequence = this.itemSequences.get(accountId) ?? 1;
+
+    this.itemSequences.set(accountId, currentSequence + 1);
+    return currentSequence;
   }
 }
 
