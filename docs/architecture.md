@@ -57,6 +57,12 @@ The audit logger boundary is app-owned. Product modules emit meaningful events
 through audit application services and repository ports; routes, UI components,
 and future provider adapters must not insert audit records directly.
 
+When a product workflow must persist domain state and audit history atomically,
+use the app-owned database unit-of-work boundary. The unit of work provides
+transaction-scoped repositories, including the domain repository and the audit
+repository, inside one authenticated database session. Domain repositories must
+not grow `withAuditEvent` methods or write `audit_events` directly.
+
 Hand receipt lifecycle behavior is owned by the hand receipts module. Archive
 and restore are reversible application-service behaviors, emit audit events, and
 must not be reimplemented in route components or UI-only code. See

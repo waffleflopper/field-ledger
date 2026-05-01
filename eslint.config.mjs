@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "mocks/**",
     ".agents/skills/**",
+    ".sandcastle/worktrees/**",
+    ".sandcastle/npm-cache/**",
+    ".sandcastle/logs/**",
   ]),
 ]);
 

@@ -4,6 +4,7 @@ import { appRouter } from "@/server/trpc/router";
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
+import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(): AccountRecord {
@@ -30,6 +31,7 @@ describe("accountsRouter", () => {
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: createEmptyAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
     await expect(caller.accounts.getOnboardingStatus()).resolves.toMatchObject({

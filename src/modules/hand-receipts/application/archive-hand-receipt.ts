@@ -1,4 +1,5 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import {
   canArchiveHandReceipt,
   canRestoreHandReceipt,
@@ -11,6 +12,7 @@ type LifecycleHandReceiptInput = {
   actorId: string;
   handReceiptId: string;
   handReceiptRepository: HandReceiptRepository;
+  auditRepository: AuditRepository;
   now?: Date;
 };
 
@@ -19,6 +21,7 @@ export async function archiveHandReceipt({
   actorId,
   handReceiptId,
   handReceiptRepository,
+  auditRepository,
   now = new Date(),
 }: LifecycleHandReceiptInput) {
   const capabilities = deriveAccountCapabilities(account, now);
@@ -40,7 +43,7 @@ export async function archiveHandReceipt({
     throw new Error("Hand receipt is already archived.");
   }
 
-  return handReceiptRepository.updateWithAuditEvent(
+  const archived = await handReceiptRepository.update(
     account.id,
     handReceiptId,
     {
@@ -48,18 +51,28 @@ export async function archiveHandReceipt({
       status: "archived",
       updatedAt: now,
     },
-    {
-      accountId: account.id,
-      actorId,
-      action: "hand_receipt.archived",
-      targetType: "hand_receipt",
-      targetId: handReceiptId,
-      metadata: {
-        name: existing.name,
-      },
-      occurredAt: now,
-    },
   );
+
+  if (!archived) {
+    return null;
+  }
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId,
+    action: "hand_receipt.archived",
+    target: {
+      type: "hand_receipt",
+      id: handReceiptId,
+    },
+    metadata: {
+      name: existing.name,
+    },
+    occurredAt: now,
+    repository: auditRepository,
+  });
+
+  return archived;
 }
 
 export async function restoreHandReceipt({
@@ -67,6 +80,7 @@ export async function restoreHandReceipt({
   actorId,
   handReceiptId,
   handReceiptRepository,
+  auditRepository,
   now = new Date(),
 }: LifecycleHandReceiptInput) {
   const capabilities = deriveAccountCapabilities(account, now);
@@ -96,7 +110,7 @@ export async function restoreHandReceipt({
     throw new Error("Active hand receipt limit reached.");
   }
 
-  return handReceiptRepository.updateWithAuditEvent(
+  const restored = await handReceiptRepository.update(
     account.id,
     handReceiptId,
     {
@@ -104,16 +118,26 @@ export async function restoreHandReceipt({
       status: "active",
       updatedAt: now,
     },
-    {
-      accountId: account.id,
-      actorId,
-      action: "hand_receipt.restored",
-      targetType: "hand_receipt",
-      targetId: handReceiptId,
-      metadata: {
-        name: existing.name,
-      },
-      occurredAt: now,
-    },
   );
+
+  if (!restored) {
+    return null;
+  }
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId,
+    action: "hand_receipt.restored",
+    target: {
+      type: "hand_receipt",
+      id: handReceiptId,
+    },
+    metadata: {
+      name: existing.name,
+    },
+    occurredAt: now,
+    repository: auditRepository,
+  });
+
+  return restored;
 }

@@ -27,7 +27,7 @@ async function main() {
       },
     },
     handReceiptRepository: {
-      async createWithAuditEvent() {
+      async create() {
         throw new Error("Foundation check should not create hand receipts.");
       },
       async findByAccountId() {
@@ -36,11 +36,16 @@ async function main() {
       async findById() {
         return null;
       },
-      async updateWithAuditEvent() {
+      async update() {
         throw new Error("Foundation check should not update hand receipts.");
       },
       async countActiveByAccountId() {
         return 0;
+      },
+    },
+    unitOfWork: {
+      async run() {
+        throw new Error("Foundation check should not start a unit of work.");
       },
     },
   });

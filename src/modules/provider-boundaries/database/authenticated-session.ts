@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import type { createDrizzleClient } from "./drizzle";
 
 type DrizzleClient = ReturnType<typeof createDrizzleClient>;
-type DrizzleTransaction = Parameters<
+export type AuthenticatedDatabaseTransaction = Parameters<
   Parameters<DrizzleClient["transaction"]>[0]
 >[0];
 
@@ -14,7 +14,7 @@ export type AuthenticatedDatabaseSession = {
 export async function runWithAuthenticatedDatabaseSession<T>(
   db: DrizzleClient,
   session: AuthenticatedDatabaseSession,
-  operation: (transaction: DrizzleTransaction) => Promise<T>,
+  operation: (transaction: AuthenticatedDatabaseTransaction) => Promise<T>,
 ) {
   if (!session.authSubject.trim()) {
     throw new Error(

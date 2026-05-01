@@ -3,6 +3,7 @@ import {
   canCreateHandReceipt,
   deriveAccountCapabilities,
 } from "@/modules/billing";
+import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import type { HandReceiptRepository } from "./hand-receipt-repository";
 import type { HandReceiptMetadataInput } from "./types";
 
@@ -13,6 +14,7 @@ type CreateHandReceiptInput = {
     name: string;
   };
   handReceiptRepository: HandReceiptRepository;
+  auditRepository: AuditRepository;
   now?: Date;
   createHandReceiptId?: () => string;
 };
@@ -27,6 +29,7 @@ export async function createHandReceipt({
   actorId,
   input,
   handReceiptRepository,
+  auditRepository,
   now = new Date(),
   createHandReceiptId = () => globalThis.crypto.randomUUID(),
 }: CreateHandReceiptInput) {
@@ -50,33 +53,35 @@ export async function createHandReceipt({
   }
 
   const handReceiptId = createHandReceiptId();
-  const handReceipt = await handReceiptRepository.createWithAuditEvent(
-    {
+  const handReceipt = await handReceiptRepository.create({
+    id: handReceiptId,
+    accountId: account.id,
+    name,
+    notes: cleanOptionalText(input.notes),
+    handReceiptNumber: cleanOptionalText(input.handReceiptNumber),
+    holderName: cleanOptionalText(input.holderName),
+    unitName: cleanOptionalText(input.unitName),
+    uic: cleanOptionalText(input.uic),
+    effectiveDate: cleanOptionalText(input.effectiveDate),
+    status: "active",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId,
+    action: "hand_receipt.created",
+    target: {
+      type: "hand_receipt",
       id: handReceiptId,
-      accountId: account.id,
+    },
+    metadata: {
       name,
-      notes: cleanOptionalText(input.notes),
-      handReceiptNumber: cleanOptionalText(input.handReceiptNumber),
-      holderName: cleanOptionalText(input.holderName),
-      unitName: cleanOptionalText(input.unitName),
-      uic: cleanOptionalText(input.uic),
-      effectiveDate: cleanOptionalText(input.effectiveDate),
-      status: "active",
-      createdAt: now,
-      updatedAt: now,
     },
-    {
-      accountId: account.id,
-      actorId,
-      action: "hand_receipt.created",
-      targetType: "hand_receipt",
-      targetId: handReceiptId,
-      metadata: {
-        name,
-      },
-      occurredAt: now,
-    },
-  );
+    occurredAt: now,
+    repository: auditRepository,
+  });
 
   return handReceipt;
 }

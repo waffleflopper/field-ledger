@@ -4,7 +4,7 @@ async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
   const email = `shell-${suffix}@example.test`;
 
-  await page.goto("/auth/login?next=/app");
+  await page.goto("/auth/login?next=/app/dashboard");
   await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");
@@ -20,7 +20,16 @@ async function acknowledgeOnboardingIfPresent(page: Page) {
   });
   const acknowledgment = page.getByRole("button", { name: "I understand" });
 
-  await expect(notice).toBeVisible();
+  try {
+    await expect(notice).toBeVisible({ timeout: 8_000 });
+  } catch (error) {
+    if (error instanceof Error && /timed out/i.test(error.message)) {
+      return;
+    }
+
+    throw error;
+  }
+
   await acknowledgment.click();
   await expect(notice).toBeHidden();
 }

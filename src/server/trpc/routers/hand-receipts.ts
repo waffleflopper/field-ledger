@@ -10,6 +10,10 @@ import {
   restoreHandReceipt,
   updateHandReceipt,
 } from "@/modules/hand-receipts";
+import type {
+  AppUnitOfWork,
+  AppUnitOfWorkRepositories,
+} from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 
 const optionalText = z
@@ -90,6 +94,21 @@ function toTRPCError(error: unknown): never {
   });
 }
 
+async function runInUnitOfWork<T>(
+  ctx: { unitOfWork: AppUnitOfWork },
+  operation: (repositories: AppUnitOfWorkRepositories) => Promise<T>,
+): Promise<T> {
+  try {
+    return await ctx.unitOfWork.run(operation);
+  } catch (error) {
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+
+    toTRPCError(error);
+  }
+}
+
 export const handReceiptsRouter = createTRPCRouter({
   list: protectedProcedure
     .input(listHandReceiptsInput)
@@ -126,9 +145,9 @@ export const handReceiptsRouter = createTRPCRouter({
     }),
   create: protectedProcedure
     .input(createHandReceiptInput)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await createHandReceipt({
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, (repositories) =>
+        createHandReceipt({
           account: ctx.account,
           actorId: ctx.session.userId,
           input: {
@@ -140,17 +159,16 @@ export const handReceiptsRouter = createTRPCRouter({
             uic: input.uic,
             effectiveDate: input.effectiveDate,
           },
-          handReceiptRepository: ctx.handReceiptRepository,
-        });
-      } catch (error) {
-        toTRPCError(error);
-      }
-    }),
+          handReceiptRepository: repositories.handReceiptRepository,
+          auditRepository: repositories.auditRepository,
+        }),
+      ),
+    ),
   update: protectedProcedure
     .input(updateHandReceiptInput)
     .mutation(async ({ ctx, input }) => {
-      try {
-        const updated = await updateHandReceipt({
+      const updated = await runInUnitOfWork(ctx, (repositories) =>
+        updateHandReceipt({
           account: ctx.account,
           actorId: ctx.session.userId,
           handReceiptId: input.id,
@@ -163,77 +181,62 @@ export const handReceiptsRouter = createTRPCRouter({
             uic: input.uic,
             effectiveDate: input.effectiveDate,
           },
-          handReceiptRepository: ctx.handReceiptRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          auditRepository: repositories.auditRepository,
+        }),
+      );
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Hand receipt was not found.",
         });
-
-        if (!updated) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Hand receipt was not found.",
-          });
-        }
-
-        return updated;
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        toTRPCError(error);
       }
+
+      return updated;
     }),
   archive: protectedProcedure
     .input(handReceiptIdInput)
     .mutation(async ({ ctx, input }) => {
-      try {
-        const archived = await archiveHandReceipt({
+      const archived = await runInUnitOfWork(ctx, (repositories) =>
+        archiveHandReceipt({
           account: ctx.account,
           actorId: ctx.session.userId,
           handReceiptId: input.id,
-          handReceiptRepository: ctx.handReceiptRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          auditRepository: repositories.auditRepository,
+        }),
+      );
+
+      if (!archived) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Hand receipt was not found.",
         });
-
-        if (!archived) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Hand receipt was not found.",
-          });
-        }
-
-        return archived;
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        toTRPCError(error);
       }
+
+      return archived;
     }),
   restore: protectedProcedure
     .input(handReceiptIdInput)
     .mutation(async ({ ctx, input }) => {
-      try {
-        const restored = await restoreHandReceipt({
+      const restored = await runInUnitOfWork(ctx, (repositories) =>
+        restoreHandReceipt({
           account: ctx.account,
           actorId: ctx.session.userId,
           handReceiptId: input.id,
-          handReceiptRepository: ctx.handReceiptRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          auditRepository: repositories.auditRepository,
+        }),
+      );
+
+      if (!restored) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Hand receipt was not found.",
         });
-
-        if (!restored) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Hand receipt was not found.",
-          });
-        }
-
-        return restored;
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        toTRPCError(error);
       }
+
+      return restored;
     }),
 });
