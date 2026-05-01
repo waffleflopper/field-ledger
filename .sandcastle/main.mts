@@ -76,7 +76,6 @@ const shellQuote = (value: string) => `'${value.replace(/'/g, "'\\''")}'`;
 
 const hostRepoDir = process.cwd();
 const hostSandboxGitConfigPath = join(hostRepoDir, sandboxGitConfigPath);
-const sourceBranch = execText("git", ["branch", "--show-current"]);
 
 const copySandboxGitConfigHook = [
   "mkdir -p .sandcastle",
@@ -235,7 +234,6 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             agent: sandcastle.codex("gpt-5.5", { effort: "medium" }),
             promptFile: "./.sandcastle/review-prompt.md",
             promptArgs: {
-              SOURCE_BRANCH: sourceBranch,
               BRANCH: issue.branch,
             },
           });
