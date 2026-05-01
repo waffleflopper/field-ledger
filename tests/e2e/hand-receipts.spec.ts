@@ -286,7 +286,9 @@ test("users can assign and clear manual signed-to state without a 2062", async (
   await page.getByLabel("Contact name").fill("SSG Rivera");
   await page.getByRole("button", { name: "Create SSG Rivera" }).click();
 
-  await expect(page.getByText("SSG Rivera")).toBeVisible();
+  await expect(
+    page.getByRole("paragraph").filter({ hasText: "SSG Rivera" }),
+  ).toBeVisible();
   await expect(page.getByText("No 2062")).toBeVisible();
   await expect(page.getByText("Item signed to contact")).toBeVisible();
 
@@ -354,17 +356,20 @@ test("users can archive, review, and restore a hand receipt", async ({
 
   await expect(page.getByText("archived receipt")).toBeVisible();
   await page.getByRole("link", { name: "Hand Receipts" }).first().click();
+  await page.waitForLoadState("networkidle");
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeHidden();
 
-  await page.getByRole("button", { name: "Archived" }).click();
+  const archivedTab = page.getByRole("link", { name: "Archived" });
+  await archivedTab.click();
+  await expect(archivedTab).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Restore" }).click();
-  await page.getByRole("button", { name: "Active" }).click();
+  await page.getByRole("link", { name: "Active" }).click();
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeVisible();

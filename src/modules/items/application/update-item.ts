@@ -67,8 +67,22 @@ function nextEditableItemValues(
   };
 }
 
+function currentEditableItemValues(current: ItemRecord): EditableItemValues {
+  return {
+    nomenclature: current.nomenclature,
+    ecn: current.ecn,
+    serialNumber: current.serialNumber,
+    notes: current.notes,
+    locationId: current.locationId ?? null,
+  };
+}
+
 function changedFields(current: ItemRecord, next: EditableItemValues) {
-  return editableItemFields.filter((field) => current[field] !== next[field]);
+  const currentValues = currentEditableItemValues(current);
+
+  return editableItemFields.filter(
+    (field) => currentValues[field] !== next[field],
+  );
 }
 
 function identifiersChanged(current: ItemRecord, next: EditableItemValues) {
@@ -169,7 +183,7 @@ export async function updateItem({
     repository: auditRepository,
   });
 
-  if (existing.locationId !== updated.locationId) {
+  if ((existing.locationId ?? null) !== (updated.locationId ?? null)) {
     await recordAuditEvent({
       accountId: account.id,
       actorId,

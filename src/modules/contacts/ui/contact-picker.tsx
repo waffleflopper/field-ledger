@@ -32,7 +32,7 @@ export function ContactPicker({
       enabled: !disabled,
     },
   );
-  const contacts = searchQuery.data ?? [];
+  const contacts = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
   const trimmedQuery = query.trim();
   const hasExactMatch = useMemo(
     () =>

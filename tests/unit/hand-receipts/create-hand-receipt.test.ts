@@ -183,6 +183,7 @@ describe("createHandReceipt", () => {
   });
 
   it("allows trial and Pro accounts to create beyond the Base limit", async () => {
+    const now = new Date("2026-04-30T12:00:00.000Z");
     const seededReceipts = Array.from({ length: 4 }, (_, index) => ({
       id: `active-${index}`,
       accountId: "account-1",
@@ -212,6 +213,7 @@ describe("createHandReceipt", () => {
           seededReceipts,
         ),
         auditRepository: new InMemoryAuditRepository(),
+        now,
       }),
     ).resolves.toMatchObject({
       name: "Trial receipt",
@@ -230,6 +232,7 @@ describe("createHandReceipt", () => {
           seededReceipts,
         ),
         auditRepository: new InMemoryAuditRepository(),
+        now,
       }),
     ).resolves.toMatchObject({
       name: "Pro receipt",

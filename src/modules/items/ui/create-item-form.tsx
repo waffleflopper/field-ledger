@@ -75,10 +75,13 @@ export function CreateItemForm({
     useState<CreateItemResult["duplicateWarning"]>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [locationPending, setLocationPending] = useState(false);
   const nomenclatureId = useId();
   const ecnId = useId();
   const serialNumberId = useId();
   const generatedIdId = useId();
+  const generatedIdLabelId = useId();
+  const generatedIdDescriptionId = useId();
   const notesId = useId();
 
   const submitButtonLabel = getSubmitButtonLabel({
@@ -96,6 +99,7 @@ export function CreateItemForm({
     setConfirmDuplicate(false);
     setDuplicateWarning(undefined);
     setError(null);
+    setLocationPending(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -211,11 +215,10 @@ export function CreateItemForm({
             </div>
           </div>
 
-          <label
-            className="flex items-start gap-3 rounded-md border bg-secondary px-3 py-2 text-sm"
-            htmlFor={generatedIdId}
-          >
+          <div className="flex items-start gap-3 rounded-md border bg-secondary px-3 py-2 text-sm">
             <input
+              aria-describedby={generatedIdDescriptionId}
+              aria-labelledby={generatedIdLabelId}
               checked={generateFieldLedgerId}
               className="mt-1"
               id={generatedIdId}
@@ -225,14 +228,21 @@ export function CreateItemForm({
               type="checkbox"
             />
             <span>
-              <span className="block font-medium text-foreground">
+              <Label
+                className="block font-medium text-foreground"
+                htmlFor={generatedIdId}
+                id={generatedIdLabelId}
+              >
                 Generate Field Ledger ID
-              </span>
-              <span className="block leading-6 text-muted-foreground">
+              </Label>
+              <span
+                className="block leading-6 text-muted-foreground"
+                id={generatedIdDescriptionId}
+              >
                 Use this when ECN and serial are not available yet.
               </span>
             </span>
-          </label>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor={notesId}>Notes</Label>
@@ -249,6 +259,7 @@ export function CreateItemForm({
             currentLocationName={location?.name ?? null}
             disabled={!canCreate}
             isPending={submitting}
+            onPendingChange={setLocationPending}
             onChange={setLocation}
             value={location?.id ?? null}
           />
@@ -290,7 +301,10 @@ export function CreateItemForm({
             >
               Cancel
             </Button>
-            <Button disabled={submitting || !canCreate} type="submit">
+            <Button
+              disabled={submitting || locationPending || !canCreate}
+              type="submit"
+            >
               {submitButtonLabel}
             </Button>
           </DialogFooter>

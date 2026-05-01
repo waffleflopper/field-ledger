@@ -36,7 +36,9 @@ test("users can search items globally and open item detail on mobile", async ({
   await createDialog.getByLabel("Nomenclature").fill("Searchable radio");
   await createDialog.getByLabel("ECN").fill("ECN-SEARCH-1");
   await createDialog.getByLabel("Location").fill("Search cage");
-  await createDialog.getByRole("button", { name: "Create Search cage" }).click();
+  await createDialog
+    .getByRole("button", { name: "Create Search cage" })
+    .click();
   await createDialog.getByRole("button", { name: "Create item" }).click();
   await expect(
     page.getByRole("link", { name: "Open Searchable radio" }),
@@ -44,7 +46,9 @@ test("users can search items globally and open item detail on mobile", async ({
 
   await page.goto("/app/items");
   await expect(page.getByRole("heading", { name: "Items" })).toBeVisible();
-  await page.getByRole("searchbox", { name: "Search items" }).fill("search cage");
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill("search cage");
 
   await expect(
     page.getByRole("link", { name: "Open Searchable radio" }),
@@ -102,5 +106,5 @@ test("archived item records appear only when deliberately included", async ({
   await expect(
     page.getByRole("link", { name: "Open Archived search radio" }),
   ).toBeVisible();
-  await expect(page.getByText("Archived item")).toBeVisible();
+  await expect(page.getByText("Archived item", { exact: true })).toBeVisible();
 });

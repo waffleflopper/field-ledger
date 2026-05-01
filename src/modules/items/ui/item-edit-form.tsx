@@ -74,6 +74,7 @@ export function ItemEditForm({
   const utilities = trpc.useUtils();
   const [form, setForm] = useState<FormState>(() => toFormState(item));
   const [error, setError] = useState<string | null>(null);
+  const [locationPending, setLocationPending] = useState(false);
   const [pendingDuplicate, setPendingDuplicate] =
     useState<DuplicateCheckResult | null>(null);
   const updateMutation = trpc.items.update.useMutation({
@@ -120,7 +121,7 @@ export function ItemEditForm({
   }
 
   async function submitForm(confirmDuplicate = false) {
-    if (isReadOnly) {
+    if (isReadOnly || locationPending) {
       return;
     }
 
@@ -256,6 +257,7 @@ export function ItemEditForm({
               currentLocationName={form.locationName}
               disabled={isReadOnly}
               isPending={updateMutation.isPending}
+              onPendingChange={setLocationPending}
               onChange={(nextLocation) => {
                 setForm((current) => ({
                   ...current,
@@ -287,7 +289,10 @@ export function ItemEditForm({
             Cancel
           </Button>
           {isReadOnly ? null : (
-            <Button disabled={updateMutation.isPending} type="submit">
+            <Button
+              disabled={updateMutation.isPending || locationPending}
+              type="submit"
+            >
               {updateMutation.isPending ? "Saving" : "Save changes"}
             </Button>
           )}

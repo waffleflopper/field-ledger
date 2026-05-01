@@ -65,15 +65,17 @@ export const locationsRouter = createTRPCRouter({
         repository: ctx.locationRepository,
       }),
     ),
-  create: protectedProcedure.input(locationNameInput).mutation(({ ctx, input }) =>
-    runInUnitOfWork(ctx, (repositories) =>
-      createLocation({
-        account: ctx.account,
-        actorId: ctx.session.userId,
-        input,
-        locationRepository: repositories.locationRepository,
-        auditRepository: repositories.auditRepository,
-      }),
+  create: protectedProcedure
+    .input(locationNameInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, (repositories) =>
+        createLocation({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input,
+          locationRepository: repositories.locationRepository,
+          auditRepository: repositories.auditRepository,
+        }),
+      ),
     ),
-  ),
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { MapPin, X } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ type LocationPickerProps = {
   disabled?: boolean;
   isPending?: boolean;
   onChange: (location: { id: string; name: string } | null) => void;
+  onPendingChange?: (pending: boolean) => void;
 };
 
 function getSelectedLocation({
@@ -48,6 +49,7 @@ export function LocationPicker({
   disabled = false,
   isPending = false,
   onChange,
+  onPendingChange,
 }: LocationPickerProps) {
   const utilities = trpc.useUtils();
   const inputId = useId();
@@ -68,7 +70,7 @@ export function LocationPicker({
       ]);
     },
   });
-  const locations = searchQuery.data ?? [];
+  const locations = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
   const trimmedQuery = query.trim();
   const selectedLocation = getSelectedLocation({
     currentLocationName,
@@ -85,6 +87,10 @@ export function LocationPicker({
     [locations, trimmedQuery],
   );
   const pending = isPending || createMutation.isPending;
+
+  useEffect(() => {
+    onPendingChange?.(pending);
+  }, [onPendingChange, pending]);
 
   return (
     <div className="space-y-2">

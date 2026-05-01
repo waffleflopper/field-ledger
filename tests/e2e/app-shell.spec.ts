@@ -23,7 +23,7 @@ async function acknowledgeOnboardingIfPresent(page: Page) {
   try {
     await expect(notice).toBeVisible({ timeout: 8_000 });
   } catch (error) {
-    if (error instanceof Error && /timed out/i.test(error.message)) {
+    if (error instanceof Error && /timeout/i.test(error.message)) {
       return;
     }
 

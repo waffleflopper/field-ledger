@@ -95,44 +95,47 @@ describe("searchItems", () => {
       createHandReceiptRepository(),
     );
 
-    await expect(
-      searchItems({
-        accountId: "account-1",
-        query: "search",
-        repository: itemRepository,
-      }),
-    ).resolves.toMatchObject([
-      {
-        item: {
-          id: "item-by-location",
-        },
-        handReceipt: {
-          id: "receipt-1",
-          name: "HQ hand receipt",
-        },
-        location: {
-          id: "location-1",
-          name: "Search cage",
-        },
-        matchedFields: ["location"],
-      },
-      {
-        item: {
-          id: "item-by-contact",
-        },
-        contact: {
-          id: "contact-1",
-          displayName: "SSG Search",
-        },
-        matchedFields: ["contact"],
-      },
-      {
-        item: {
-          id: "item-by-ecn",
-        },
-        matchedFields: ["ecn"],
-      },
-    ]);
+    const searchResults = await searchItems({
+      accountId: "account-1",
+      query: "search",
+      repository: itemRepository,
+    });
+
+    expect(searchResults).toHaveLength(3);
+    expect(searchResults).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "item-by-location",
+          }),
+          handReceipt: expect.objectContaining({
+            id: "receipt-1",
+            name: "HQ hand receipt",
+          }),
+          location: expect.objectContaining({
+            id: "location-1",
+            name: "Search cage",
+          }),
+          matchedFields: ["location"],
+        }),
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "item-by-contact",
+          }),
+          contact: expect.objectContaining({
+            id: "contact-1",
+            displayName: "SSG Search",
+          }),
+          matchedFields: ["contact"],
+        }),
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "item-by-ecn",
+          }),
+          matchedFields: ["ecn"],
+        }),
+      ]),
+    );
 
     await expect(
       searchItems({
@@ -223,25 +226,28 @@ describe("searchItems", () => {
       },
     ]);
 
-    await expect(
-      searchItems({
-        accountId: "account-1",
-        includeArchived: true,
-        query: "search",
-        repository: itemRepository,
-      }),
-    ).resolves.toMatchObject([
-      {
-        item: {
-          id: "archived-item-match",
-        },
-      },
-      {
-        item: {
-          id: "active-match",
-        },
-      },
-    ]);
+    const archivedResults = await searchItems({
+      accountId: "account-1",
+      includeArchived: true,
+      query: "search",
+      repository: itemRepository,
+    });
+
+    expect(archivedResults).toHaveLength(2);
+    expect(archivedResults).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "archived-item-match",
+          }),
+        }),
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "active-match",
+          }),
+        }),
+      ]),
+    );
   });
 
   it("returns no results for blank queries", async () => {

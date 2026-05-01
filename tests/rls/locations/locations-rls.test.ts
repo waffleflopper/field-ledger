@@ -11,8 +11,7 @@ const ownerOneAccountId = "30cb269f-0f50-40a0-993a-cc494fa8fcb2";
 const ownerTwoAccountId = "298dc5fc-2f26-42bc-b4a4-cdbf5d572e83";
 const ownerOneLocationId = "0e7a3923-c6a3-4c02-ab7e-cc932e47f0af";
 const ownerTwoLocationId = "6cad59ab-cb57-40bb-89da-d45aef9bb399";
-const ownerOneInsertAllowedLocationId =
-  "bc990747-9359-4eef-a00b-8b13ef91c162";
+const ownerOneInsertAllowedLocationId = "bc990747-9359-4eef-a00b-8b13ef91c162";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
