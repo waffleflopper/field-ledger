@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { listRecentActivity, listTargetActivity } from "@/modules/audit";
+import type { AuditRepository } from "@/modules/audit";
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 
 const activityLimitInput = z
@@ -9,24 +10,31 @@ const activityLimitInput = z
   })
   .optional();
 
+function activityOptions(
+  accountId: string,
+  repository: AuditRepository,
+  limit: number | undefined,
+) {
+  return limit === undefined
+    ? {
+        accountId,
+        repository,
+      }
+    : {
+        accountId,
+        repository,
+        limit,
+      };
+}
+
 export const auditRouter = createTRPCRouter({
   listRecentActivity: protectedProcedure
     .input(activityLimitInput)
-    .query(({ ctx, input }) => {
-      const options = {
-        accountId: ctx.account.id,
-        repository: ctx.auditRepository,
-      };
-
-      return listRecentActivity(
-        input?.limit === undefined
-          ? options
-          : {
-              ...options,
-              limit: input.limit,
-            },
-      );
-    }),
+    .query(({ ctx, input }) =>
+      listRecentActivity(
+        activityOptions(ctx.account.id, ctx.auditRepository, input?.limit),
+      ),
+    ),
   listTargetActivity: protectedProcedure
     .input(
       z.object({
@@ -36,21 +44,10 @@ export const auditRouter = createTRPCRouter({
       }),
     )
     .query(({ ctx, input }) =>
-      listTargetActivity(
-        input.limit === undefined
-          ? {
-              accountId: ctx.account.id,
-              repository: ctx.auditRepository,
-              targetId: input.targetId,
-              targetType: input.targetType,
-            }
-          : {
-              accountId: ctx.account.id,
-              repository: ctx.auditRepository,
-              targetId: input.targetId,
-              targetType: input.targetType,
-              limit: input.limit,
-            },
-      ),
+      listTargetActivity({
+        ...activityOptions(ctx.account.id, ctx.auditRepository, input.limit),
+        targetId: input.targetId,
+        targetType: input.targetType,
+      }),
     ),
 });

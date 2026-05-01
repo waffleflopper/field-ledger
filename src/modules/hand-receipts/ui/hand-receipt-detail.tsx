@@ -173,22 +173,26 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  async function refreshHandReceiptContext(updated: HandReceiptRecord) {
+    setLifecycleError(null);
+    utilities.handReceipts.getById.setData({ id: handReceiptId }, updated);
+    await Promise.all([
+      utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
+      utilities.handReceipts.list.invalidate(),
+      utilities.handReceipts.listArchived.invalidate(),
+      utilities.audit.listRecentActivity.invalidate(),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "hand_receipt",
+        targetId: handReceiptId,
+      }),
+      utilities.billing.capabilities.invalidate(),
+    ]);
+  }
+
   const archiveMutation = trpc.handReceipts.archive.useMutation({
     onSuccess: async (archived) => {
-      setLifecycleError(null);
       setIsArchiveDialogOpen(false);
-      utilities.handReceipts.getById.setData({ id: handReceiptId }, archived);
-      await Promise.all([
-        utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
-        utilities.handReceipts.list.invalidate(),
-        utilities.handReceipts.listArchived.invalidate(),
-        utilities.audit.listRecentActivity.invalidate(),
-        utilities.audit.listTargetActivity.invalidate({
-          targetType: "hand_receipt",
-          targetId: handReceiptId,
-        }),
-        utilities.billing.capabilities.invalidate(),
-      ]);
+      await refreshHandReceiptContext(archived);
     },
     onError: (error) => {
       setLifecycleError(error.message);
@@ -196,19 +200,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   });
   const restoreMutation = trpc.handReceipts.restore.useMutation({
     onSuccess: async (restored) => {
-      setLifecycleError(null);
-      utilities.handReceipts.getById.setData({ id: handReceiptId }, restored);
-      await Promise.all([
-        utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
-        utilities.handReceipts.list.invalidate(),
-        utilities.handReceipts.listArchived.invalidate(),
-        utilities.audit.listRecentActivity.invalidate(),
-        utilities.audit.listTargetActivity.invalidate({
-          targetType: "hand_receipt",
-          targetId: handReceiptId,
-        }),
-        utilities.billing.capabilities.invalidate(),
-      ]);
+      await refreshHandReceiptContext(restored);
     },
     onError: (error) => {
       setLifecycleError(error.message);
