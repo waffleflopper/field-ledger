@@ -14,6 +14,9 @@ async function main() {
       async markOnboardingCompleted() {
         return null;
       },
+      async incrementAndGetNextItemSequence() {
+        throw new Error("Foundation check should not allocate item sequences.");
+      },
     },
     auditRepository: {
       async record() {
@@ -23,6 +26,20 @@ async function main() {
         return [];
       },
       async listByTarget() {
+        return [];
+      },
+    },
+    contactRepository: {
+      async create() {
+        throw new Error("Foundation check should not create contacts.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async searchByName() {
         return [];
       },
     },
@@ -41,6 +58,52 @@ async function main() {
       },
       async countActiveByAccountId() {
         return 0;
+      },
+    },
+    itemRepository: {
+      async create() {
+        throw new Error("Foundation check should not create items.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async findByHandReceiptId() {
+        return [];
+      },
+      async update() {
+        throw new Error("Foundation check should not update items.");
+      },
+      async findByEcn() {
+        return [];
+      },
+      async findBySerialNumber() {
+        return [];
+      },
+      async countActiveByAccountId() {
+        return 0;
+      },
+      async countActiveByHandReceiptId() {
+        return 0;
+      },
+      async search() {
+        return [];
+      },
+    },
+    locationRepository: {
+      async create() {
+        throw new Error("Foundation check should not create locations.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async searchByName() {
+        return [];
       },
     },
     unitOfWork: {

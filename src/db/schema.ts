@@ -11,6 +11,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -41,6 +42,8 @@ export const handReceiptStatusEnum = pgEnum("hand_receipt_status", [
   "active",
   "archived",
 ]);
+
+export const itemStatusEnum = pgEnum("item_status", ["active", "archived"]);
 
 export const authUser = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -138,6 +141,7 @@ export const accounts = pgTable(
     onboardingCompletedAt: timestamp("onboarding_completed_at", {
       withTimezone: true,
     }),
+    nextItemSequence: integer("next_item_sequence").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -207,6 +211,111 @@ export const handReceipts = pgTable(
       table.accountId,
       table.status,
       table.createdAt.desc(),
+    ),
+  ],
+).enableRLS();
+
+export const contacts = pgTable(
+  "contacts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    displayName: text("display_name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("contacts_account_id_display_name_idx").on(
+      table.accountId,
+      table.displayName,
+    ),
+  ],
+).enableRLS();
+
+export const locations = pgTable(
+  "locations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("locations_account_id_lower_name_unique_idx").on(
+      table.accountId,
+      sql`lower(${table.name})`,
+    ),
+  ],
+).enableRLS();
+
+export const items = pgTable(
+  "items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    handReceiptId: uuid("hand_receipt_id")
+      .notNull()
+      .references(() => handReceipts.id),
+    nomenclature: text("nomenclature").notNull(),
+    ecn: text("ecn"),
+    serialNumber: text("serial_number"),
+    generatedId: text("generated_id"),
+    notes: text("notes"),
+    status: itemStatusEnum("status").notNull().default("active"),
+    signedToContactId: uuid("signed_to_contact_id").references(
+      () => contacts.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    locationId: uuid("location_id").references(() => locations.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("items_account_id_status_created_at_idx").on(
+      table.accountId,
+      table.status,
+      table.createdAt.desc(),
+    ),
+    index("items_hand_receipt_id_status_created_at_idx").on(
+      table.handReceiptId,
+      table.status,
+      table.createdAt.desc(),
+    ),
+    index("items_account_id_ecn_idx").on(table.accountId, table.ecn),
+    index("items_account_id_serial_number_idx").on(
+      table.accountId,
+      table.serialNumber,
+    ),
+    uniqueIndex("items_account_id_generated_id_unique_idx").on(
+      table.accountId,
+      table.generatedId,
+    ),
+    index("items_account_id_location_id_idx").on(
+      table.accountId,
+      table.locationId,
     ),
   ],
 ).enableRLS();

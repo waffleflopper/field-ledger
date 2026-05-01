@@ -2,8 +2,12 @@ import type {
   AppUnitOfWork,
   AppUnitOfWorkRepositories,
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
+import { InMemoryAccountRepository } from "./account-repository";
 import { InMemoryAuditRepository } from "./audit-repository";
+import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
+import { InMemoryItemRepository } from "./item-repository";
+import { InMemoryLocationRepository } from "./location-repository";
 
 export function createInMemoryAppUnitOfWork(
   repositories: Partial<AppUnitOfWorkRepositories> = {},
@@ -12,6 +16,14 @@ export function createInMemoryAppUnitOfWork(
     repositories.handReceiptRepository ?? new InMemoryHandReceiptRepository();
   const auditRepository =
     repositories.auditRepository ?? new InMemoryAuditRepository();
+  const contactRepository =
+    repositories.contactRepository ?? new InMemoryContactRepository();
+  const accountRepository =
+    repositories.accountRepository ?? new InMemoryAccountRepository();
+  const itemRepository =
+    repositories.itemRepository ?? new InMemoryItemRepository();
+  const locationRepository =
+    repositories.locationRepository ?? new InMemoryLocationRepository();
 
   return {
     async run(operation) {
@@ -31,11 +43,47 @@ export function createInMemoryAppUnitOfWork(
         inMemoryAuditRepository !== null
           ? [...inMemoryAuditRepository.events]
           : null;
+      const inMemoryItemRepository =
+        itemRepository instanceof InMemoryItemRepository
+          ? itemRepository
+          : null;
+      const itemSnapshot =
+        inMemoryItemRepository !== null
+          ? [...inMemoryItemRepository.items]
+          : null;
+      const inMemoryContactRepository =
+        contactRepository instanceof InMemoryContactRepository
+          ? contactRepository
+          : null;
+      const contactSnapshot =
+        inMemoryContactRepository !== null
+          ? [...inMemoryContactRepository.contacts]
+          : null;
+      const inMemoryLocationRepository =
+        locationRepository instanceof InMemoryLocationRepository
+          ? locationRepository
+          : null;
+      const locationSnapshot =
+        inMemoryLocationRepository !== null
+          ? [...inMemoryLocationRepository.locations]
+          : null;
+      const inMemoryAccountRepository =
+        accountRepository instanceof InMemoryAccountRepository
+          ? accountRepository
+          : null;
+      const accountSnapshot =
+        inMemoryAccountRepository !== null
+          ? inMemoryAccountRepository.snapshotState()
+          : null;
 
       try {
         return await operation({
+          accountRepository,
           auditRepository,
+          contactRepository,
           handReceiptRepository,
+          itemRepository,
+          locationRepository,
         });
       } catch (error) {
         if (inMemoryHandReceiptRepository && handReceiptSnapshot) {
@@ -44,6 +92,22 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryAuditRepository && auditSnapshot) {
           inMemoryAuditRepository.events = auditSnapshot;
+        }
+
+        if (inMemoryItemRepository && itemSnapshot) {
+          inMemoryItemRepository.items = itemSnapshot;
+        }
+
+        if (inMemoryContactRepository && contactSnapshot) {
+          inMemoryContactRepository.contacts = contactSnapshot;
+        }
+
+        if (inMemoryLocationRepository && locationSnapshot) {
+          inMemoryLocationRepository.locations = locationSnapshot;
+        }
+
+        if (inMemoryAccountRepository && accountSnapshot) {
+          inMemoryAccountRepository.restoreState(accountSnapshot);
         }
 
         throw error;

@@ -10,7 +10,6 @@ import {
   FileUp,
   History,
   Pencil,
-  PackageSearch,
   RotateCcw,
 } from "lucide-react";
 
@@ -25,12 +24,17 @@ import {
 } from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
+import type { ItemRecord } from "@/modules/items";
+import { CreateItemForm } from "@/modules/items/ui/create-item-form";
+import { ItemList } from "@/modules/items/ui/item-list";
 import { trpc } from "@/trpc/react";
 import { HandReceiptEditForm } from "./hand-receipt-edit-form";
 
 type HandReceiptDetailProps = {
   handReceiptId: string;
 };
+
+type ItemView = "active" | "archived";
 
 function formatDate(value: Date | string | null) {
   if (!value) {
@@ -68,7 +72,7 @@ function FutureSection({
   label,
   text,
 }: {
-  icon: typeof PackageSearch;
+  icon: typeof FileUp;
   label: string;
   text: string;
 }) {
@@ -157,10 +161,32 @@ function DetailSummary({
   );
 }
 
+function getCreateItemDisabledReason({
+  handReceipt,
+  isReadOnly,
+}: {
+  handReceipt: HandReceiptRecord;
+  isReadOnly: boolean;
+}) {
+  if (isReadOnly) {
+    return "This account is read-only. Existing records remain available.";
+  }
+
+  if (handReceipt.status !== "active") {
+    return "Archived hand receipts cannot receive new items.";
+  }
+
+  return null;
+}
+
 export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [itemView, setItemView] = useState<ItemView>("active");
+  const [itemLifecycleError, setItemLifecycleError] = useState<string | null>(
+    null,
+  );
   const utilities = trpc.useUtils();
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
     id: handReceiptId,
@@ -170,9 +196,18 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     targetId: handReceiptId,
     limit: 6,
   });
+  const itemsQuery = trpc.items.listByHandReceipt.useQuery({
+    handReceiptId,
+    status: itemView,
+  });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  const isViewingArchivedItems = itemView === "archived";
+  const itemListEmptyDescription = isViewingArchivedItems
+    ? "Archived items from this hand receipt will appear here after they leave active workflows."
+    : "Add the first physical item for this hand receipt when you are ready to track accountable property.";
+
   async function refreshHandReceiptContext(updated: HandReceiptRecord) {
     setLifecycleError(null);
     utilities.handReceipts.getById.setData({ id: handReceiptId }, updated);
@@ -185,9 +220,42 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
         targetType: "hand_receipt",
         targetId: handReceiptId,
       }),
+      utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
+      utilities.items.search.invalidate(),
       utilities.billing.capabilities.invalidate(),
     ]);
   }
+
+  async function refreshItemLifecycleContext(updated: ItemRecord) {
+    setItemLifecycleError(null);
+    utilities.items.getById.setData({ id: updated.id }, updated);
+    await Promise.all([
+      utilities.items.getById.invalidate({ id: updated.id }),
+      utilities.items.search.invalidate(),
+      utilities.items.list.invalidate(),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId,
+        status: "active",
+      }),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId,
+        status: "archived",
+      }),
+      utilities.audit.listRecentActivity.invalidate(),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "item",
+        targetId: updated.id,
+      }),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "hand_receipt",
+        targetId: handReceiptId,
+      }),
+    ]);
+  }
+
+  const createItemDisabledReason = handReceipt
+    ? getCreateItemDisabledReason({ handReceipt, isReadOnly })
+    : null;
 
   const archiveMutation = trpc.handReceipts.archive.useMutation({
     onSuccess: async (archived) => {
@@ -204,6 +272,32 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     },
     onError: (error) => {
       setLifecycleError(error.message);
+    },
+  });
+  const createItemMutation = trpc.items.create.useMutation({
+    onSuccess: async (result) => {
+      if (result.item) {
+        await Promise.all([
+          utilities.items.listByHandReceipt.invalidate({
+            handReceiptId,
+            status: "active",
+          }),
+          utilities.items.search.invalidate(),
+          utilities.audit.listRecentActivity.invalidate(),
+          utilities.audit.listTargetActivity.invalidate({
+            targetType: "hand_receipt",
+            targetId: handReceiptId,
+          }),
+        ]);
+      }
+    },
+  });
+  const restoreItemMutation = trpc.items.restore.useMutation({
+    onSuccess: async (restored) => {
+      await refreshItemLifecycleContext(restored);
+    },
+    onError: (error) => {
+      setItemLifecycleError(error.message);
     },
   });
 
@@ -340,12 +434,94 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           />
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <FutureSection
-            icon={PackageSearch}
-            label="Linked Items"
-            text="Item records for this hand receipt will appear here after the item slice lands."
-          />
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.8fr)]">
+          <section className="space-y-3 rounded-lg border bg-card p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold tracking-normal">
+                  Property Items
+                </h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Review active property by default, or switch to archived
+                  records when you need preserved item history.
+                </p>
+              </div>
+              {!isViewingArchivedItems ? (
+                <CreateItemForm
+                  canCreate={!isReadOnly && handReceipt.status === "active"}
+                  disabledReason={createItemDisabledReason}
+                  onSubmit={(input) =>
+                    createItemMutation.mutateAsync({
+                      handReceiptId,
+                      ...input,
+                    })
+                  }
+                />
+              ) : null}
+            </div>
+            <div className="flex w-fit rounded-lg border bg-background p-1">
+              <button
+                aria-pressed={itemView === "active"}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                onClick={() => {
+                  setItemLifecycleError(null);
+                  setItemView("active");
+                }}
+                type="button"
+              >
+                Active
+              </button>
+              <button
+                aria-pressed={itemView === "archived"}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                onClick={() => {
+                  setItemLifecycleError(null);
+                  setItemView("archived");
+                }}
+                type="button"
+              >
+                Archived
+              </button>
+            </div>
+            {itemLifecycleError ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                {itemLifecycleError}
+              </p>
+            ) : null}
+            {itemsQuery.isLoading ? (
+              <div className="h-24 rounded-lg border bg-secondary" />
+            ) : itemsQuery.error ? (
+              <div
+                className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+                role="alert"
+              >
+                <p className="font-medium">Items could not be loaded.</p>
+                <p className="leading-6">
+                  {itemsQuery.error.message ||
+                    "Refresh this item list before making changes."}
+                </p>
+                <Button
+                  onClick={() => void itemsQuery.refetch()}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : (
+              <ItemList
+                canRestore={!isReadOnly && isViewingArchivedItems}
+                emptyDescription={itemListEmptyDescription}
+                items={itemsQuery.data ?? []}
+                onRestore={(item) => {
+                  setItemLifecycleError(null);
+                  restoreItemMutation.mutate({ id: item.id });
+                }}
+                restorePendingId={restoreItemMutation.variables?.id ?? null}
+              />
+            )}
+          </section>
           <FutureSection
             icon={FileUp}
             label="Upload 2062"

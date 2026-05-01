@@ -8,13 +8,20 @@ async function signInLocalUser(page: Page) {
   await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("button", { name: "Create account" }),
+  ).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/hand-receipts$/);
   await page
     .getByRole("dialog", { name: "Property accountability only" })
     .getByRole("button", { name: "I understand" })
     .click();
+}
+
+async function expectHandReceiptDetail(page: Page, name: string) {
+  await expect(page).toHaveURL(/\/app\/hand-receipts\/[0-9a-f-]+$/);
+  await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
 test("users can create and see an active hand receipt on mobile", async ({
@@ -74,7 +81,7 @@ test("users can open and edit hand receipt details", async ({ page }) => {
     page.getByRole("heading", { name: "Detail edit receipt" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Linked Items" }),
+    page.getByRole("heading", { name: "Property Items" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Edit details" }).click();
@@ -104,6 +111,200 @@ test("users can open and edit hand receipt details", async ({ page }) => {
   await expect(page.getByText("SSG Rivera")).toBeVisible();
 });
 
+test("users can open and edit item details from a hand receipt", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Item detail receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Item detail receipt" }).click();
+  await expectHandReceiptDetail(page, "Item detail receipt");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("M4 carbine");
+  await createDialog.getByLabel("ECN").fill("ECN-101");
+  await createDialog.getByLabel("Location").fill("Arms room");
+  await createDialog.getByRole("button", { name: "Create Arms room" }).click();
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open M4 carbine" }).click();
+  await expect(page).toHaveURL(
+    /\/app\/hand-receipts\/[0-9a-f-]+\/items\/[0-9a-f-]+$/,
+  );
+  await expect(page.getByRole("heading", { name: "M4 carbine" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hand Receipt Context" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Item detail receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Requirements" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Active 2062s" }),
+  ).toBeVisible();
+  await expect(page.getByText("Arms room")).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit item" }).click();
+  await page.getByLabel("Nomenclature").fill("Updated M4 carbine");
+  await page.getByLabel("Serial number").fill("SER-101");
+  await page.getByLabel("Notes").fill("Rack 3");
+  await page.getByRole("button", { name: "Clear" }).click();
+  await page.getByLabel("Location").fill("Motor pool");
+  await page.getByRole("button", { name: "Create Motor pool" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Updated M4 carbine" }),
+  ).toBeVisible();
+  await expect(page.getByText("SER-101")).toBeVisible();
+  await expect(page.getByText("Rack 3")).toBeVisible();
+  await expect(page.getByText("Motor pool")).toBeVisible();
+  await expect(page.getByText("Item location changed")).toBeVisible();
+  await expect(page.getByText("Item updated")).toBeVisible();
+});
+
+test("users can archive, review, and restore property items", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Item lifecycle receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Item lifecycle receipt" }).click();
+  await expectHandReceiptDetail(page, "Item lifecycle receipt");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("PRC radio");
+  await createDialog.getByLabel("ECN").fill("ECN-404");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open PRC radio" }).click();
+  await expect(page).toHaveURL(
+    /\/app\/hand-receipts\/[0-9a-f-]+\/items\/[0-9a-f-]+$/,
+  );
+  await expect(page.getByText(/will leave active hand receipt/)).toBeHidden();
+  await page.getByRole("button", { name: "Archive item" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive this item?",
+  });
+  await expect(
+    archiveDialog.getByText(/will leave active hand receipt/),
+  ).toBeVisible();
+  await archiveDialog.getByRole("button", { name: "Archive" }).click();
+
+  await expect(page.getByText("archived property item")).toBeVisible();
+  await expect(page.getByText("Item archived")).toBeVisible();
+  await page.getByRole("link", { name: "Back to hand receipt" }).click();
+  await expect(page.getByRole("link", { name: "Open PRC radio" })).toBeHidden();
+
+  await page.getByRole("button", { name: "Archived" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open PRC radio" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Restore" }).click();
+  await page.getByRole("button", { name: "Active" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open PRC radio" }),
+  ).toBeVisible();
+});
+
+test("users can move an item between active hand receipts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Source move receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Target move receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await page.getByRole("link", { name: "Open Source move receipt" }).click();
+  await expectHandReceiptDetail(page, "Source move receipt");
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("Move test radio");
+  await createDialog.getByLabel("ECN").fill("ECN-MOVE");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open Move test radio" }).click();
+  await page.getByRole("button", { name: "Move" }).click();
+  const moveDialog = page.getByRole("dialog", { name: "Move item" });
+  await moveDialog
+    .getByLabel("Target hand receipt")
+    .selectOption({ label: "Target move receipt" });
+  await moveDialog.getByRole("button", { name: "Move" }).click();
+
+  await expect(
+    page.getByRole("link", { name: "Target move receipt" }),
+  ).toBeVisible();
+  await expect(page.getByText("Item moved")).toBeVisible();
+
+  await page.getByRole("link", { name: "Back to hand receipt" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Target move receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open Move test radio" }),
+  ).toBeVisible();
+});
+
+test("users can assign and clear manual signed-to state without a 2062", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Signed-to receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Signed-to receipt" }).click();
+  await expectHandReceiptDetail(page, "Signed-to receipt");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("Signed-to radio");
+  await createDialog.getByLabel("ECN").fill("ECN-SIGNED");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open Signed-to radio" }).click();
+  await expect(page.getByRole("heading", { name: "Signed to" })).toBeVisible();
+  await expect(page.getByText("Not signed out.")).toBeVisible();
+
+  await page.getByLabel("Contact name").fill("SSG Rivera");
+  await page.getByRole("button", { name: "Create SSG Rivera" }).click();
+
+  await expect(
+    page.getByRole("paragraph").filter({ hasText: "SSG Rivera" }),
+  ).toBeVisible();
+  await expect(page.getByText("No 2062")).toBeVisible();
+  await expect(page.getByText("Item signed to contact")).toBeVisible();
+
+  await page.getByRole("button", { name: "Clear" }).click();
+
+  await expect(page.getByText("Not signed out.")).toBeVisible();
+  await expect(page.getByText("Item signed-to cleared")).toBeVisible();
+});
+
 test("hand receipt activity appears in detail, dashboard, and Activity route", async ({
   page,
 }) => {
@@ -116,7 +317,7 @@ test("hand receipt activity appears in detail, dashboard, and Activity route", a
   await page
     .getByRole("link", { name: "Open Activity context receipt" })
     .click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Activity context receipt");
 
   await expect(
     page.getByRole("heading", { name: "Recent Activity" }),
@@ -148,7 +349,7 @@ test("users can archive, review, and restore a hand receipt", async ({
   await page.getByLabel("Name").fill("Lifecycle receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Lifecycle receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Lifecycle receipt");
 
   await expect(page.getByText(/will leave active workflows/)).toBeHidden();
   await page.getByRole("button", { name: "Archive hand receipt" }).click();
@@ -163,16 +364,21 @@ test("users can archive, review, and restore a hand receipt", async ({
   await expect(page.getByText("archived receipt")).toBeVisible();
   await page.getByRole("link", { name: "Hand Receipts" }).first().click();
   await expect(
+    page.getByRole("heading", { name: "Hand Receipts" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeHidden();
 
-  await page.getByRole("button", { name: "Archived" }).click();
+  const archivedTab = page.getByRole("link", { name: "Archived" });
+  await archivedTab.click();
+  await expect(archivedTab).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Restore" }).click();
-  await page.getByRole("button", { name: "Active" }).click();
+  await page.getByRole("link", { name: "Active" }).click();
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeVisible();

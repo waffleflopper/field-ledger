@@ -12,7 +12,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -183,6 +183,7 @@ describe("createHandReceipt", () => {
   });
 
   it("allows trial and Pro accounts to create beyond the Base limit", async () => {
+    const now = new Date("2026-04-30T12:00:00.000Z");
     const seededReceipts = Array.from({ length: 4 }, (_, index) => ({
       id: `active-${index}`,
       accountId: "account-1",
@@ -212,6 +213,7 @@ describe("createHandReceipt", () => {
           seededReceipts,
         ),
         auditRepository: new InMemoryAuditRepository(),
+        now,
       }),
     ).resolves.toMatchObject({
       name: "Trial receipt",
@@ -230,6 +232,7 @@ describe("createHandReceipt", () => {
           seededReceipts,
         ),
         auditRepository: new InMemoryAuditRepository(),
+        now,
       }),
     ).resolves.toMatchObject({
       name: "Pro receipt",

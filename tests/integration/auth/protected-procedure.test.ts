@@ -5,7 +5,10 @@ import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { createEmptyItemRepository } from "../../support/item-repository";
+import { createEmptyLocationRepository } from "../../support/location-repository";
 
 const authProbeRouter = createTRPCRouter({
   currentUserEmail: protectedProcedure.query(({ ctx }) => ctx.session.email),
@@ -18,7 +21,10 @@ describe("protectedProcedure", () => {
       account: null,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -36,7 +42,10 @@ describe("protectedProcedure", () => {
       account: null,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -61,7 +70,10 @@ describe("protectedProcedure", () => {
       },
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

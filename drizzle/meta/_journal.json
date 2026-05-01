@@ -92,6 +92,27 @@
       "when": 1777595500000,
       "tag": "0012_hand_receipts_owner_update",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777607940000,
+      "tag": "0013_create_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1777614840000,
+      "tag": "0014_contacts_signed_to",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777619460000,
+      "tag": "0015_locations_item_location",
+      "breakpoints": true
     }
   ]
 }

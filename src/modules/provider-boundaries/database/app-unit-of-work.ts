@@ -1,7 +1,15 @@
 import type { AuditRepository } from "@/modules/audit";
 import { createTransactionalDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
+import type { ContactRepository } from "@/modules/contacts";
+import { createTransactionalDrizzleContactRepository } from "@/modules/contacts/infrastructure/drizzle-contact-repository";
+import type { AccountRepository } from "@/modules/accounts/application/ensure-account";
+import { createTransactionalDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
 import { createTransactionalDrizzleHandReceiptRepository } from "@/modules/hand-receipts/infrastructure/drizzle-hand-receipt-repository";
+import type { ItemRepository } from "@/modules/items";
+import { createTransactionalDrizzleItemRepository } from "@/modules/items/infrastructure/drizzle-item-repository";
+import type { LocationRepository } from "@/modules/locations";
+import { createTransactionalDrizzleLocationRepository } from "@/modules/locations/infrastructure/drizzle-location-repository";
 import type { AuthenticatedDatabaseSession } from "./authenticated-session";
 import { runWithAuthenticatedDatabaseSession } from "./authenticated-session";
 import type { createDrizzleClient } from "./drizzle";
@@ -9,8 +17,12 @@ import type { createDrizzleClient } from "./drizzle";
 type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 
 export type AppUnitOfWorkRepositories = {
+  accountRepository: AccountRepository;
   auditRepository: AuditRepository;
+  contactRepository: ContactRepository;
   handReceiptRepository: HandReceiptRepository;
+  itemRepository: ItemRepository;
+  locationRepository: LocationRepository;
 };
 
 export type AppUnitOfWork = {
@@ -35,10 +47,17 @@ export function createDrizzleAppUnitOfWork(
     run(operation) {
       return runWithAuthenticatedDatabaseSession(db, session, (transaction) =>
         operation({
+          accountRepository:
+            createTransactionalDrizzleAccountRepository(transaction),
           auditRepository:
             createTransactionalDrizzleAuditRepository(transaction),
+          contactRepository:
+            createTransactionalDrizzleContactRepository(transaction),
           handReceiptRepository:
             createTransactionalDrizzleHandReceiptRepository(transaction),
+          itemRepository: createTransactionalDrizzleItemRepository(transaction),
+          locationRepository:
+            createTransactionalDrizzleLocationRepository(transaction),
         }),
       );
     },

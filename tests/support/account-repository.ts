@@ -5,6 +5,7 @@ import type {
 
 export class InMemoryAccountRepository implements AccountRepository {
   private accounts = new Map<string, AccountRecord>();
+  private itemSequences = new Map<string, number>();
 
   constructor(accounts: AccountRecord[] = []) {
     for (const account of accounts) {
@@ -41,6 +42,35 @@ export class InMemoryAccountRepository implements AccountRepository {
 
     this.accounts.set(account.userId, updatedAccount);
     return updatedAccount;
+  }
+
+  async incrementAndGetNextItemSequence(accountId: string) {
+    const account = Array.from(this.accounts.values()).find(
+      (candidate) => candidate.id === accountId,
+    );
+
+    if (!account) {
+      throw new Error("Unable to allocate generated item ID.");
+    }
+
+    const currentSequence = this.itemSequences.get(accountId) ?? 1;
+
+    this.itemSequences.set(accountId, currentSequence + 1);
+    return currentSequence;
+  }
+
+  snapshotState() {
+    return {
+      accounts: new Map(this.accounts),
+      itemSequences: new Map(this.itemSequences),
+    };
+  }
+
+  restoreState(
+    snapshot: ReturnType<InMemoryAccountRepository["snapshotState"]>,
+  ) {
+    this.accounts = new Map(snapshot.accounts);
+    this.itemSequences = new Map(snapshot.itemSequences);
   }
 }
 

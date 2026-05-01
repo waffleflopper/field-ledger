@@ -27,6 +27,10 @@ export function canArchiveHandReceipt(capabilities: AccountCapabilities) {
   return !capabilities.isReadOnly;
 }
 
+export function canMoveItem(capabilities: AccountCapabilities) {
+  return !capabilities.isReadOnly;
+}
+
 export function canRestoreHandReceipt(
   capabilities: AccountCapabilities,
   currentActiveHandReceiptCount: number,

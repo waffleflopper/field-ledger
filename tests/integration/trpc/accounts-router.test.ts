@@ -5,7 +5,10 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { createEmptyItemRepository } from "../../support/item-repository";
+import { createEmptyLocationRepository } from "../../support/location-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -14,7 +17,7 @@ function createAccount(): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
   };
 }
@@ -30,7 +33,10 @@ describe("accountsRouter", () => {
       account,
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: createEmptyAuditRepository(),
+      contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

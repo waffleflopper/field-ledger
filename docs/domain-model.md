@@ -19,6 +19,7 @@ New accounts initialize with:
 - `trial_starts_at`: first initialization time
 - `trial_ends_at`: 30 days after trial start
 - `onboarding_completed_at`: null until the first-run boundary notice is acknowledged
+- `next_item_sequence`: the next account-local generated item identifier sequence
 
 Account access state is separate from subscription tier.
 
@@ -109,9 +110,49 @@ Rules:
 
 - Duplicate nomenclature is allowed.
 - Duplicate ECN/serial warns but can be confirmed.
-- ECN/serial edits are allowed and audited.
+- Creating an item emits `item.created` with hand receipt and identifier metadata.
+- Editing nomenclature, ECN, serial number, and notes emits `item.updated` with
+  changed field metadata.
+- Archiving an item emits `item.archived`, keeps the same item identity and
+  history, and removes the item from normal active hand receipt workflows.
+- Archived items remain linked to their hand receipt and stay deliberately
+  reviewable through archived-record views.
+- Restoring an archived item emits `item.restored` and returns the same item
+  record to active workflows.
+- Moving an active item between active hand receipts emits `item.moved`, keeps
+  the same item record, generated ID, identifiers, notes, and item activity
+  history, and changes only the current hand receipt relationship.
+- Manual signed-to state stores `signed_to_contact_id` on the item and always
+  references an account contact. It is never saved as free-text assignee data.
+- Assigning manual signed-to state emits `item.signed_to_assigned`; clearing it
+  emits `item.signed_to_cleared`.
+- Manual signed-to state is labeled as `No 2062` in item surfaces until formal
+  2062 assignment conversion lands.
+- Location state stores `location_id` on the item and optionally references an
+  account location. Items can have no location.
+- Changing or clearing location emits `item.location_changed`.
+- Identifier edits cannot leave the item without ECN, serial number, or a
+  generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
-- Item with active 2062 cannot move to another hand receipt until the active 2062 link is closed.
+- Generated IDs are account-sequential and allocated from the account record.
+- The Items route is global search by default. Normal search matches ECN, serial
+  number, generated ID, nomenclature, hand receipt name, manual signed-to
+  contact, and location across the account's active hand receipts and active
+  items.
+- Global search excludes archived items and archived hand receipts by default.
+  A deliberate include-archived option expands the search to include archived
+  item records and items that belong to archived hand receipts.
+- Search results show hand receipt context and the strongest available
+  identifier matches so users can confirm the correct property record before
+  opening detail.
+- Item with active 2062 cannot move to another hand receipt until the active
+  2062 link is closed. Until formal 2062 assignment enforcement lands, item
+  movement keeps a dedicated application-service hook for this future block but
+  does not implement assignments, documents, active links, or enforcement.
+- When item requirements exist, archived items should suppress day-to-day
+  requirement reminders while remaining available for historical review.
+- Future 2062 work should define whether archived items with active 2062
+  coverage require a warning, a block, or a close-coverage step.
 
 ## Contacts
 
@@ -128,7 +169,9 @@ Optional later:
 - notes
 - archived/inactive status
 
-Manual signed-to fallback always references a contact. If the user types a new name, create a contact with only display name.
+Manual signed-to fallback always references a contact. If the user types a new
+name, create a contact with only display name. Creating a contact emits
+`contact.created`.
 
 ## Locations
 
@@ -137,6 +180,10 @@ Locations are optional, reusable, account-wide records.
 Required:
 
 - name
+
+Creating a location emits `location.created`. Locations can be created inline
+from item create and edit flows, selected from existing account locations, or
+cleared from an item when the place is unknown.
 
 Optional later:
 

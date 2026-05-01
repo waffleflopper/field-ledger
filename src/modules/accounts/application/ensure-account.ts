@@ -22,6 +22,7 @@ export type AccountRepository = {
     accountId: string,
     completedAt: Date,
   ): Promise<AccountRecord | null>;
+  incrementAndGetNextItemSequence(accountId: string): Promise<number>;
 };
 
 type EnsureAccountInput = {

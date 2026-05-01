@@ -37,6 +37,10 @@ function formatTargetLabel(event: AuditEventRecord) {
     return metadataName(event.metadata) ?? "Hand receipt";
   }
 
+  if (event.targetType === "item") {
+    return metadataName(event.metadata) ?? "Item";
+  }
+
   if (event.targetType === "account") {
     return "Account";
   }

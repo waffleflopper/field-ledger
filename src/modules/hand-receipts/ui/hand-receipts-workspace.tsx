@@ -4,6 +4,8 @@ import type { AccountCapabilities } from "@/modules/billing";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import { trpc } from "@/trpc/react";
 import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { CreateHandReceiptForm } from "./create-hand-receipt-form";
 import { HandReceiptEmptyState } from "./hand-receipt-empty-state";
@@ -55,8 +57,10 @@ export function HandReceiptsWorkspace({
   initialCapabilities,
   initialHandReceipts,
 }: HandReceiptsWorkspaceProps) {
+  const searchParams = useSearchParams();
   const utilities = trpc.useUtils();
-  const [view, setView] = useState<HandReceiptView>("active");
+  const view: HandReceiptView =
+    searchParams.get("view") === "archived" ? "archived" : "active";
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const activeHandReceiptsQuery = trpc.handReceipts.list.useQuery(
     { status: "active" },
@@ -133,28 +137,22 @@ export function HandReceiptsWorkspace({
       ) : null}
 
       <div className="flex w-fit rounded-lg border bg-card p-1">
-        <button
+        <Link
+          href="/app/hand-receipts"
           className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          onClick={() => {
-            setRestoreError(null);
-            setView("active");
-          }}
+          onClick={() => setRestoreError(null)}
           aria-pressed={view === "active"}
-          type="button"
         >
           Active
-        </button>
-        <button
+        </Link>
+        <Link
+          href="/app/hand-receipts?view=archived"
           className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          onClick={() => {
-            setRestoreError(null);
-            setView("archived");
-          }}
+          onClick={() => setRestoreError(null)}
           aria-pressed={view === "archived"}
-          type="button"
         >
           Archived
-        </button>
+        </Link>
       </div>
 
       {restoreError && view === "archived" ? (
