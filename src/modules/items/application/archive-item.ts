@@ -2,6 +2,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import type { ItemRepository } from "./item-repository";
+import type { ItemStatus } from "./types";
 
 type LifecycleItemInput = {
   account: AccountRecord;
@@ -12,14 +13,21 @@ type LifecycleItemInput = {
   now?: Date;
 };
 
-export async function archiveItem({
+type ItemLifecycleTransition = {
+  targetStatus: ItemStatus;
+  alreadyInTargetMessage: string;
+  auditAction: "item.archived" | "item.restored";
+};
+
+async function changeItemLifecycleStatus({
   account,
   actorId,
   itemId,
   itemRepository,
   auditRepository,
   now = new Date(),
-}: LifecycleItemInput) {
+  transition,
+}: LifecycleItemInput & { transition: ItemLifecycleTransition }) {
   const capabilities = deriveAccountCapabilities(account, now);
 
   if (capabilities.isReadOnly) {
@@ -32,23 +40,23 @@ export async function archiveItem({
     return null;
   }
 
-  if (existing.status === "archived") {
-    throw new Error("Item is already archived.");
+  if (existing.status === transition.targetStatus) {
+    throw new Error(transition.alreadyInTargetMessage);
   }
 
-  const archived = await itemRepository.update(account.id, itemId, {
-    status: "archived",
+  const updated = await itemRepository.update(account.id, itemId, {
+    status: transition.targetStatus,
     updatedAt: now,
   });
 
-  if (!archived) {
+  if (!updated) {
     return null;
   }
 
   await recordAuditEvent({
     accountId: account.id,
     actorId,
-    action: "item.archived",
+    action: transition.auditAction,
     target: {
       type: "item",
       id: itemId,
@@ -61,57 +69,27 @@ export async function archiveItem({
     repository: auditRepository,
   });
 
-  return archived;
+  return updated;
 }
 
-export async function restoreItem({
-  account,
-  actorId,
-  itemId,
-  itemRepository,
-  auditRepository,
-  now = new Date(),
-}: LifecycleItemInput) {
-  const capabilities = deriveAccountCapabilities(account, now);
-
-  if (capabilities.isReadOnly) {
-    throw new Error("This account is read-only.");
-  }
-
-  const existing = await itemRepository.findById(account.id, itemId);
-
-  if (!existing) {
-    return null;
-  }
-
-  if (existing.status === "active") {
-    throw new Error("Item is already active.");
-  }
-
-  const restored = await itemRepository.update(account.id, itemId, {
-    status: "active",
-    updatedAt: now,
-  });
-
-  if (!restored) {
-    return null;
-  }
-
-  await recordAuditEvent({
-    accountId: account.id,
-    actorId,
-    action: "item.restored",
-    target: {
-      type: "item",
-      id: itemId,
+export function archiveItem(input: LifecycleItemInput) {
+  return changeItemLifecycleStatus({
+    ...input,
+    transition: {
+      targetStatus: "archived",
+      alreadyInTargetMessage: "Item is already archived.",
+      auditAction: "item.archived",
     },
-    metadata: {
-      name: existing.nomenclature,
-      handReceiptId: existing.handReceiptId,
-    },
-    occurredAt: now,
-    repository: auditRepository,
   });
+}
 
-  return restored;
+export function restoreItem(input: LifecycleItemInput) {
+  return changeItemLifecycleStatus({
+    ...input,
+    transition: {
+      targetStatus: "active",
+      alreadyInTargetMessage: "Item is already active.",
+      auditAction: "item.restored",
+    },
+  });
 }

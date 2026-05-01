@@ -190,25 +190,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
   const archiveMutation = trpc.items.archive.useMutation({
     onSuccess: async (archived) => {
       setIsArchiveDialogOpen(false);
-      setLifecycleError(null);
-      utilities.items.getById.setData({ id: itemId }, archived);
-      await Promise.all([
-        utilities.items.getById.invalidate({ id: itemId }),
-        utilities.items.list.invalidate(),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId: archived.handReceiptId,
-          status: "active",
-        }),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId: archived.handReceiptId,
-          status: "archived",
-        }),
-        utilities.audit.listRecentActivity.invalidate(),
-        utilities.audit.listTargetActivity.invalidate({
-          targetType: "item",
-          targetId: itemId,
-        }),
-      ]);
+      await refreshItemLifecycleContext(archived);
     },
     onError: (error) => {
       setLifecycleError(error.message);
@@ -216,30 +198,34 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
   });
   const restoreMutation = trpc.items.restore.useMutation({
     onSuccess: async (restored) => {
-      setLifecycleError(null);
-      utilities.items.getById.setData({ id: itemId }, restored);
-      await Promise.all([
-        utilities.items.getById.invalidate({ id: itemId }),
-        utilities.items.list.invalidate(),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId: restored.handReceiptId,
-          status: "active",
-        }),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId: restored.handReceiptId,
-          status: "archived",
-        }),
-        utilities.audit.listRecentActivity.invalidate(),
-        utilities.audit.listTargetActivity.invalidate({
-          targetType: "item",
-          targetId: itemId,
-        }),
-      ]);
+      await refreshItemLifecycleContext(restored);
     },
     onError: (error) => {
       setLifecycleError(error.message);
     },
   });
+
+  async function refreshItemLifecycleContext(updated: ItemRecord) {
+    setLifecycleError(null);
+    utilities.items.getById.setData({ id: itemId }, updated);
+    await Promise.all([
+      utilities.items.getById.invalidate({ id: itemId }),
+      utilities.items.list.invalidate(),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId: updated.handReceiptId,
+        status: "active",
+      }),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId: updated.handReceiptId,
+        status: "archived",
+      }),
+      utilities.audit.listRecentActivity.invalidate(),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "item",
+        targetId: itemId,
+      }),
+    ]);
+  }
 
   if (itemQuery.isLoading || handReceiptQuery.isLoading) {
     return (

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
+import type { ItemRecord } from "@/modules/items";
 import { CreateItemForm } from "@/modules/items/ui/create-item-form";
 import { ItemList } from "@/modules/items/ui/item-list";
 import { trpc } from "@/trpc/react";
@@ -202,6 +203,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  const isViewingArchivedItems = itemView === "archived";
+  const itemListEmptyDescription = isViewingArchivedItems
+    ? "Archived items from this hand receipt will appear here after they leave active workflows."
+    : "Add the first physical item for this hand receipt when you are ready to track accountable property.";
 
   async function refreshHandReceiptContext(updated: HandReceiptRecord) {
     setLifecycleError(null);
@@ -217,6 +222,28 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
       }),
       utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
       utilities.billing.capabilities.invalidate(),
+    ]);
+  }
+
+  async function refreshItemLifecycleContext(updated: ItemRecord) {
+    setItemLifecycleError(null);
+    utilities.items.getById.setData({ id: updated.id }, updated);
+    await Promise.all([
+      utilities.items.getById.invalidate({ id: updated.id }),
+      utilities.items.list.invalidate(),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId,
+        status: "active",
+      }),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId,
+        status: "archived",
+      }),
+      utilities.audit.listRecentActivity.invalidate(),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "item",
+        targetId: updated.id,
+      }),
     ]);
   }
 
@@ -260,25 +287,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   });
   const restoreItemMutation = trpc.items.restore.useMutation({
     onSuccess: async (restored) => {
-      setItemLifecycleError(null);
-      utilities.items.getById.setData({ id: restored.id }, restored);
-      await Promise.all([
-        utilities.items.getById.invalidate({ id: restored.id }),
-        utilities.items.list.invalidate(),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId,
-          status: "active",
-        }),
-        utilities.items.listByHandReceipt.invalidate({
-          handReceiptId,
-          status: "archived",
-        }),
-        utilities.audit.listRecentActivity.invalidate(),
-        utilities.audit.listTargetActivity.invalidate({
-          targetType: "item",
-          targetId: restored.id,
-        }),
-      ]);
+      await refreshItemLifecycleContext(restored);
     },
     onError: (error) => {
       setItemLifecycleError(error.message);
@@ -430,7 +439,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                   records when you need preserved item history.
                 </p>
               </div>
-              {itemView === "active" ? (
+              {!isViewingArchivedItems ? (
                 <CreateItemForm
                   canCreate={!isReadOnly && handReceipt.status === "active"}
                   disabledReason={createItemDisabledReason}
@@ -476,12 +485,8 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
               <div className="h-24 rounded-lg border bg-secondary" />
             ) : (
               <ItemList
-                canRestore={!isReadOnly && itemView === "archived"}
-                emptyDescription={
-                  itemView === "archived"
-                    ? "Archived items from this hand receipt will appear here after they leave active workflows."
-                    : "Add the first physical item for this hand receipt when you are ready to track accountable property."
-                }
+                canRestore={!isReadOnly && isViewingArchivedItems}
+                emptyDescription={itemListEmptyDescription}
                 items={itemsQuery.data ?? []}
                 onRestore={(item) => {
                   setItemLifecycleError(null);
