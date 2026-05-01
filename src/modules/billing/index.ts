@@ -1,5 +1,7 @@
 export {
+  canArchiveHandReceipt,
   canCreateHandReceipt,
+  canRestoreHandReceipt,
   getActiveHandReceiptLimit,
   isAccountReadOnly,
 } from "@/modules/billing/application/capabilities";

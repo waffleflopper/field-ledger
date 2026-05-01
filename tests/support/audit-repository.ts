@@ -32,6 +32,26 @@ export class InMemoryAuditRepository implements AuditRepository {
       )
       .slice(0, limit);
   }
+
+  async listByTarget(
+    accountId: string,
+    target: { targetType: string; targetId: string },
+    options = {},
+  ) {
+    const { limit = 20 } = options as { limit?: number };
+
+    return this.events
+      .filter(
+        (event) =>
+          event.accountId === accountId &&
+          event.targetType === target.targetType &&
+          event.targetId === target.targetId,
+      )
+      .sort(
+        (left, right) => right.occurredAt.getTime() - left.occurredAt.getTime(),
+      )
+      .slice(0, limit);
+  }
 }
 
 export function createEmptyAuditRepository() {

@@ -4,6 +4,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
+import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -28,6 +29,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: new InMemoryAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toEqual([]);
@@ -67,6 +69,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toMatchObject([
@@ -77,6 +80,73 @@ describe("auditRouter", () => {
       {
         id: "event-1",
         label: "System initialized",
+      },
+    ]);
+  });
+
+  it("returns target-scoped hand receipt activity for the current account", async () => {
+    const account = createAccount();
+    const otherAccount = {
+      ...account,
+      id: "account-2",
+      userId: "user-2",
+    };
+    const auditRepository = new InMemoryAuditRepository([
+      {
+        id: "event-1",
+        accountId: account.id,
+        actorId: account.userId,
+        action: "hand_receipt.created",
+        targetType: "hand_receipt",
+        targetId: "receipt-1",
+        occurredAt: new Date("2026-04-29T12:00:00.000Z"),
+        metadata: { name: "Alpha hand receipt" },
+        createdAt: new Date("2026-04-29T12:00:01.000Z"),
+      },
+      {
+        id: "event-2",
+        accountId: account.id,
+        actorId: account.userId,
+        action: "hand_receipt.updated",
+        targetType: "hand_receipt",
+        targetId: "receipt-2",
+        occurredAt: new Date("2026-04-29T13:00:00.000Z"),
+        metadata: { name: "Bravo hand receipt" },
+        createdAt: new Date("2026-04-29T13:00:01.000Z"),
+      },
+      {
+        id: "event-3",
+        accountId: otherAccount.id,
+        actorId: otherAccount.userId,
+        action: "hand_receipt.archived",
+        targetType: "hand_receipt",
+        targetId: "receipt-1",
+        occurredAt: new Date("2026-04-29T14:00:00.000Z"),
+        metadata: { name: "Other account receipt" },
+        createdAt: new Date("2026-04-29T14:00:01.000Z"),
+      },
+    ]);
+    const caller = appRouter.createCaller({
+      session: {
+        userId: account.userId,
+        email: "owner@example.com",
+      },
+      account,
+      accountRepository: createEmptyAccountRepository(),
+      auditRepository,
+      handReceiptRepository: createEmptyHandReceiptRepository(),
+    });
+
+    await expect(
+      caller.audit.listTargetActivity({
+        targetType: "hand_receipt",
+        targetId: "receipt-1",
+      }),
+    ).resolves.toMatchObject([
+      {
+        id: "event-1",
+        label: "Hand receipt created",
+        targetLabel: "Alpha hand receipt",
       },
     ]);
   });
@@ -115,6 +185,7 @@ describe("auditRouter", () => {
       account,
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(

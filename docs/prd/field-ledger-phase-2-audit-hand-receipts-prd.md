@@ -57,7 +57,7 @@ cannot create, edit, archive, or restore records.
 Each meaningful hand receipt change will emit an audit event. The user-facing
 activity surfaces will show readable labels such as hand receipt created,
 updated, archived, or restored rather than raw implementation names. The detail
-page will leave room for future item lists, upload 2062 actions, and scoped
+page leaves room for future item lists, upload 2062 actions, and scoped
 activity without implementing item, document, 2062, or requirement workflows in
 this phase.
 

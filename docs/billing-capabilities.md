@@ -18,7 +18,8 @@ behavior even if the stored access state has not yet been updated.
 
 ## Subscription Tiers
 
-- `base`: Allows up to 3 active hand receipts.
+- `base`: Allows up to 3 active hand receipts. Archived hand receipts do not
+  count against this active limit.
 - `pro`: Allows unlimited active hand receipts.
 
 Subscription tier is separate from access state. A trial account can have no
@@ -30,7 +31,9 @@ expires.
 The public module API is exported from `src/modules/billing`.
 
 Server workflows can call `deriveAccountCapabilities(account)` and decision
-helpers such as `canCreateHandReceipt(capabilities, currentActiveCount)`.
+helpers such as `canCreateHandReceipt(capabilities, currentActiveCount)`,
+`canArchiveHandReceipt(capabilities)`, and
+`canRestoreHandReceipt(capabilities, currentActiveCount)`.
 
 UI workflows should use the typed tRPC boundary, currently
 `billing.capabilities`, so client code does not need to know how access state or

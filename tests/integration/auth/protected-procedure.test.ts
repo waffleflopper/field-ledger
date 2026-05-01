@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
+import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 const authProbeRouter = createTRPCRouter({
   currentUserEmail: protectedProcedure.query(({ ctx }) => ctx.session.email),
@@ -16,6 +17,7 @@ describe("protectedProcedure", () => {
       account: null,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.currentUserEmail()).rejects.toMatchObject({
@@ -32,6 +34,7 @@ describe("protectedProcedure", () => {
       account: null,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.currentUserEmail()).rejects.toMatchObject({
@@ -55,6 +58,7 @@ describe("protectedProcedure", () => {
       },
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.currentUserEmail()).resolves.toBe("owner@example.com");

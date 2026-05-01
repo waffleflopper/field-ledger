@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canArchiveHandReceipt,
   canCreateHandReceipt,
+  canRestoreHandReceipt,
   deriveAccountCapabilities,
   getActiveHandReceiptLimit,
   isAccountReadOnly,
@@ -23,6 +25,7 @@ describe("account billing capabilities", () => {
     expect(isAccountReadOnly(capabilities)).toBe(false);
     expect(getActiveHandReceiptLimit(capabilities)).toBe(null);
     expect(canCreateHandReceipt(capabilities, 25)).toBe(true);
+    expect(canRestoreHandReceipt(capabilities, 25)).toBe(true);
   });
 
   it("limits active Base accounts to three active hand receipts", () => {
@@ -36,6 +39,8 @@ describe("account billing capabilities", () => {
     expect(getActiveHandReceiptLimit(capabilities)).toBe(3);
     expect(canCreateHandReceipt(capabilities, 2)).toBe(true);
     expect(canCreateHandReceipt(capabilities, 3)).toBe(false);
+    expect(canRestoreHandReceipt(capabilities, 2)).toBe(true);
+    expect(canRestoreHandReceipt(capabilities, 3)).toBe(false);
   });
 
   it("allows active Pro accounts unlimited active hand receipts", () => {
@@ -48,6 +53,7 @@ describe("account billing capabilities", () => {
     expect(isAccountReadOnly(capabilities)).toBe(false);
     expect(getActiveHandReceiptLimit(capabilities)).toBe(null);
     expect(canCreateHandReceipt(capabilities, 300)).toBe(true);
+    expect(canRestoreHandReceipt(capabilities, 300)).toBe(true);
   });
 
   it("resolves expired trials with no active plan to read-only", () => {
@@ -62,6 +68,8 @@ describe("account billing capabilities", () => {
 
     expect(isAccountReadOnly(capabilities)).toBe(true);
     expect(canCreateHandReceipt(capabilities, 0)).toBe(false);
+    expect(canArchiveHandReceipt(capabilities)).toBe(false);
+    expect(canRestoreHandReceipt(capabilities, 0)).toBe(false);
   });
 
   it("keeps paused accounts read-only regardless of tier", () => {
@@ -73,5 +81,17 @@ describe("account billing capabilities", () => {
 
     expect(isAccountReadOnly(capabilities)).toBe(true);
     expect(canCreateHandReceipt(capabilities, 0)).toBe(false);
+    expect(canArchiveHandReceipt(capabilities)).toBe(false);
+    expect(canRestoreHandReceipt(capabilities, 0)).toBe(false);
+  });
+
+  it("allows archive for writable accounts", () => {
+    const capabilities = deriveAccountCapabilities({
+      accessState: "active",
+      subscriptionTier: "base",
+      trialEndsAt: new Date("2026-04-01T12:00:00.000Z"),
+    });
+
+    expect(canArchiveHandReceipt(capabilities)).toBe(true);
   });
 });

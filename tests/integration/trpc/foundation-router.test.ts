@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
+import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 describe("foundationRouter", () => {
   it("serves health through the typed tRPC caller", async () => {
@@ -11,6 +12,7 @@ describe("foundationRouter", () => {
       account: null,
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
     });
 
     await expect(caller.foundation.health()).resolves.toMatchObject({
