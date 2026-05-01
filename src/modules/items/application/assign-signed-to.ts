@@ -1,7 +1,11 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
-import { createContact, type ContactRepository } from "@/modules/contacts";
+import {
+  createContact,
+  type ContactRecord,
+  type ContactRepository,
+} from "@/modules/contacts";
 import type { ItemRepository } from "./item-repository";
 import type { ItemRecord } from "./types";
 
@@ -45,6 +49,56 @@ function assertWritable(account: AccountRecord, now: Date) {
   }
 }
 
+async function assignItemToContact({
+  accountId,
+  actorId,
+  item,
+  contact,
+  itemRepository,
+  auditRepository,
+  now,
+}: {
+  accountId: string;
+  actorId: string;
+  item: ItemRecord;
+  contact: ContactRecord;
+  itemRepository: ItemRepository;
+  auditRepository: AuditRepository;
+  now: Date;
+}): Promise<ItemRecord | null> {
+  const updated = await itemRepository.update(accountId, item.id, {
+    signedToContactId: contact.id,
+    updatedAt: now,
+  });
+
+  if (!updated) {
+    return null;
+  }
+
+  await recordAuditEvent({
+    accountId,
+    actorId,
+    action: "item.signed_to_assigned",
+    target: {
+      type: "item",
+      id: item.id,
+    },
+    metadata: {
+      name: updated.nomenclature,
+      contactId: contact.id,
+      contactName: contact.displayName,
+    },
+    occurredAt: now,
+    repository: auditRepository,
+  });
+
+  return {
+    ...updated,
+    signedToContactId: contact.id,
+    signedToContactName: contact.displayName,
+  };
+}
+
 export async function assignSignedTo({
   account,
   actorId,
@@ -70,39 +124,15 @@ export async function assignSignedTo({
     throw new Error("Contact was not found.");
   }
 
-  const updated = await itemRepository.update(account.id, itemId, {
-    signedToContactId: contact.id,
-    updatedAt: now,
-  });
-
-  if (!updated) {
-    return null;
-  }
-
-  const updatedWithContact = {
-    ...updated,
-    signedToContactId: contact.id,
-    signedToContactName: contact.displayName,
-  };
-
-  await recordAuditEvent({
+  return assignItemToContact({
     accountId: account.id,
     actorId,
-    action: "item.signed_to_assigned",
-    target: {
-      type: "item",
-      id: itemId,
-    },
-    metadata: {
-      name: updated.nomenclature,
-      contactId: contact.id,
-      contactName: contact.displayName,
-    },
-    occurredAt: now,
-    repository: auditRepository,
+    item,
+    contact,
+    itemRepository,
+    auditRepository,
+    now,
   });
-
-  return updatedWithContact;
 }
 
 export async function assignSignedToWithNewContact({
@@ -136,12 +166,11 @@ export async function assignSignedToWithNewContact({
     ...(createContactId ? { createContactId } : {}),
   });
 
-  return assignSignedTo({
-    account,
+  return assignItemToContact({
+    accountId: account.id,
     actorId,
-    itemId,
-    contactId: contact.id,
-    contactRepository,
+    item,
+    contact,
     itemRepository,
     auditRepository,
     now,
