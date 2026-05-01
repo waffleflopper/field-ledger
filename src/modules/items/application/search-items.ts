@@ -1,4 +1,5 @@
 import type { ItemRepository } from "./item-repository";
+import { normalizeItemSearchQuery } from "./search-fields";
 import type { ItemSearchResult } from "./types";
 
 export async function searchItems({
@@ -12,7 +13,7 @@ export async function searchItems({
   query: string;
   repository: ItemRepository;
 }): Promise<ItemSearchResult[]> {
-  const trimmedQuery = query.trim();
+  const trimmedQuery = normalizeItemSearchQuery(query);
 
   if (trimmedQuery.length === 0) {
     return [];

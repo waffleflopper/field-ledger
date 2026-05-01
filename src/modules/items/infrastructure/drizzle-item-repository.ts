@@ -1,11 +1,14 @@
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
 import { contacts, handReceipts, items, locations } from "@/db/schema";
+import {
+  getMatchedItemSearchFields,
+  normalizeItemSearchQuery,
+} from "@/modules/items";
 import type { ItemRepository } from "@/modules/items";
 import type {
   ItemRecord,
   ItemSearchResult,
-  SearchableItemField,
 } from "@/modules/items/application/types";
 import type {
   AuthenticatedDatabaseSession,
@@ -60,41 +63,20 @@ function toItemRecordFromJoinedRow(row: ItemRowWithContact): ItemRecord {
   );
 }
 
-function valueMatches(value: string | null | undefined, query: string) {
-  return value?.toLocaleLowerCase().includes(query) ?? false;
-}
-
 function toSearchResult(row: ItemSearchRow, query: string): ItemSearchResult {
   const item = toItemRecordFromJoinedRow(row);
-  const matchedFields: SearchableItemField[] = [];
-
-  if (valueMatches(item.ecn, query)) {
-    matchedFields.push("ecn");
-  }
-
-  if (valueMatches(item.serialNumber, query)) {
-    matchedFields.push("serialNumber");
-  }
-
-  if (valueMatches(item.generatedId, query)) {
-    matchedFields.push("generatedId");
-  }
-
-  if (valueMatches(item.nomenclature, query)) {
-    matchedFields.push("nomenclature");
-  }
-
-  if (valueMatches(row.handReceipt.name, query)) {
-    matchedFields.push("handReceiptName");
-  }
-
-  if (valueMatches(row.contact?.displayName, query)) {
-    matchedFields.push("contact");
-  }
-
-  if (valueMatches(row.location?.name, query)) {
-    matchedFields.push("location");
-  }
+  const matchedFields = getMatchedItemSearchFields(
+    {
+      ecn: item.ecn,
+      serialNumber: item.serialNumber,
+      generatedId: item.generatedId,
+      nomenclature: item.nomenclature,
+      handReceiptName: row.handReceipt.name,
+      contact: row.contact?.displayName,
+      location: row.location?.name,
+    },
+    query,
+  );
 
   return {
     item,
@@ -315,7 +297,7 @@ function createItemRepository(run: ItemOperation): ItemRepository {
       );
 
       return rows.map((row) =>
-        toSearchResult(row, trimmedQuery.toLocaleLowerCase()),
+        toSearchResult(row, normalizeItemSearchQuery(trimmedQuery)),
       );
     },
   };

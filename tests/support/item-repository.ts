@@ -7,11 +7,11 @@ import type {
   NewItemRecord,
   UpdateItemRecord,
 } from "@/modules/items";
+import {
+  getMatchedItemSearchFields,
+  normalizeItemSearchQuery,
+} from "@/modules/items";
 import type { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
-
-function includesQuery(value: string | null | undefined, query: string) {
-  return value?.toLocaleLowerCase().includes(query) ?? false;
-}
 
 export class InMemoryItemRepository implements ItemRepository {
   items: ItemRecord[] = [];
@@ -129,7 +129,7 @@ export class InMemoryItemRepository implements ItemRepository {
   }
 
   async search(accountId: string, input: ItemSearchInput) {
-    const normalizedQuery = input.query.trim().toLocaleLowerCase();
+    const normalizedQuery = normalizeItemSearchQuery(input.query);
 
     if (normalizedQuery.length === 0) {
       return [];
@@ -159,35 +159,18 @@ export class InMemoryItemRepository implements ItemRepository {
         continue;
       }
 
-      const matchedFields: ItemSearchResult["matchedFields"] = [];
-
-      if (includesQuery(item.ecn, normalizedQuery)) {
-        matchedFields.push("ecn");
-      }
-
-      if (includesQuery(item.serialNumber, normalizedQuery)) {
-        matchedFields.push("serialNumber");
-      }
-
-      if (includesQuery(item.generatedId, normalizedQuery)) {
-        matchedFields.push("generatedId");
-      }
-
-      if (includesQuery(item.nomenclature, normalizedQuery)) {
-        matchedFields.push("nomenclature");
-      }
-
-      if (includesQuery(handReceipt.name, normalizedQuery)) {
-        matchedFields.push("handReceiptName");
-      }
-
-      if (includesQuery(item.signedToContactName, normalizedQuery)) {
-        matchedFields.push("contact");
-      }
-
-      if (includesQuery(item.locationName, normalizedQuery)) {
-        matchedFields.push("location");
-      }
+      const matchedFields = getMatchedItemSearchFields(
+        {
+          ecn: item.ecn,
+          serialNumber: item.serialNumber,
+          generatedId: item.generatedId,
+          nomenclature: item.nomenclature,
+          handReceiptName: handReceipt.name,
+          contact: item.signedToContactName,
+          location: item.locationName,
+        },
+        normalizedQuery,
+      );
 
       if (matchedFields.length === 0) {
         continue;

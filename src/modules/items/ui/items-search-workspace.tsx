@@ -36,6 +36,38 @@ export function ItemsSearchWorkspace() {
     return () => window.clearTimeout(timeout);
   }, [query]);
 
+  function renderSearchState() {
+    if (trimmedQuery.length === 0) {
+      return <ItemSearchStartState />;
+    }
+
+    if (searchQuery.isLoading || query !== debouncedQuery) {
+      return (
+        <div className="space-y-2">
+          <div className="h-24 rounded-lg border bg-card" />
+          <div className="h-24 rounded-lg border bg-card" />
+        </div>
+      );
+    }
+
+    if (searchQuery.error) {
+      return (
+        <div
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          {searchQuery.error.message}
+        </div>
+      );
+    }
+
+    if (results.length > 0) {
+      return <ItemSearchResults results={results} />;
+    }
+
+    return <ItemSearchNoResultsState includeArchived={includeArchived} />;
+  }
+
   return (
     <section className="space-y-5">
       <div className="space-y-2">
@@ -71,25 +103,7 @@ export function ItemsSearchWorkspace() {
         </label>
       </div>
 
-      {trimmedQuery.length === 0 ? (
-        <ItemSearchStartState />
-      ) : searchQuery.isLoading || query !== debouncedQuery ? (
-        <div className="space-y-2">
-          <div className="h-24 rounded-lg border bg-card" />
-          <div className="h-24 rounded-lg border bg-card" />
-        </div>
-      ) : searchQuery.error ? (
-        <div
-          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          role="alert"
-        >
-          {searchQuery.error.message}
-        </div>
-      ) : results.length > 0 ? (
-        <ItemSearchResults results={results} />
-      ) : (
-        <ItemSearchNoResultsState includeArchived={includeArchived} />
-      )}
+      {renderSearchState()}
     </section>
   );
 }

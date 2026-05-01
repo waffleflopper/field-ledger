@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ClipboardList, Hash, MapPin, PackageSearch, UserRound } from "lucide-react";
+import {
+  ClipboardList,
+  Hash,
+  MapPin,
+  PackageSearch,
+  UserRound,
+} from "lucide-react";
 
 import type { ItemSearchResult, SearchableItemField } from "@/modules/items";
 
@@ -14,17 +20,22 @@ const fieldLabels: Record<SearchableItemField, string> = {
 };
 
 function getIdentifierMatches(result: ItemSearchResult) {
-  const identifiers = [
-    result.matchedFields.includes("ecn") && result.item.ecn
-      ? `ECN ${result.item.ecn}`
-      : null,
-    result.matchedFields.includes("serialNumber") && result.item.serialNumber
-      ? `Serial ${result.item.serialNumber}`
-      : null,
-    result.matchedFields.includes("generatedId") && result.item.generatedId
-      ? result.item.generatedId
-      : null,
-  ].filter(Boolean);
+  const identifiers: string[] = [];
+
+  if (result.matchedFields.includes("ecn") && result.item.ecn) {
+    identifiers.push(`ECN ${result.item.ecn}`);
+  }
+
+  if (
+    result.matchedFields.includes("serialNumber") &&
+    result.item.serialNumber
+  ) {
+    identifiers.push(`Serial ${result.item.serialNumber}`);
+  }
+
+  if (result.matchedFields.includes("generatedId") && result.item.generatedId) {
+    identifiers.push(result.item.generatedId);
+  }
 
   if (identifiers.length > 0) {
     return identifiers;
