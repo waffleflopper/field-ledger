@@ -151,7 +151,7 @@ describe("contactsRouter", () => {
         }),
       ).rejects.toMatchObject({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Unable to update contacts.",
+        message: "Unable to create contact.",
       });
       expect(errorSpy).toHaveBeenCalledWith(
         "Unexpected contacts tRPC error.",

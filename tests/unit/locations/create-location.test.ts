@@ -120,12 +120,12 @@ describe("locations", () => {
       },
     ]);
 
-    expect(
+    await expect(
       searchLocations({
         accountId: "account-1",
         query: "   ",
         repository,
       }),
-    ).toEqual([]);
+    ).resolves.toEqual([]);
   });
 });

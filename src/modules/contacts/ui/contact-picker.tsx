@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,14 +28,20 @@ export function ContactPicker({
 }: ContactPickerProps) {
   const inputId = useId();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const trimmedQuery = query.trim();
+  const trimmedDebouncedQuery = debouncedQuery.trim();
   const searchQuery = trpc.contacts.search.useQuery(
-    { query },
+    { query: trimmedDebouncedQuery },
     {
-      enabled: !disabled,
+      enabled: !disabled && trimmedDebouncedQuery.length > 0,
     },
   );
-  const contacts = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
-  const trimmedQuery = query.trim();
+  const queryIsSettling = query !== debouncedQuery;
+  const contacts = useMemo(
+    () => (queryIsSettling ? [] : (searchQuery.data ?? [])),
+    [queryIsSettling, searchQuery.data],
+  );
   const hasExactMatch = useMemo(
     () =>
       contacts.some(
@@ -45,6 +51,15 @@ export function ContactPicker({
       ),
     [contacts, trimmedQuery],
   );
+  const isSearching = queryIsSettling || searchQuery.isLoading;
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [query]);
 
   return (
     <section className="rounded-lg border bg-card p-4 text-card-foreground">
@@ -113,7 +128,7 @@ export function ContactPicker({
             ))}
           </div>
         ) : null}
-        {!disabled && trimmedQuery && !hasExactMatch ? (
+        {!disabled && trimmedQuery && !hasExactMatch && !isSearching ? (
           <Button
             disabled={isPending}
             onClick={() => {

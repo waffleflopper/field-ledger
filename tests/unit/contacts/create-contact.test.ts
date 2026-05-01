@@ -120,12 +120,12 @@ describe("contacts", () => {
       },
     ]);
 
-    expect(
+    await expect(
       searchContacts({
         accountId: "account-1",
         query: "   ",
         repository,
       }),
-    ).toEqual([]);
+    ).resolves.toEqual([]);
   });
 });

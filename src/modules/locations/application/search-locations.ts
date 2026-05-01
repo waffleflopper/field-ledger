@@ -12,7 +12,7 @@ export function searchLocations({
   const trimmedQuery = query.trim();
 
   if (!trimmedQuery) {
-    return [];
+    return Promise.resolve([]);
   }
 
   return repository.searchByName(accountId, trimmedQuery);

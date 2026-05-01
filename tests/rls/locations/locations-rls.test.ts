@@ -35,14 +35,14 @@ describe("locations RLS", () => {
         auth_user_id: ownerOneId,
         access_state: "trialing",
         trial_starts_at: new Date("2026-04-30T12:00:00.000Z"),
-        trial_ends_at: new Date("2026-05-30T12:00:00.000Z"),
+        trial_ends_at: new Date("2100-01-01T00:00:00.000Z"),
       },
       {
         id: ownerTwoAccountId,
         auth_user_id: ownerTwoId,
         access_state: "trialing",
         trial_starts_at: new Date("2026-04-30T12:00:00.000Z"),
-        trial_ends_at: new Date("2026-05-30T12:00:00.000Z"),
+        trial_ends_at: new Date("2100-01-01T00:00:00.000Z"),
       },
     ])} on conflict (auth_user_id) do update set access_state = excluded.access_state`;
 

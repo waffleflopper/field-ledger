@@ -12,7 +12,7 @@ export function searchContacts({
   const trimmedQuery = query.trim();
 
   if (!trimmedQuery) {
-    return [];
+    return Promise.resolve([]);
   }
 
   return repository.searchByName(accountId, trimmedQuery);

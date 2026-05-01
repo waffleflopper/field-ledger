@@ -25,7 +25,7 @@ function toTRPCError(
   context: { accountId: string; operation: string; userId: string },
 ): never {
   const message =
-    error instanceof Error ? error.message : "Unable to update locations.";
+    error instanceof Error ? error.message : "Unable to create location.";
 
   switch (message) {
     case "This account is read-only.":
@@ -41,7 +41,7 @@ function toTRPCError(
       });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Unable to update locations.",
+        message: "Unable to create location.",
       });
   }
 }

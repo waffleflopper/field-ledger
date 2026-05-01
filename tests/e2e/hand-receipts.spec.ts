@@ -8,13 +8,20 @@ async function signInLocalUser(page: Page) {
   await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("button", { name: "Create account" }),
+  ).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/hand-receipts$/);
   await page
     .getByRole("dialog", { name: "Property accountability only" })
     .getByRole("button", { name: "I understand" })
     .click();
+}
+
+async function expectHandReceiptDetail(page: Page, name: string) {
+  await expect(page).toHaveURL(/\/app\/hand-receipts\/[0-9a-f-]+$/);
+  await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
 test("users can create and see an active hand receipt on mobile", async ({
@@ -114,7 +121,7 @@ test("users can open and edit item details from a hand receipt", async ({
   await page.getByLabel("Name").fill("Item detail receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Item detail receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Item detail receipt");
 
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {
@@ -174,7 +181,7 @@ test("users can archive, review, and restore property items", async ({
   await page.getByLabel("Name").fill("Item lifecycle receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Item lifecycle receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Item lifecycle receipt");
 
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {
@@ -228,7 +235,7 @@ test("users can move an item between active hand receipts", async ({
   await page.getByRole("button", { name: "Create" }).click();
 
   await page.getByRole("link", { name: "Open Source move receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Source move receipt");
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {
     name: "Add property item",
@@ -269,7 +276,7 @@ test("users can assign and clear manual signed-to state without a 2062", async (
   await page.getByLabel("Name").fill("Signed-to receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Signed-to receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Signed-to receipt");
 
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {
@@ -310,7 +317,7 @@ test("hand receipt activity appears in detail, dashboard, and Activity route", a
   await page
     .getByRole("link", { name: "Open Activity context receipt" })
     .click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Activity context receipt");
 
   await expect(
     page.getByRole("heading", { name: "Recent Activity" }),
@@ -342,7 +349,7 @@ test("users can archive, review, and restore a hand receipt", async ({
   await page.getByLabel("Name").fill("Lifecycle receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Lifecycle receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expectHandReceiptDetail(page, "Lifecycle receipt");
 
   await expect(page.getByText(/will leave active workflows/)).toBeHidden();
   await page.getByRole("button", { name: "Archive hand receipt" }).click();
@@ -356,7 +363,9 @@ test("users can archive, review, and restore a hand receipt", async ({
 
   await expect(page.getByText("archived receipt")).toBeVisible();
   await page.getByRole("link", { name: "Hand Receipts" }).first().click();
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("heading", { name: "Hand Receipts" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Open Lifecycle receipt" }),
   ).toBeHidden();

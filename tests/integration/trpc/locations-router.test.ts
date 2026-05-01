@@ -151,7 +151,7 @@ describe("locationsRouter", () => {
         }),
       ).rejects.toMatchObject({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Unable to update locations.",
+        message: "Unable to create location.",
       });
       expect(errorSpy).toHaveBeenCalledWith(
         "Unexpected locations tRPC error.",

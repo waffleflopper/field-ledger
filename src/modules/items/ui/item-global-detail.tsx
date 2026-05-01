@@ -39,8 +39,7 @@ export function ItemGlobalDetail({ itemId }: { itemId: string }) {
               Item could not be loaded
             </h1>
             <p className="mt-2 text-sm leading-6 text-destructive">
-              {itemQuery.error.message ||
-                "Retry before treating this item as missing."}
+              Retry before treating this item as missing.
             </p>
           </div>
           <Button
