@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import type { ItemRecord } from "@/modules/items";
 import { trpc } from "@/trpc/react";
 import { ItemEditForm } from "./item-edit-form";
@@ -180,6 +181,80 @@ function DetailSummary({
         </div>
       </dl>
     </section>
+  );
+}
+
+function MoveItemDialog({
+  isOpen,
+  item,
+  isMoving,
+  moveTargets,
+  onMove,
+  onOpenChange,
+  onTargetChange,
+  targetHandReceiptId,
+}: {
+  isOpen: boolean;
+  item: ItemRecord;
+  isMoving: boolean;
+  moveTargets: HandReceiptRecord[];
+  onMove: () => void;
+  onOpenChange: (isOpen: boolean) => void;
+  onTargetChange: (targetHandReceiptId: string) => void;
+  targetHandReceiptId: string;
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Move item</DialogTitle>
+          <DialogDescription>
+            Move {item.nomenclature} to another active hand receipt. The item
+            record, identifiers, and activity history stay preserved.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="target-hand-receipt">Target hand receipt</Label>
+          {moveTargets.length > 0 ? (
+            <select
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              id="target-hand-receipt"
+              onChange={(event) => onTargetChange(event.target.value)}
+              value={targetHandReceiptId}
+            >
+              <option value="">Select active receipt</option>
+              {moveTargets.map((receipt) => (
+                <option key={receipt.id} value={receipt.id}>
+                  {receipt.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
+              Create another active hand receipt before moving this item.
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={isMoving}
+            onClick={() => onOpenChange(false)}
+            type="button"
+            variant="outline"
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={!targetHandReceiptId || isMoving}
+            onClick={onMove}
+            type="button"
+          >
+            <ArrowRightLeft aria-hidden="true" className="size-4" />
+            {isMoving ? "Moving" : "Move"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -358,62 +433,21 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         </Button>
       ) : null}
 
-      <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move item</DialogTitle>
-            <DialogDescription>
-              Move {item.nomenclature} to another active hand receipt. The item
-              record, identifiers, and activity history stay preserved.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="target-hand-receipt">Target hand receipt</Label>
-            {moveTargets.length > 0 ? (
-              <select
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                id="target-hand-receipt"
-                onChange={(event) => setTargetHandReceiptId(event.target.value)}
-                value={targetHandReceiptId}
-              >
-                <option value="">Select active receipt</option>
-                {moveTargets.map((receipt) => (
-                  <option key={receipt.id} value={receipt.id}>
-                    {receipt.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
-                Create another active hand receipt before moving this item.
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              disabled={moveMutation.isPending}
-              onClick={() => setIsMoveDialogOpen(false)}
-              type="button"
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={!targetHandReceiptId || moveMutation.isPending}
-              onClick={() =>
-                moveMutation.mutate({
-                  id: item.id,
-                  targetHandReceiptId,
-                })
-              }
-              type="button"
-            >
-              <ArrowRightLeft aria-hidden="true" className="size-4" />
-              {moveMutation.isPending ? "Moving" : "Move"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MoveItemDialog
+        isMoving={moveMutation.isPending}
+        isOpen={isMoveDialogOpen}
+        item={item}
+        moveTargets={moveTargets}
+        onMove={() =>
+          moveMutation.mutate({
+            id: item.id,
+            targetHandReceiptId,
+          })
+        }
+        onOpenChange={setIsMoveDialogOpen}
+        onTargetChange={setTargetHandReceiptId}
+        targetHandReceiptId={targetHandReceiptId}
+      />
 
       <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
         <DialogContent>

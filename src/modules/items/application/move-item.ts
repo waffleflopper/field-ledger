@@ -19,7 +19,7 @@ type MoveItemInput = {
   now?: Date;
 };
 
-function allowMovementUntil2062CoverageExists() {
+function defaultHasActive2062Coverage() {
   return false;
 }
 
@@ -31,7 +31,7 @@ export async function moveItem({
   itemRepository,
   handReceiptRepository,
   auditRepository,
-  hasActive2062Coverage = allowMovementUntil2062CoverageExists,
+  hasActive2062Coverage = defaultHasActive2062Coverage,
   now = new Date(),
 }: MoveItemInput) {
   const capabilities = deriveAccountCapabilities(account, now);
