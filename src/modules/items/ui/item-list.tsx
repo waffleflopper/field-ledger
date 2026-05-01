@@ -63,6 +63,14 @@ export function ItemList({
               {item.notes ? (
                 <span className="truncate">{item.notes}</span>
               ) : null}
+              {item.signedToContactName ? (
+                <span className="inline-flex items-center gap-1">
+                  Signed to {item.signedToContactName}
+                  <span className="rounded-sm border px-1 font-mono text-[0.63rem] uppercase">
+                    No 2062
+                  </span>
+                </span>
+              ) : null}
             </div>
           </div>
           {canRestore && item.status === "archived" && onRestore ? (

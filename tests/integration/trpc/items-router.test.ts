@@ -6,6 +6,7 @@ import { appRouter } from "@/server/trpc/router";
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { InMemoryContactRepository } from "../../support/contact-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
 
@@ -73,12 +74,14 @@ function createCaller({
   account = createAccount(),
   accountRepository = new InMemoryAccountRepository([account]),
   auditRepository = new InMemoryAuditRepository(),
+  contactRepository = new InMemoryContactRepository(),
   handReceiptRepository = createHandReceiptRepository(),
   itemRepository = new InMemoryItemRepository(),
 }: {
   account?: AccountRecord;
   accountRepository?: InMemoryAccountRepository;
   auditRepository?: InMemoryAuditRepository;
+  contactRepository?: InMemoryContactRepository;
   handReceiptRepository?: InMemoryHandReceiptRepository;
   itemRepository?: InMemoryItemRepository;
 } = {}) {
@@ -90,11 +93,13 @@ function createCaller({
     account,
     accountRepository,
     auditRepository,
+    contactRepository,
     handReceiptRepository,
     itemRepository,
     unitOfWork: createInMemoryAppUnitOfWork({
       accountRepository,
       auditRepository,
+      contactRepository,
       handReceiptRepository,
       itemRepository,
     }),
@@ -390,6 +395,71 @@ describe("itemsRouter", () => {
           toHandReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
         },
       },
+    ]);
+  });
+
+  it("assigns signed-to state through existing and inline-created contacts", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const contactRepository = new InMemoryContactRepository([
+      {
+        id: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        accountId: "account-1",
+        displayName: "SSG Rivera",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Signed radio",
+        ecn: "ECN-701",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      auditRepository,
+      contactRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.assignSignedTo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+      }),
+    ).resolves.toMatchObject({
+      signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+      signedToContactName: "SSG Rivera",
+    });
+    await expect(
+      caller.items.assignSignedToWithNewContact({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactDisplayName: "CPL Nguyen",
+      }),
+    ).resolves.toMatchObject({
+      signedToContactName: "CPL Nguyen",
+    });
+    await expect(
+      caller.items.clearSignedTo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      }),
+    ).resolves.toMatchObject({
+      signedToContactId: null,
+      signedToContactName: null,
+    });
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "item.signed_to_assigned",
+      "contact.created",
+      "item.signed_to_assigned",
+      "item.signed_to_cleared",
     ]);
   });
 

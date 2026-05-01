@@ -14,6 +14,8 @@ const ownerTwoHandReceiptId = "ab6d5ac4-0b79-40ef-bd51-359005c992b5";
 const ownerOneItemId = "8d0751a5-53a7-4284-8aa5-50448ffd210b";
 const ownerTwoItemId = "d75d214e-f428-40e2-87e3-c3de7f037cb8";
 const ownerOneInsertAllowedItemId = "961b8bf3-7b61-4e8a-a2fa-8340a42298fd";
+const ownerOneContactId = "dbbd04c1-8466-4498-9219-5108e864fc88";
+const ownerTwoContactId = "5ac2ca34-3070-4d17-b3c2-d4ed836a088e";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -61,6 +63,19 @@ describe("items RLS", () => {
       },
     ])} on conflict (id) do nothing`;
 
+    await sql`insert into contacts ${sql([
+      {
+        id: ownerOneContactId,
+        account_id: ownerOneAccountId,
+        display_name: "Owner one contact",
+      },
+      {
+        id: ownerTwoContactId,
+        account_id: ownerTwoAccountId,
+        display_name: "Owner two contact",
+      },
+    ])} on conflict (id) do nothing`;
+
     await sql`insert into items ${sql([
       {
         id: ownerOneItemId,
@@ -81,6 +96,7 @@ describe("items RLS", () => {
 
   afterAll(async () => {
     await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertAllowedItemId})`;
+    await sql`delete from contacts where id in (${ownerOneContactId}, ${ownerTwoContactId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
@@ -224,6 +240,16 @@ describe("items RLS", () => {
     );
 
     expect(rows).toEqual([]);
+  });
+
+  it("prevents an owner from signing an item to another account's contact", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set signed_to_contact_id = ${ownerTwoContactId} where id = ${ownerOneItemId} returning id`,
+      ),
+    ).rejects.toThrow();
   });
 
   it("keeps archived item reads scoped to the owner account", async () => {

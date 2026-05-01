@@ -5,6 +5,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 
@@ -31,6 +32,7 @@ describe("accountsRouter", () => {
       account,
       accountRepository: new InMemoryAccountRepository([account]),
       auditRepository: createEmptyAuditRepository(),
+      contactRepository: createEmptyContactRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),

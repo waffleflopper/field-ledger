@@ -1,6 +1,7 @@
 export type KnownAuditAction =
   | "system.initialized"
   | "account.onboarding_completed"
+  | "contact.created"
   | "hand_receipt.created"
   | "hand_receipt.updated"
   | "hand_receipt.archived"
@@ -9,6 +10,8 @@ export type KnownAuditAction =
   | "item.archived"
   | "item.moved"
   | "item.restored"
+  | "item.signed_to_assigned"
+  | "item.signed_to_cleared"
   | "item.updated";
 
 export type AuditAction = KnownAuditAction | (string & {});

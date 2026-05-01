@@ -122,6 +122,12 @@ Rules:
 - Moving an active item between active hand receipts emits `item.moved`, keeps
   the same item record, generated ID, identifiers, notes, and item activity
   history, and changes only the current hand receipt relationship.
+- Manual signed-to state stores `signed_to_contact_id` on the item and always
+  references an account contact. It is never saved as free-text assignee data.
+- Assigning manual signed-to state emits `item.signed_to_assigned`; clearing it
+  emits `item.signed_to_cleared`.
+- Manual signed-to state is labeled as `No 2062` in item surfaces until formal
+  2062 assignment conversion lands.
 - Identifier edits cannot leave the item without ECN, serial number, or a
   generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
@@ -150,7 +156,9 @@ Optional later:
 - notes
 - archived/inactive status
 
-Manual signed-to fallback always references a contact. If the user types a new name, create a contact with only display name.
+Manual signed-to fallback always references a contact. If the user types a new
+name, create a contact with only display name. Creating a contact emits
+`contact.created`.
 
 ## Locations
 

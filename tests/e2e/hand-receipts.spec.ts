@@ -251,6 +251,43 @@ test("users can move an item between active hand receipts", async ({
   ).toBeVisible();
 });
 
+test("users can assign and clear manual signed-to state without a 2062", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Signed-to receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Signed-to receipt" }).click();
+  await page.waitForLoadState("networkidle");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("Signed-to radio");
+  await createDialog.getByLabel("ECN").fill("ECN-SIGNED");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open Signed-to radio" }).click();
+  await expect(page.getByRole("heading", { name: "Signed to" })).toBeVisible();
+  await expect(page.getByText("Not signed out.")).toBeVisible();
+
+  await page.getByLabel("Contact name").fill("SSG Rivera");
+  await page.getByRole("button", { name: "Create SSG Rivera" }).click();
+
+  await expect(page.getByText("SSG Rivera")).toBeVisible();
+  await expect(page.getByText("No 2062")).toBeVisible();
+  await expect(page.getByText("Item signed to contact")).toBeVisible();
+
+  await page.getByRole("button", { name: "Clear" }).click();
+
+  await expect(page.getByText("Not signed out.")).toBeVisible();
+  await expect(page.getByText("Item signed-to cleared")).toBeVisible();
+});
+
 test("hand receipt activity appears in detail, dashboard, and Activity route", async ({
   page,
 }) => {

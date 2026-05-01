@@ -4,6 +4,7 @@ import type {
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { InMemoryAccountRepository } from "./account-repository";
 import { InMemoryAuditRepository } from "./audit-repository";
+import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
 import { InMemoryItemRepository } from "./item-repository";
 
@@ -14,6 +15,8 @@ export function createInMemoryAppUnitOfWork(
     repositories.handReceiptRepository ?? new InMemoryHandReceiptRepository();
   const auditRepository =
     repositories.auditRepository ?? new InMemoryAuditRepository();
+  const contactRepository =
+    repositories.contactRepository ?? new InMemoryContactRepository();
   const accountRepository =
     repositories.accountRepository ?? new InMemoryAccountRepository();
   const itemRepository =
@@ -45,11 +48,20 @@ export function createInMemoryAppUnitOfWork(
         inMemoryItemRepository !== null
           ? [...inMemoryItemRepository.items]
           : null;
+      const inMemoryContactRepository =
+        contactRepository instanceof InMemoryContactRepository
+          ? contactRepository
+          : null;
+      const contactSnapshot =
+        inMemoryContactRepository !== null
+          ? [...inMemoryContactRepository.contacts]
+          : null;
 
       try {
         return await operation({
           accountRepository,
           auditRepository,
+          contactRepository,
           handReceiptRepository,
           itemRepository,
         });
@@ -64,6 +76,10 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryItemRepository && itemSnapshot) {
           inMemoryItemRepository.items = itemSnapshot;
+        }
+
+        if (inMemoryContactRepository && contactSnapshot) {
+          inMemoryContactRepository.contacts = contactSnapshot;
         }
 
         throw error;

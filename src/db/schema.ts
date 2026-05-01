@@ -215,6 +215,29 @@ export const handReceipts = pgTable(
   ],
 ).enableRLS();
 
+export const contacts = pgTable(
+  "contacts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    displayName: text("display_name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("contacts_account_id_display_name_idx").on(
+      table.accountId,
+      table.displayName,
+    ),
+  ],
+).enableRLS();
+
 export const items = pgTable(
   "items",
   {
@@ -231,6 +254,12 @@ export const items = pgTable(
     generatedId: text("generated_id"),
     notes: text("notes"),
     status: itemStatusEnum("status").notNull().default("active"),
+    signedToContactId: uuid("signed_to_contact_id").references(
+      () => contacts.id,
+      {
+        onDelete: "set null",
+      },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

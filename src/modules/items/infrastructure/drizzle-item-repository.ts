@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 
-import { items } from "@/db/schema";
+import { contacts, items } from "@/db/schema";
 import type { ItemRepository } from "@/modules/items";
 import type { ItemRecord } from "@/modules/items/application/types";
 import type {
@@ -12,11 +12,18 @@ import type { createDrizzleClient } from "@/modules/provider-boundaries/database
 
 type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 type ItemRow = typeof items.$inferSelect;
+type ItemRowWithContact = {
+  item: ItemRow;
+  contact: typeof contacts.$inferSelect | null;
+};
 type ItemOperation = <T>(
   operation: (transaction: AuthenticatedDatabaseTransaction) => Promise<T>,
 ) => Promise<T>;
 
-function toItemRecord(row: ItemRow): ItemRecord {
+function toItemRecord(
+  row: ItemRow,
+  contactName: string | null = null,
+): ItemRecord {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -27,9 +34,15 @@ function toItemRecord(row: ItemRow): ItemRecord {
     generatedId: row.generatedId,
     notes: row.notes,
     status: row.status,
+    signedToContactId: row.signedToContactId,
+    signedToContactName: contactName,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+function toItemRecordFromJoinedRow(row: ItemRowWithContact): ItemRecord {
+  return toItemRecord(row.item, row.contact?.displayName ?? null);
 }
 
 function createItemRepository(run: ItemOperation): ItemRepository {
@@ -49,13 +62,14 @@ function createItemRepository(run: ItemOperation): ItemRepository {
 
     const rows = await run((transaction) =>
       transaction
-        .select()
+        .select({ item: items, contact: contacts })
         .from(items)
+        .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
         .where(and(...filters))
         .orderBy(desc(items.createdAt)),
     );
 
-    return rows.map(toItemRecord);
+    return rows.map(toItemRecordFromJoinedRow);
   };
 
   return {
@@ -79,13 +93,14 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findById(accountId, itemId) {
       const [row] = await run((transaction) =>
         transaction
-          .select()
+          .select({ item: items, contact: contacts })
           .from(items)
+          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .limit(1),
       );
 
-      return row ? toItemRecord(row) : null;
+      return row ? toItemRecordFromJoinedRow(row) : null;
     },
     async findByHandReceiptId(accountId, handReceiptId, options = {}) {
       return findByAccountId(accountId, {
@@ -104,24 +119,39 @@ function createItemRepository(run: ItemOperation): ItemRepository {
         return updated ?? null;
       });
 
-      return updatedItem ? toItemRecord(updatedItem) : null;
+      if (!updatedItem) {
+        return null;
+      }
+
+      const [row] = await run((transaction) =>
+        transaction
+          .select({ item: items, contact: contacts })
+          .from(items)
+          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
+          .limit(1),
+      );
+
+      return row ? toItemRecordFromJoinedRow(row) : null;
     },
     async findByEcn(accountId, ecn) {
       const rows = await run((transaction) =>
         transaction
-          .select()
+          .select({ item: items, contact: contacts })
           .from(items)
+          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
           .where(and(eq(items.accountId, accountId), eq(items.ecn, ecn)))
           .orderBy(desc(items.createdAt)),
       );
 
-      return rows.map(toItemRecord);
+      return rows.map(toItemRecordFromJoinedRow);
     },
     async findBySerialNumber(accountId, serialNumber) {
       const rows = await run((transaction) =>
         transaction
-          .select()
+          .select({ item: items, contact: contacts })
           .from(items)
+          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
           .where(
             and(
               eq(items.accountId, accountId),
@@ -131,7 +161,7 @@ function createItemRepository(run: ItemOperation): ItemRepository {
           .orderBy(desc(items.createdAt)),
       );
 
-      return rows.map(toItemRecord);
+      return rows.map(toItemRecordFromJoinedRow);
     },
     async countActiveByAccountId(accountId) {
       const [row] = await run((transaction) =>

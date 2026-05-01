@@ -1,5 +1,7 @@
 import type { AuditRepository } from "@/modules/audit";
 import { createTransactionalDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
+import type { ContactRepository } from "@/modules/contacts";
+import { createTransactionalDrizzleContactRepository } from "@/modules/contacts/infrastructure/drizzle-contact-repository";
 import type { AccountRepository } from "@/modules/accounts/application/ensure-account";
 import { createTransactionalDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
@@ -15,6 +17,7 @@ type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 export type AppUnitOfWorkRepositories = {
   accountRepository: AccountRepository;
   auditRepository: AuditRepository;
+  contactRepository: ContactRepository;
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
 };
@@ -45,6 +48,8 @@ export function createDrizzleAppUnitOfWork(
             createTransactionalDrizzleAccountRepository(transaction),
           auditRepository:
             createTransactionalDrizzleAuditRepository(transaction),
+          contactRepository:
+            createTransactionalDrizzleContactRepository(transaction),
           handReceiptRepository:
             createTransactionalDrizzleHandReceiptRepository(transaction),
           itemRepository: createTransactionalDrizzleItemRepository(transaction),

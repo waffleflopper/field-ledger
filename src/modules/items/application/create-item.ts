@@ -107,6 +107,7 @@ export async function createItem({
     generatedId,
     notes,
     status: "active",
+    signedToContactId: null,
     createdAt: now,
     updatedAt: now,
   });

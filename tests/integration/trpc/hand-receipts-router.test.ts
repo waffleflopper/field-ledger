@@ -6,6 +6,7 @@ import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
+import { createEmptyContactRepository } from "../../support/contact-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 
@@ -32,6 +33,7 @@ function createCaller({
   auditRepository?: InMemoryAuditRepository;
 } = {}) {
   const itemRepository = createEmptyItemRepository();
+  const contactRepository = createEmptyContactRepository();
   return appRouter.createCaller({
     session: {
       userId: account.userId,
@@ -40,10 +42,12 @@ function createCaller({
     account,
     accountRepository: createEmptyAccountRepository(),
     auditRepository,
+    contactRepository,
     handReceiptRepository,
     itemRepository,
     unitOfWork: createInMemoryAppUnitOfWork({
       auditRepository,
+      contactRepository,
       handReceiptRepository,
       itemRepository,
     }),

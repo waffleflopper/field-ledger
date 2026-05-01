@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { ContactPicker } from "@/modules/contacts/ui/contact-picker";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import type { ItemRecord } from "@/modules/items";
 import { trpc } from "@/trpc/react";
@@ -315,6 +316,39 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       setLifecycleError(error.message);
     },
   });
+  const assignSignedToMutation = trpc.items.assignSignedTo.useMutation({
+    onSuccess: async (assigned) => {
+      await refreshItemLifecycleContext(assigned);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
+  const assignSignedToWithNewContactMutation =
+    trpc.items.assignSignedToWithNewContact.useMutation({
+      onSuccess: async (assigned) => {
+        await Promise.all([
+          refreshItemLifecycleContext(assigned),
+          utilities.contacts.list.invalidate(),
+          utilities.contacts.search.invalidate(),
+        ]);
+      },
+      onError: (error) => {
+        setLifecycleError(error.message);
+      },
+    });
+  const clearSignedToMutation = trpc.items.clearSignedTo.useMutation({
+    onSuccess: async (cleared) => {
+      await refreshItemLifecycleContext(cleared);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
+  const signedToMutationPending =
+    assignSignedToMutation.isPending ||
+    assignSignedToWithNewContactMutation.isPending ||
+    clearSignedToMutation.isPending;
 
   async function refreshItemLifecycleContext(
     updated: ItemRecord,
@@ -529,6 +563,29 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
           }}
         />
       )}
+
+      <ContactPicker
+        currentContactName={item.signedToContactName ?? null}
+        disabled={isReadOnly || item.status !== "active"}
+        isPending={signedToMutationPending}
+        onAssignExisting={(contactId) =>
+          assignSignedToMutation.mutate({
+            id: item.id,
+            contactId,
+          })
+        }
+        onAssignNew={(contactDisplayName) =>
+          assignSignedToWithNewContactMutation.mutate({
+            id: item.id,
+            contactDisplayName,
+          })
+        }
+        onClear={() =>
+          clearSignedToMutation.mutate({
+            id: item.id,
+          })
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-2">
         <FutureSection

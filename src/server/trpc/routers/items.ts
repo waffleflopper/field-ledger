@@ -2,8 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  assignSignedTo,
+  assignSignedToWithNewContact,
   archiveItem,
   checkDuplicateIdentifiers,
+  clearSignedTo,
   createItem,
   getItem,
   listActiveItemsByHandReceipt,
@@ -66,6 +69,20 @@ const moveItemInput = z.object({
   targetHandReceiptId: z.uuid(),
 });
 
+const assignSignedToInput = z.object({
+  id: z.uuid(),
+  contactId: z.uuid(),
+});
+
+const assignSignedToWithNewContactInput = z.object({
+  id: z.uuid(),
+  contactDisplayName: z
+    .string()
+    .trim()
+    .min(1, "Contact display name is required.")
+    .max(120),
+});
+
 const updateItemInput = z.object({
   id: z.uuid(),
   nomenclature: z
@@ -107,8 +124,14 @@ function toTRPCError(error: unknown): never {
         message,
       });
     case "Hand receipt was not found.":
+    case "Contact was not found.":
       throw new TRPCError({
         code: "NOT_FOUND",
+        message,
+      });
+    case "Contact display name is required.":
+      throw new TRPCError({
+        code: "BAD_REQUEST",
         message,
       });
     case "Hand receipt is not active.":
@@ -323,5 +346,75 @@ export const itemsRouter = createTRPCRouter({
       }
 
       return moved;
+    }),
+  assignSignedTo: protectedProcedure
+    .input(assignSignedToInput)
+    .mutation(async ({ ctx, input }) => {
+      const assigned = await runInUnitOfWork(ctx, (repositories) =>
+        assignSignedTo({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          contactId: input.contactId,
+          auditRepository: repositories.auditRepository,
+          contactRepository: repositories.contactRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!assigned) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return assigned;
+    }),
+  assignSignedToWithNewContact: protectedProcedure
+    .input(assignSignedToWithNewContactInput)
+    .mutation(async ({ ctx, input }) => {
+      const assigned = await runInUnitOfWork(ctx, (repositories) =>
+        assignSignedToWithNewContact({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          contactDisplayName: input.contactDisplayName,
+          auditRepository: repositories.auditRepository,
+          contactRepository: repositories.contactRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!assigned) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return assigned;
+    }),
+  clearSignedTo: protectedProcedure
+    .input(itemIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const cleared = await runInUnitOfWork(ctx, (repositories) =>
+        clearSignedTo({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          auditRepository: repositories.auditRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!cleared) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return cleared;
     }),
 });

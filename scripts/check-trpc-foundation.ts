@@ -29,6 +29,20 @@ async function main() {
         return [];
       },
     },
+    contactRepository: {
+      async create() {
+        throw new Error("Foundation check should not create contacts.");
+      },
+      async findByAccountId() {
+        return [];
+      },
+      async findById() {
+        return null;
+      },
+      async searchByName() {
+        return [];
+      },
+    },
     handReceiptRepository: {
       async create() {
         throw new Error("Foundation check should not create hand receipts.");

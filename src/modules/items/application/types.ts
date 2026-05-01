@@ -10,11 +10,16 @@ export type ItemRecord = {
   generatedId: string | null;
   notes: string | null;
   status: ItemStatus;
+  signedToContactId?: string | null;
+  signedToContactName?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type NewItemRecord = Omit<ItemRecord, "createdAt" | "updatedAt"> & {
+export type NewItemRecord = Omit<
+  ItemRecord,
+  "createdAt" | "updatedAt" | "signedToContactName"
+> & {
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -29,6 +34,7 @@ export type UpdateItemRecord = Partial<
     | "generatedId"
     | "notes"
     | "status"
+    | "signedToContactId"
     | "updatedAt"
   >
 >;

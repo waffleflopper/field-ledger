@@ -24,6 +24,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       account: ctx.account,
       accountRepository: ctx.accountRepository,
       auditRepository: ctx.auditRepository,
+      contactRepository: ctx.contactRepository,
       handReceiptRepository: ctx.handReceiptRepository,
       itemRepository: ctx.itemRepository,
       unitOfWork: ctx.unitOfWork,
