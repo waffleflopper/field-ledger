@@ -104,6 +104,40 @@ test("users can open and edit hand receipt details", async ({ page }) => {
   await expect(page.getByText("SSG Rivera")).toBeVisible();
 });
 
+test("hand receipt activity appears in detail, dashboard, and Activity route", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Activity context receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page
+    .getByRole("link", { name: "Open Activity context receipt" })
+    .click();
+  await page.waitForLoadState("networkidle");
+
+  await expect(
+    page.getByRole("heading", { name: "Recent Activity" }),
+  ).toBeVisible();
+  await expect(page.getByText("Hand receipt created")).toBeVisible();
+  await expect(page.getByText("hand_receipt.created")).toBeHidden();
+
+  await page.goto("/app/dashboard");
+  await expect(
+    page.getByRole("heading", { name: "Recent Activity" }),
+  ).toBeVisible();
+  await expect(page.getByText("Hand receipt created")).toBeVisible();
+  await expect(page.getByText("Activity context receipt")).toBeVisible();
+
+  await page.goto("/app/activity");
+  await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
+  await expect(page.getByText("Hand receipt created")).toBeVisible();
+  await expect(page.getByText("Activity context receipt")).toBeVisible();
+  await expect(page.getByText("hand_receipt.created")).toBeHidden();
+});
+
 test("users can archive, review, and restore a hand receipt", async ({
   page,
 }) => {
