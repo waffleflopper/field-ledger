@@ -6,6 +6,16 @@ import type { ItemRepository } from "./item-repository";
 import type { ItemRecord, UpdateItemResult } from "./types";
 import { validateItemIdentifiers } from "./validate-item-identifiers";
 
+const editableItemFields = [
+  "nomenclature",
+  "ecn",
+  "serialNumber",
+  "notes",
+] as const;
+
+type EditableItemField = (typeof editableItemFields)[number];
+type EditableItemValues = Pick<ItemRecord, EditableItemField>;
+
 type UpdateItemInput = {
   account: AccountRecord;
   actorId: string;
@@ -22,18 +32,39 @@ type UpdateItemInput = {
   now?: Date;
 };
 
-function cleanOptionalText(value: string | null | undefined) {
+function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
 }
 
-function changedFields(
+function nextEditableItemValues(
   current: ItemRecord,
-  next: Pick<ItemRecord, "nomenclature" | "ecn" | "serialNumber" | "notes">,
-) {
-  const fields = ["nomenclature", "ecn", "serialNumber", "notes"] as const;
+  input: UpdateItemInput["input"],
+): EditableItemValues {
+  return {
+    nomenclature:
+      input.nomenclature === undefined
+        ? current.nomenclature
+        : input.nomenclature.trim(),
+    ecn:
+      input.ecn === undefined ? current.ecn : normalizeOptionalText(input.ecn),
+    serialNumber:
+      input.serialNumber === undefined
+        ? current.serialNumber
+        : normalizeOptionalText(input.serialNumber),
+    notes:
+      input.notes === undefined
+        ? current.notes
+        : normalizeOptionalText(input.notes),
+  };
+}
 
-  return fields.filter((field) => current[field] !== next[field]);
+function changedFields(current: ItemRecord, next: EditableItemValues) {
+  return editableItemFields.filter((field) => current[field] !== next[field]);
+}
+
+function identifiersChanged(current: ItemRecord, next: EditableItemValues) {
+  return current.ecn !== next.ecn || current.serialNumber !== next.serialNumber;
 }
 
 export async function updateItem({
@@ -57,27 +88,12 @@ export async function updateItem({
     return { item: null };
   }
 
-  const nomenclature =
-    input.nomenclature === undefined
-      ? existing.nomenclature
-      : input.nomenclature.trim();
+  const next = nextEditableItemValues(existing, input);
 
-  if (!nomenclature) {
+  if (!next.nomenclature) {
     throw new Error("Item nomenclature is required.");
   }
 
-  const next = {
-    nomenclature,
-    ecn: input.ecn === undefined ? existing.ecn : cleanOptionalText(input.ecn),
-    serialNumber:
-      input.serialNumber === undefined
-        ? existing.serialNumber
-        : cleanOptionalText(input.serialNumber),
-    notes:
-      input.notes === undefined
-        ? existing.notes
-        : cleanOptionalText(input.notes),
-  };
   const identifierValidation = validateItemIdentifiers({
     ...next,
     generatedId: existing.generatedId,
@@ -93,10 +109,7 @@ export async function updateItem({
     return { item: existing };
   }
 
-  const identifiersChanged =
-    existing.ecn !== next.ecn || existing.serialNumber !== next.serialNumber;
-
-  if (identifiersChanged) {
+  if (identifiersChanged(existing, next)) {
     const duplicateWarning = await checkDuplicateIdentifiers({
       accountId: account.id,
       ecn: next.ecn,

@@ -128,18 +128,20 @@ export function ItemEditForm({
       return;
     }
 
+    const ecn = blankToNull(form.ecn);
+    const serialNumber = blankToNull(form.serialNumber);
+    const notes = blankToNull(form.notes);
     setError(null);
 
     const identifiersChanged =
-      blankToNull(form.ecn) !== item.ecn ||
-      blankToNull(form.serialNumber) !== item.serialNumber;
+      ecn !== item.ecn || serialNumber !== item.serialNumber;
 
     if (!confirmDuplicate && identifiersChanged) {
       const duplicateCheck =
         await utilities.items.checkDuplicateIdentifier.fetch({
           itemId: item.id,
-          ecn: blankToNull(form.ecn),
-          serialNumber: blankToNull(form.serialNumber),
+          ecn,
+          serialNumber,
         });
 
       if (duplicateCheck.hasDuplicate) {
@@ -151,9 +153,9 @@ export function ItemEditForm({
     updateMutation.mutate({
       id: item.id,
       nomenclature: form.nomenclature,
-      ecn: blankToNull(form.ecn),
-      serialNumber: blankToNull(form.serialNumber),
-      notes: blankToNull(form.notes),
+      ecn,
+      serialNumber,
+      notes,
       ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
     });
   }
