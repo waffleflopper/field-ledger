@@ -6,7 +6,8 @@
 //                               listing unblocked issues with branch names.
 //   Phase 2 (Execute + Review): For each issue, a sandbox is created via
 //                               createSandbox(). The implementer runs first
-//                               (100 iterations). If it produces commits, a
+//                               (100 iterations). If it produces commits or
+//                               the branch already contains unmerged commits, a
 //                               reviewer runs in the same sandbox on the same
 //                               branch (1 iteration). All issue pipelines run
 //                               concurrently via Promise.allSettled().
@@ -76,6 +77,19 @@ const shellQuote = (value: string) => `'${value.replace(/'/g, "'\\''")}'`;
 
 const hostRepoDir = process.cwd();
 const hostSandboxGitConfigPath = join(hostRepoDir, sandboxGitConfigPath);
+const targetBranch = execText("git", ["branch", "--show-current"]);
+
+const branchHasChangesAgainstTarget = (branch: string) => {
+  try {
+    return (
+      Number(
+        execText("git", ["rev-list", "--count", `${targetBranch}..${branch}`]),
+      ) > 0
+    );
+  } catch {
+    return false;
+  }
+};
 
 const copySandboxGitConfigHook = [
   "mkdir -p .sandcastle",
@@ -226,8 +240,11 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
           },
         });
 
-        // Only review if the implementer produced commits
-        if (implement.commits.length > 0) {
+        const hasBranchChanges = branchHasChangesAgainstTarget(issue.branch);
+
+        // Review retry leftovers too. A previous run may have committed to the
+        // issue branch and then failed before review or merge.
+        if (implement.commits.length > 0 || hasBranchChanges) {
           const review = await sandbox.run({
             name: "reviewer",
             maxIterations: 1,
@@ -243,10 +260,11 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
           return {
             ...review,
             commits: [...implement.commits, ...review.commits],
+            hasMergeableChanges: branchHasChangesAgainstTarget(issue.branch),
           };
         }
 
-        return implement;
+        return { ...implement, hasMergeableChanges: false };
       } finally {
         await sandbox.close();
       }
@@ -269,7 +287,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     .filter(
       (entry) =>
         entry.outcome.status === "fulfilled" &&
-        entry.outcome.value.commits.length > 0,
+        entry.outcome.value.hasMergeableChanges,
     )
     .map((entry) => entry.issue);
 
