@@ -106,6 +106,17 @@ async function main() {
         return [];
       },
     },
+    requirementRepository: {
+      async create() {
+        throw new Error("Foundation check should not create requirements.");
+      },
+      async findByItemId() {
+        return [];
+      },
+      async findByName() {
+        return null;
+      },
+    },
     unitOfWork: {
       async run() {
         throw new Error("Foundation check should not start a unit of work.");

@@ -9,6 +9,7 @@ import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 import { createEmptyLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -37,6 +38,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -81,6 +83,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -150,6 +153,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -205,6 +209,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 

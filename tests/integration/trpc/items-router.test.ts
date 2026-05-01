@@ -11,6 +11,7 @@ import { InMemoryContactRepository } from "../../support/contact-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
 import { InMemoryLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -80,6 +81,7 @@ function createCaller({
   handReceiptRepository = createHandReceiptRepository(),
   itemRepository = new InMemoryItemRepository(),
   locationRepository = new InMemoryLocationRepository(),
+  requirementRepository = createEmptyRequirementRepository(),
   unitOfWork,
 }: {
   account?: AccountRecord;
@@ -89,6 +91,7 @@ function createCaller({
   handReceiptRepository?: InMemoryHandReceiptRepository;
   itemRepository?: InMemoryItemRepository;
   locationRepository?: InMemoryLocationRepository;
+  requirementRepository?: ReturnType<typeof createEmptyRequirementRepository>;
   unitOfWork?: AppUnitOfWork;
 } = {}) {
   return appRouter.createCaller({
@@ -103,6 +106,7 @@ function createCaller({
     handReceiptRepository,
     itemRepository,
     locationRepository,
+    requirementRepository,
     unitOfWork:
       unitOfWork ??
       createInMemoryAppUnitOfWork({
@@ -112,6 +116,7 @@ function createCaller({
         handReceiptRepository,
         itemRepository,
         locationRepository,
+        requirementRepository,
       }),
   });
 }

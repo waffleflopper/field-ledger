@@ -45,6 +45,18 @@ export const handReceiptStatusEnum = pgEnum("hand_receipt_status", [
 
 export const itemStatusEnum = pgEnum("item_status", ["active", "archived"]);
 
+export const requirementIntervalTypeEnum = pgEnum("requirement_interval_type", [
+  "weekly",
+  "monthly",
+  "quarterly",
+  "semiannual",
+  "annual",
+  "custom_days",
+  "custom_months",
+]);
+
+export const requirementStatusEnum = pgEnum("requirement_status", ["active"]);
+
 export const authUser = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -316,6 +328,37 @@ export const items = pgTable(
     index("items_account_id_location_id_idx").on(
       table.accountId,
       table.locationId,
+    ),
+  ],
+).enableRLS();
+
+export const requirements = pgTable(
+  "requirements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id),
+    name: text("name").notNull(),
+    intervalType: requirementIntervalTypeEnum("interval_type").notNull(),
+    intervalValue: integer("interval_value"),
+    nextDueDate: date("next_due_date").notNull(),
+    status: requirementStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("requirements_account_id_item_id_status_idx").on(
+      table.accountId,
+      table.itemId,
+      table.status,
     ),
   ],
 ).enableRLS();

@@ -8,6 +8,7 @@ import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
 import { InMemoryItemRepository } from "./item-repository";
 import { InMemoryLocationRepository } from "./location-repository";
+import { InMemoryRequirementRepository } from "./requirement-repository";
 
 export function createInMemoryAppUnitOfWork(
   repositories: Partial<AppUnitOfWorkRepositories> = {},
@@ -24,6 +25,8 @@ export function createInMemoryAppUnitOfWork(
     repositories.itemRepository ?? new InMemoryItemRepository();
   const locationRepository =
     repositories.locationRepository ?? new InMemoryLocationRepository();
+  const requirementRepository =
+    repositories.requirementRepository ?? new InMemoryRequirementRepository();
 
   return {
     async run(operation) {
@@ -75,6 +78,14 @@ export function createInMemoryAppUnitOfWork(
         inMemoryAccountRepository !== null
           ? inMemoryAccountRepository.snapshotState()
           : null;
+      const inMemoryRequirementRepository =
+        requirementRepository instanceof InMemoryRequirementRepository
+          ? requirementRepository
+          : null;
+      const requirementSnapshot =
+        inMemoryRequirementRepository !== null
+          ? [...inMemoryRequirementRepository.requirements]
+          : null;
 
       try {
         return await operation({
@@ -84,6 +95,7 @@ export function createInMemoryAppUnitOfWork(
           handReceiptRepository,
           itemRepository,
           locationRepository,
+          requirementRepository,
         });
       } catch (error) {
         if (inMemoryHandReceiptRepository && handReceiptSnapshot) {
@@ -108,6 +120,10 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryAccountRepository && accountSnapshot) {
           inMemoryAccountRepository.restoreState(accountSnapshot);
+        }
+
+        if (inMemoryRequirementRepository && requirementSnapshot) {
+          inMemoryRequirementRepository.requirements = requirementSnapshot;
         }
 
         throw error;

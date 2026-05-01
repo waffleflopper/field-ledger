@@ -245,6 +245,11 @@ MVP interval options:
 
 Rules:
 
+- A requirement belongs to exactly one item and one account.
+- Requirement creation happens from item detail and emits
+  `requirement.created`.
+- Paused/read-only accounts can view requirements but cannot create new ones.
+- Active requirements are listed on item detail by next due date.
 - Due dates calculate from last completed date.
 - Completion creates permanent history.
 - Completion date defaults to today, allows past dates, blocks future dates.

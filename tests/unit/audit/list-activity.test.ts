@@ -131,6 +131,48 @@ describe("listRecentActivity", () => {
     ]);
   });
 
+  it("returns readable target context from requirement metadata", async () => {
+    const repository: AuditRepository = {
+      async record(event) {
+        return {
+          id: "event-1",
+          createdAt: event.createdAt ?? event.occurredAt,
+          ...event,
+        };
+      },
+      async listByAccountId() {
+        return [
+          {
+            id: "event-1",
+            accountId: "account-1",
+            actorId: "user-1",
+            action: "requirement.created",
+            targetType: "requirement",
+            targetId: "requirement-1",
+            occurredAt: new Date("2026-05-01T12:00:00.000Z"),
+            metadata: { name: "Monthly PMCS" },
+            createdAt: new Date("2026-05-01T12:00:01.000Z"),
+          },
+        ];
+      },
+      async listByTarget() {
+        return [];
+      },
+    };
+
+    await expect(
+      listRecentActivity({
+        accountId: "account-1",
+        repository,
+      }),
+    ).resolves.toMatchObject([
+      {
+        label: "Requirement created",
+        targetLabel: "Monthly PMCS",
+      },
+    ]);
+  });
+
   it("passes target filters to the repository for contextual activity", async () => {
     const { repository, getReceivedTarget } = createRecordingRepository();
 

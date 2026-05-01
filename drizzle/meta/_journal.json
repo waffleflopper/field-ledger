@@ -113,6 +113,13 @@
       "when": 1777619460000,
       "tag": "0015_locations_item_location",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777672889212,
+      "tag": "0016_wet_giant_man",
+      "breakpoints": true
     }
   ]
 }

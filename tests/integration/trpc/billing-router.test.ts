@@ -8,6 +8,7 @@ import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 import { createEmptyLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 describe("billingRouter", () => {
   it("serves current account capabilities through the typed tRPC boundary", async () => {
@@ -31,6 +32,7 @@ describe("billingRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
