@@ -246,11 +246,11 @@ export function CreateItemForm({
           </div>
 
           <LocationPicker
-            disabled={!canCreate || submitting}
+            currentLocationName={location?.name ?? null}
+            disabled={!canCreate}
             isPending={submitting}
             onChange={setLocation}
             value={location?.id ?? null}
-            currentLocationName={location?.name ?? null}
           />
 
           {duplicateWarning ? (

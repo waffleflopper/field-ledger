@@ -253,7 +253,7 @@ export function ItemEditForm({
           <div className="md:col-span-2">
             <LocationPicker
               currentLocationName={form.locationName}
-              disabled={isReadOnly || updateMutation.isPending}
+              disabled={isReadOnly}
               isPending={updateMutation.isPending}
               onChange={(nextLocation) => {
                 setForm((current) => ({

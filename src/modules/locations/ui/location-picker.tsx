@@ -1,7 +1,7 @@
 "use client";
 
 import { MapPin, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,32 @@ type LocationPickerProps = {
   onChange: (location: { id: string; name: string } | null) => void;
 };
 
+function getSelectedLocation({
+  currentLocationName,
+  locations,
+  value,
+}: {
+  currentLocationName: string | null;
+  locations: Array<{ id: string; name: string }>;
+  value: string | null;
+}) {
+  if (!value) {
+    return null;
+  }
+
+  const matchingLocation = locations.find((location) => location.id === value);
+
+  if (matchingLocation) {
+    return matchingLocation;
+  }
+
+  if (currentLocationName) {
+    return { id: value, name: currentLocationName };
+  }
+
+  return null;
+}
+
 export function LocationPicker({
   value,
   currentLocationName = null,
@@ -24,6 +50,7 @@ export function LocationPicker({
   onChange,
 }: LocationPickerProps) {
   const utilities = trpc.useUtils();
+  const inputId = useId();
   const [query, setQuery] = useState("");
   const searchQuery = trpc.locations.search.useQuery(
     { query },
@@ -43,11 +70,11 @@ export function LocationPicker({
   });
   const locations = searchQuery.data ?? [];
   const trimmedQuery = query.trim();
-  const selectedLocation =
-    locations.find((location) => location.id === value) ??
-    (value && currentLocationName
-      ? { id: value, name: currentLocationName }
-      : null);
+  const selectedLocation = getSelectedLocation({
+    currentLocationName,
+    locations,
+    value,
+  });
   const hasExactMatch = useMemo(
     () =>
       locations.some(
@@ -62,7 +89,7 @@ export function LocationPicker({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <Label htmlFor="item-location">Location</Label>
+        <Label htmlFor={inputId}>Location</Label>
         {selectedLocation ? (
           <Button
             disabled={disabled || pending}
@@ -86,7 +113,7 @@ export function LocationPicker({
         <Input
           className="mt-3 bg-background"
           disabled={disabled || pending}
-          id="item-location"
+          id={inputId}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search or create location"
           value={query}
