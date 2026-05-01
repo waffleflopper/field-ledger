@@ -11,6 +11,10 @@ For each branch:
 3. After resolving conflicts, run `pnpm verify:sandcastle` to verify the merged result
 4. If tests fail, fix the issues before proceeding to the next branch
 
+Do not run `pnpm install`, `npm install`, `corepack install`, or any other dependency install/refresh command inside the sandbox.
+
+Do not run `pnpm test`, `pnpm test:*`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests. If verification is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, report it as a verification limitation and do not try to repair sandbox dependencies.
+
 After all branches are merged, make a single commit summarizing the merge.
 
 # CLOSE ISSUES
