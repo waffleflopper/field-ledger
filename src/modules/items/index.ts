@@ -1,3 +1,4 @@
+export * from "./application/archive-item";
 export * from "./application/check-duplicate-identifiers";
 export * from "./application/create-item";
 export * from "./application/generated-id";

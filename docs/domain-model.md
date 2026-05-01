@@ -113,11 +113,21 @@ Rules:
 - Creating an item emits `item.created` with hand receipt and identifier metadata.
 - Editing nomenclature, ECN, serial number, and notes emits `item.updated` with
   changed field metadata.
+- Archiving an item emits `item.archived`, keeps the same item identity and
+  history, and removes the item from normal active hand receipt workflows.
+- Archived items remain linked to their hand receipt and stay deliberately
+  reviewable through archived-record views.
+- Restoring an archived item emits `item.restored` and returns the same item
+  record to active workflows.
 - Identifier edits cannot leave the item without ECN, serial number, or a
   generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
 - Generated IDs are account-sequential and allocated from the account record.
 - Item with active 2062 cannot move to another hand receipt until the active 2062 link is closed.
+- When item requirements exist, archived items should suppress day-to-day
+  requirement reminders while remaining available for historical review.
+- Future 2062 work should define whether archived items with active 2062
+  coverage require a warning, a block, or a close-coverage step.
 
 ## Contacts
 

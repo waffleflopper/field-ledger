@@ -2,11 +2,14 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  archiveItem,
   checkDuplicateIdentifiers,
   createItem,
   getItem,
   listActiveItemsByHandReceipt,
+  listArchivedItemsByHandReceipt,
   listItems,
+  restoreItem,
   updateItem,
 } from "@/modules/items";
 import type {
@@ -44,12 +47,13 @@ const createItemInput = z.object({
 const listItemsInput = z
   .object({
     handReceiptId: z.uuid().optional(),
-    status: z.enum(["active", "archived"]).optional(),
+    status: z.enum(["active", "archived", "all"]).optional(),
   })
   .optional();
 
 const listByHandReceiptInput = z.object({
   handReceiptId: z.uuid(),
+  status: z.enum(["active", "archived"]).optional(),
 });
 
 const itemIdInput = z.object({
@@ -102,6 +106,8 @@ function toTRPCError(error: unknown): never {
         message,
       });
     case "Hand receipt is not active.":
+    case "Item is already archived.":
+    case "Item is already active.":
       throw new TRPCError({
         code: "CONFLICT",
         message,
@@ -140,13 +146,21 @@ export const itemsRouter = createTRPCRouter({
   ),
   listByHandReceipt: protectedProcedure
     .input(listByHandReceiptInput)
-    .query(({ ctx, input }) =>
-      listActiveItemsByHandReceipt({
+    .query(({ ctx, input }) => {
+      if (input.status === "archived") {
+        return listArchivedItemsByHandReceipt({
+          accountId: ctx.account.id,
+          handReceiptId: input.handReceiptId,
+          repository: ctx.itemRepository,
+        });
+      }
+
+      return listActiveItemsByHandReceipt({
         accountId: ctx.account.id,
         handReceiptId: input.handReceiptId,
         repository: ctx.itemRepository,
-      }),
-    ),
+      });
+    }),
   getById: protectedProcedure
     .input(itemIdInput)
     .query(async ({ ctx, input }) => {
@@ -231,5 +245,49 @@ export const itemsRouter = createTRPCRouter({
       }
 
       return result;
+    }),
+  archive: protectedProcedure
+    .input(itemIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const archived = await runInUnitOfWork(ctx, (repositories) =>
+        archiveItem({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          auditRepository: repositories.auditRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!archived) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return archived;
+    }),
+  restore: protectedProcedure
+    .input(itemIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const restored = await runInUnitOfWork(ctx, (repositories) =>
+        restoreItem({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          auditRepository: repositories.auditRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!restored) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item was not found.",
+        });
+      }
+
+      return restored;
     }),
 });

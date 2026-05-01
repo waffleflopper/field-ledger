@@ -1,19 +1,21 @@
 import type { ItemRepository } from "./item-repository";
 import type { ItemStatus } from "./types";
 
+type ItemListStatus = ItemStatus | "all";
+
 export function listItems({
   accountId,
-  status,
+  status = "active",
   handReceiptId,
   repository,
 }: {
   accountId: string;
-  status?: ItemStatus;
+  status?: ItemListStatus;
   handReceiptId?: string;
   repository: ItemRepository;
 }) {
   return repository.findByAccountId(accountId, {
-    ...(status ? { status } : {}),
+    ...(status !== "all" ? { status } : {}),
     ...(handReceiptId ? { handReceiptId } : {}),
   });
 }
@@ -29,5 +31,19 @@ export function listActiveItemsByHandReceipt({
 }) {
   return repository.findByHandReceiptId(accountId, handReceiptId, {
     status: "active",
+  });
+}
+
+export function listArchivedItemsByHandReceipt({
+  accountId,
+  handReceiptId,
+  repository,
+}: {
+  accountId: string;
+  handReceiptId: string;
+  repository: ItemRepository;
+}) {
+  return repository.findByHandReceiptId(accountId, handReceiptId, {
+    status: "archived",
   });
 }

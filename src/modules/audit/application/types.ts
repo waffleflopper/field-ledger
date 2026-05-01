@@ -6,6 +6,8 @@ export type KnownAuditAction =
   | "hand_receipt.archived"
   | "hand_receipt.restored"
   | "item.created"
+  | "item.archived"
+  | "item.restored"
   | "item.updated";
 
 export type AuditAction = KnownAuditAction | (string & {});

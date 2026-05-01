@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Hash, PackageSearch } from "lucide-react";
+import { Hash, PackageSearch, RotateCcw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { ItemRecord } from "@/modules/items";
 
 function getPrimaryIdentifier(item: ItemRecord) {
@@ -15,12 +16,23 @@ function getPrimaryIdentifier(item: ItemRecord) {
   return item.generatedId ?? "No identifier";
 }
 
-export function ItemList({ items }: { items: ItemRecord[] }) {
+export function ItemList({
+  canRestore = false,
+  emptyDescription = "Add the first physical item for this hand receipt when you are ready to track accountable property.",
+  items,
+  onRestore,
+  restorePendingId = null,
+}: {
+  canRestore?: boolean;
+  emptyDescription?: string;
+  items: ItemRecord[];
+  onRestore?: (item: ItemRecord) => void;
+  restorePendingId?: string | null;
+}) {
   if (items.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-        Add the first physical item for this hand receipt when you are ready to
-        track accountable property.
+        {emptyDescription}
       </div>
     );
   }
@@ -53,6 +65,18 @@ export function ItemList({ items }: { items: ItemRecord[] }) {
               ) : null}
             </div>
           </div>
+          {canRestore && item.status === "archived" && onRestore ? (
+            <Button
+              disabled={restorePendingId === item.id}
+              onClick={() => onRestore(item)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              {restorePendingId === item.id ? "Restoring" : "Restore"}
+            </Button>
+          ) : null}
         </article>
       ))}
     </div>

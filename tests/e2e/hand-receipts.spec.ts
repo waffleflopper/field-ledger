@@ -156,6 +156,56 @@ test("users can open and edit item details from a hand receipt", async ({
   await expect(page.getByText("Item updated")).toBeVisible();
 });
 
+test("users can archive, review, and restore property items", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Item lifecycle receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Item lifecycle receipt" }).click();
+  await page.waitForLoadState("networkidle");
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("PRC radio");
+  await createDialog.getByLabel("ECN").fill("ECN-404");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open PRC radio" }).click();
+  await expect(page).toHaveURL(
+    /\/app\/hand-receipts\/[0-9a-f-]+\/items\/[0-9a-f-]+$/,
+  );
+  await expect(page.getByText(/will leave active hand receipt/)).toBeHidden();
+  await page.getByRole("button", { name: "Archive item" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive this item?",
+  });
+  await expect(
+    archiveDialog.getByText(/will leave active hand receipt/),
+  ).toBeVisible();
+  await archiveDialog.getByRole("button", { name: "Archive" }).click();
+
+  await expect(page.getByText("archived property item")).toBeVisible();
+  await expect(page.getByText("Item archived")).toBeVisible();
+  await page.getByRole("link", { name: "Back to hand receipt" }).click();
+  await expect(page.getByRole("link", { name: "Open PRC radio" })).toBeHidden();
+
+  await page.getByRole("button", { name: "Archived" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open PRC radio" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Restore" }).click();
+  await page.getByRole("button", { name: "Active" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open PRC radio" }),
+  ).toBeVisible();
+});
+
 test("hand receipt activity appears in detail, dashboard, and Activity route", async ({
   page,
 }) => {

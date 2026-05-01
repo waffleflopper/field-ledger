@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  Archive,
   ArrowLeft,
   ClipboardList,
   FileText,
@@ -10,10 +11,19 @@ import {
   History,
   PackageSearch,
   Pencil,
+  RotateCcw,
   ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
 import type { ItemRecord } from "@/modules/items";
 import { trpc } from "@/trpc/react";
@@ -90,10 +100,12 @@ function FutureSection({
 function DetailSummary({
   item,
   isReadOnly,
+  onArchive,
   onEdit,
 }: {
   item: ItemRecord;
   isReadOnly: boolean;
+  onArchive: () => void;
   onEdit: () => void;
 }) {
   return (
@@ -117,10 +129,24 @@ function DetailSummary({
             Read only
           </span>
         ) : (
-          <Button onClick={onEdit} size="sm" type="button" variant="outline">
-            <Pencil aria-hidden="true" className="size-4" />
-            Edit item
-          </Button>
+          <div className="flex items-center gap-2">
+            {item.status === "active" ? (
+              <Button
+                aria-label="Archive item"
+                onClick={onArchive}
+                size="icon-sm"
+                title="Archive item"
+                type="button"
+                variant="destructive"
+              >
+                <Archive aria-hidden="true" className="size-4" />
+              </Button>
+            ) : null}
+            <Button onClick={onEdit} size="sm" type="button" variant="outline">
+              <Pencil aria-hidden="true" className="size-4" />
+              Edit item
+            </Button>
+          </div>
         )}
       </div>
       <dl className="grid gap-x-5 md:grid-cols-2">
@@ -144,6 +170,9 @@ function DetailSummary({
 
 export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const utilities = trpc.useUtils();
   const itemQuery = trpc.items.getById.useQuery({ id: itemId });
   const owningHandReceiptId = itemQuery.data?.handReceiptId ?? handReceiptId;
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
@@ -158,6 +187,59 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
   const item = itemQuery.data;
   const handReceipt = handReceiptQuery.data;
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  const archiveMutation = trpc.items.archive.useMutation({
+    onSuccess: async (archived) => {
+      setIsArchiveDialogOpen(false);
+      setLifecycleError(null);
+      utilities.items.getById.setData({ id: itemId }, archived);
+      await Promise.all([
+        utilities.items.getById.invalidate({ id: itemId }),
+        utilities.items.list.invalidate(),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId: archived.handReceiptId,
+          status: "active",
+        }),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId: archived.handReceiptId,
+          status: "archived",
+        }),
+        utilities.audit.listRecentActivity.invalidate(),
+        utilities.audit.listTargetActivity.invalidate({
+          targetType: "item",
+          targetId: itemId,
+        }),
+      ]);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
+  const restoreMutation = trpc.items.restore.useMutation({
+    onSuccess: async (restored) => {
+      setLifecycleError(null);
+      utilities.items.getById.setData({ id: itemId }, restored);
+      await Promise.all([
+        utilities.items.getById.invalidate({ id: itemId }),
+        utilities.items.list.invalidate(),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId: restored.handReceiptId,
+          status: "active",
+        }),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId: restored.handReceiptId,
+          status: "archived",
+        }),
+        utilities.audit.listRecentActivity.invalidate(),
+        utilities.audit.listTargetActivity.invalidate({
+          targetType: "item",
+          targetId: itemId,
+        }),
+      ]);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
 
   if (itemQuery.isLoading || handReceiptQuery.isLoading) {
     return (
@@ -219,9 +301,60 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       {isReadOnly ? (
         <p className="rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
           This account is read-only. Item details remain available, but edits
-          are paused until access is restored.
+          and lifecycle changes are paused until access is restored.
         </p>
       ) : null}
+
+      {lifecycleError ? (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          {lifecycleError}
+        </p>
+      ) : null}
+
+      {!isReadOnly && item.status === "archived" ? (
+        <Button
+          disabled={restoreMutation.isPending}
+          onClick={() => restoreMutation.mutate({ id: item.id })}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <RotateCcw aria-hidden="true" className="size-4" />
+          {restoreMutation.isPending ? "Restoring" : "Restore item"}
+        </Button>
+      ) : null}
+
+      <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Archive this item?</DialogTitle>
+            <DialogDescription>
+              {item.nomenclature} will leave active hand receipt workflows. The
+              item record, identifiers, notes, and activity history stay
+              preserved and can be restored later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              disabled={archiveMutation.isPending}
+              onClick={() => setIsArchiveDialogOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={archiveMutation.isPending}
+              onClick={() => archiveMutation.mutate({ id: item.id })}
+              type="button"
+              variant="destructive"
+            >
+              <Archive aria-hidden="true" className="size-4" />
+              {archiveMutation.isPending ? "Archiving" : "Archive"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section className="rounded-lg border bg-card p-4 text-card-foreground">
         <div className="flex items-start gap-3">
@@ -262,6 +395,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         <DetailSummary
           isReadOnly={isReadOnly}
           item={item}
+          onArchive={() => setIsArchiveDialogOpen(true)}
           onEdit={() => setIsEditing(true)}
         />
       )}

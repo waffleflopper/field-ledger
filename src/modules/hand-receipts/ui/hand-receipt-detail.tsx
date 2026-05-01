@@ -33,6 +33,8 @@ type HandReceiptDetailProps = {
   handReceiptId: string;
 };
 
+type ItemView = "active" | "archived";
+
 function formatDate(value: Date | string | null) {
   if (!value) {
     return "Not set";
@@ -180,6 +182,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [itemView, setItemView] = useState<ItemView>("active");
+  const [itemLifecycleError, setItemLifecycleError] = useState<string | null>(
+    null,
+  );
   const utilities = trpc.useUtils();
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
     id: handReceiptId,
@@ -191,6 +197,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   });
   const itemsQuery = trpc.items.listByHandReceipt.useQuery({
     handReceiptId,
+    status: itemView,
   });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const handReceipt = handReceiptQuery.data;
@@ -238,7 +245,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
     onSuccess: async (result) => {
       if (result.item) {
         await Promise.all([
-          utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
+          utilities.items.listByHandReceipt.invalidate({
+            handReceiptId,
+            status: "active",
+          }),
           utilities.audit.listRecentActivity.invalidate(),
           utilities.audit.listTargetActivity.invalidate({
             targetType: "hand_receipt",
@@ -246,6 +256,32 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           }),
         ]);
       }
+    },
+  });
+  const restoreItemMutation = trpc.items.restore.useMutation({
+    onSuccess: async (restored) => {
+      setItemLifecycleError(null);
+      utilities.items.getById.setData({ id: restored.id }, restored);
+      await Promise.all([
+        utilities.items.getById.invalidate({ id: restored.id }),
+        utilities.items.list.invalidate(),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId,
+          status: "active",
+        }),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId,
+          status: "archived",
+        }),
+        utilities.audit.listRecentActivity.invalidate(),
+        utilities.audit.listTargetActivity.invalidate({
+          targetType: "item",
+          targetId: restored.id,
+        }),
+      ]);
+    },
+    onError: (error) => {
+      setItemLifecycleError(error.message);
     },
   });
 
@@ -390,24 +426,69 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                   Property Items
                 </h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  One row is one physical accountable item in this receipt.
+                  Review active property by default, or switch to archived
+                  records when you need preserved item history.
                 </p>
               </div>
-              <CreateItemForm
-                canCreate={!isReadOnly && handReceipt.status === "active"}
-                disabledReason={createItemDisabledReason}
-                onSubmit={(input) =>
-                  createItemMutation.mutateAsync({
-                    handReceiptId,
-                    ...input,
-                  })
-                }
-              />
+              {itemView === "active" ? (
+                <CreateItemForm
+                  canCreate={!isReadOnly && handReceipt.status === "active"}
+                  disabledReason={createItemDisabledReason}
+                  onSubmit={(input) =>
+                    createItemMutation.mutateAsync({
+                      handReceiptId,
+                      ...input,
+                    })
+                  }
+                />
+              ) : null}
             </div>
+            <div className="flex w-fit rounded-lg border bg-background p-1">
+              <button
+                aria-pressed={itemView === "active"}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                onClick={() => {
+                  setItemLifecycleError(null);
+                  setItemView("active");
+                }}
+                type="button"
+              >
+                Active
+              </button>
+              <button
+                aria-pressed={itemView === "archived"}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                onClick={() => {
+                  setItemLifecycleError(null);
+                  setItemView("archived");
+                }}
+                type="button"
+              >
+                Archived
+              </button>
+            </div>
+            {itemLifecycleError ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                {itemLifecycleError}
+              </p>
+            ) : null}
             {itemsQuery.isLoading ? (
               <div className="h-24 rounded-lg border bg-secondary" />
             ) : (
-              <ItemList items={itemsQuery.data ?? []} />
+              <ItemList
+                canRestore={!isReadOnly && itemView === "archived"}
+                emptyDescription={
+                  itemView === "archived"
+                    ? "Archived items from this hand receipt will appear here after they leave active workflows."
+                    : "Add the first physical item for this hand receipt when you are ready to track accountable property."
+                }
+                items={itemsQuery.data ?? []}
+                onRestore={(item) => {
+                  setItemLifecycleError(null);
+                  restoreItemMutation.mutate({ id: item.id });
+                }}
+                restorePendingId={restoreItemMutation.variables?.id ?? null}
+              />
             )}
           </section>
           <FutureSection

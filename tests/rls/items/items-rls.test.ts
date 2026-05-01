@@ -178,6 +178,24 @@ describe("items RLS", () => {
     ).resolves.toEqual([{ id: ownerOneItemId }]);
   });
 
+  it("allows an owner to archive and restore their own items", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set status = 'archived' where id = ${ownerOneItemId} returning id, status`,
+      ),
+    ).resolves.toEqual([{ id: ownerOneItemId, status: "archived" }]);
+
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set status = 'active' where id = ${ownerOneItemId} returning id, status`,
+      ),
+    ).resolves.toEqual([{ id: ownerOneItemId, status: "active" }]);
+  });
+
   it("prevents an owner from updating another account's items", async () => {
     const rows = await asAuthenticatedOwner(
       ownerOneId,
@@ -186,5 +204,27 @@ describe("items RLS", () => {
     );
 
     expect(rows).toEqual([]);
+  });
+
+  it("prevents an owner from archiving another account's items", async () => {
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update items set status = 'archived' where id = ${ownerTwoItemId} returning id`,
+    );
+
+    expect(rows).toEqual([]);
+  });
+
+  it("keeps archived item reads scoped to the owner account", async () => {
+    await sql`update items set status = 'archived' where id in (${ownerOneItemId}, ${ownerTwoItemId})`;
+
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`select id from items where status = 'archived' order by id`,
+    );
+
+    expect(rows).toEqual([{ id: ownerOneItemId }]);
   });
 });
