@@ -6,12 +6,17 @@ import type {
 
 export class InMemoryAuditRepository implements AuditRepository {
   events: AuditEventRecord[] = [];
+  failRecording = false;
 
   constructor(events: AuditEventRecord[] = []) {
     this.events = [...events];
   }
 
   async record(event: NewAuditEventRecord) {
+    if (this.failRecording) {
+      throw new Error("Audit event was not recorded.");
+    }
+
     const createdEvent = {
       id: `event-${this.events.length + 1}`,
       createdAt: event.createdAt ?? event.occurredAt,

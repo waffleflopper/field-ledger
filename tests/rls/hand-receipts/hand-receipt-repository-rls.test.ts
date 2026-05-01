@@ -82,30 +82,17 @@ describe("hand receipt repository RLS boundary", () => {
     });
 
     await expect(
-      repository.createWithAuditEvent(
-        {
-          accountId: ownerTwoAccountId,
-          name: "Blocked receipt",
-          notes: null,
-          handReceiptNumber: null,
-          holderName: null,
-          unitName: null,
-          uic: null,
-          effectiveDate: null,
-          status: "active",
-        },
-        {
-          accountId: ownerTwoAccountId,
-          actorId: ownerOneId,
-          action: "hand_receipt.created",
-          targetType: "hand_receipt",
-          targetId: "blocked-receipt",
-          occurredAt: new Date("2026-04-30T14:00:00.000Z"),
-          metadata: {
-            name: "Blocked receipt",
-          },
-        },
-      ),
+      repository.create({
+        accountId: ownerTwoAccountId,
+        name: "Blocked receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+      }),
     ).rejects.toThrow();
   });
 
@@ -115,48 +102,18 @@ describe("hand receipt repository RLS boundary", () => {
     });
 
     await expect(
-      repository.updateWithAuditEvent(
-        ownerOneAccountId,
-        ownerOneHandReceiptId,
-        {
-          name: "Updated owner one receipt",
-        },
-        {
-          accountId: ownerOneAccountId,
-          actorId: ownerOneId,
-          action: "hand_receipt.updated",
-          targetType: "hand_receipt",
-          targetId: ownerOneHandReceiptId,
-          occurredAt: new Date("2026-04-30T14:30:00.000Z"),
-          metadata: {
-            changedFields: ["name"],
-          },
-        },
-      ),
+      repository.update(ownerOneAccountId, ownerOneHandReceiptId, {
+        name: "Updated owner one receipt",
+      }),
     ).resolves.toMatchObject({
       id: ownerOneHandReceiptId,
       name: "Updated owner one receipt",
     });
 
     await expect(
-      repository.updateWithAuditEvent(
-        ownerTwoAccountId,
-        ownerTwoHandReceiptId,
-        {
-          name: "Blocked owner two update",
-        },
-        {
-          accountId: ownerTwoAccountId,
-          actorId: ownerOneId,
-          action: "hand_receipt.updated",
-          targetType: "hand_receipt",
-          targetId: ownerTwoHandReceiptId,
-          occurredAt: new Date("2026-04-30T14:35:00.000Z"),
-          metadata: {
-            changedFields: ["name"],
-          },
-        },
-      ),
+      repository.update(ownerTwoAccountId, ownerTwoHandReceiptId, {
+        name: "Blocked owner two update",
+      }),
     ).resolves.toBeNull();
   });
 });

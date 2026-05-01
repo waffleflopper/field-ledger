@@ -9,11 +9,15 @@ import type {
 } from "@/modules/audit/application/types";
 import { normalizeRecentActivityLimit } from "@/modules/audit/application/list-activity";
 import type { AuthenticatedDatabaseSession } from "@/modules/provider-boundaries/database/authenticated-session";
+import type { AuthenticatedDatabaseTransaction } from "@/modules/provider-boundaries/database/authenticated-session";
 import { runWithAuthenticatedDatabaseSession } from "@/modules/provider-boundaries/database/authenticated-session";
 import type { createDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
 
 type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 type AuditEventRow = typeof auditEvents.$inferSelect;
+type AuditOperation = <T>(
+  operation: (transaction: AuthenticatedDatabaseTransaction) => Promise<T>,
+) => Promise<T>;
 
 function toAuditEventRecord(row: AuditEventRow): AuditEventRecord {
   return {
@@ -29,17 +33,11 @@ function toAuditEventRecord(row: AuditEventRow): AuditEventRecord {
   };
 }
 
-export function createDrizzleAuditRepository(
-  db: DrizzleClient,
-  session: AuthenticatedDatabaseSession,
-): AuditRepository {
+function createAuditRepository(run: AuditOperation): AuditRepository {
   return {
     async record(event) {
-      const [createdEvent] = await runWithAuthenticatedDatabaseSession(
-        db,
-        session,
-        (transaction) =>
-          transaction.insert(auditEvents).values(event).returning(),
+      const [createdEvent] = await run((transaction) =>
+        transaction.insert(auditEvents).values(event).returning(),
       );
 
       if (!createdEvent) {
@@ -50,41 +48,50 @@ export function createDrizzleAuditRepository(
     },
     async listByAccountId(accountId, options = {}) {
       const limit = normalizeRecentActivityLimit(options.limit);
-      const rows = await runWithAuthenticatedDatabaseSession(
-        db,
-        session,
-        (transaction) =>
-          transaction
-            .select()
-            .from(auditEvents)
-            .where(eq(auditEvents.accountId, accountId))
-            .orderBy(desc(auditEvents.occurredAt))
-            .limit(limit),
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(auditEvents)
+          .where(eq(auditEvents.accountId, accountId))
+          .orderBy(desc(auditEvents.occurredAt))
+          .limit(limit),
       );
 
       return rows.map(toAuditEventRecord);
     },
     async listByTarget(accountId, target, options = {}) {
       const limit = normalizeRecentActivityLimit(options.limit);
-      const rows = await runWithAuthenticatedDatabaseSession(
-        db,
-        session,
-        (transaction) =>
-          transaction
-            .select()
-            .from(auditEvents)
-            .where(
-              and(
-                eq(auditEvents.accountId, accountId),
-                eq(auditEvents.targetType, target.targetType),
-                eq(auditEvents.targetId, target.targetId),
-              ),
-            )
-            .orderBy(desc(auditEvents.occurredAt))
-            .limit(limit),
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(auditEvents)
+          .where(
+            and(
+              eq(auditEvents.accountId, accountId),
+              eq(auditEvents.targetType, target.targetType),
+              eq(auditEvents.targetId, target.targetId),
+            ),
+          )
+          .orderBy(desc(auditEvents.occurredAt))
+          .limit(limit),
       );
 
       return rows.map(toAuditEventRecord);
     },
   };
+}
+
+export function createDrizzleAuditRepository(
+  db: DrizzleClient,
+  session: AuthenticatedDatabaseSession,
+): AuditRepository {
+  return createAuditRepository((operation) =>
+    runWithAuthenticatedDatabaseSession(db, session, operation),
+  );
+}
+
+export function createTransactionalDrizzleAuditRepository(
+  transaction: AuthenticatedDatabaseTransaction,
+): AuditRepository {
+  return createAuditRepository((operation) => operation(transaction));
 }

@@ -1,4 +1,5 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import type { HandReceiptRepository } from "./hand-receipt-repository";
 import type { HandReceiptMetadataInput, HandReceiptRecord } from "./types";
@@ -11,6 +12,7 @@ type UpdateHandReceiptInput = {
     name: string;
   };
   handReceiptRepository: HandReceiptRepository;
+  auditRepository: AuditRepository;
   now?: Date;
 };
 
@@ -50,6 +52,7 @@ export async function updateHandReceipt({
   handReceiptId,
   input,
   handReceiptRepository,
+  auditRepository,
   now = new Date(),
 }: UpdateHandReceiptInput) {
   const name = input.name.trim();
@@ -88,23 +91,33 @@ export async function updateHandReceipt({
     return existing;
   }
 
-  return handReceiptRepository.updateWithAuditEvent(
+  const updated = await handReceiptRepository.update(
     account.id,
     handReceiptId,
     {
       ...updates,
       updatedAt: now,
     },
-    {
-      accountId: account.id,
-      actorId,
-      action: "hand_receipt.updated",
-      targetType: "hand_receipt",
-      targetId: handReceiptId,
-      metadata: {
-        changedFields: changedFieldNames,
-      },
-      occurredAt: now,
-    },
   );
+
+  if (!updated) {
+    return null;
+  }
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId,
+    action: "hand_receipt.updated",
+    target: {
+      type: "hand_receipt",
+      id: handReceiptId,
+    },
+    metadata: {
+      changedFields: changedFieldNames,
+    },
+    occurredAt: now,
+    repository: auditRepository,
+  });
+
+  return updated;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import { createHandReceipt } from "@/modules/hand-receipts";
+import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
@@ -21,6 +22,7 @@ describe("createHandReceipt", () => {
   it("creates an active hand receipt and records an audit event", async () => {
     const account = createAccount();
     const handReceiptRepository = new InMemoryHandReceiptRepository();
+    const auditRepository = new InMemoryAuditRepository();
 
     const handReceipt = await createHandReceipt({
       account,
@@ -30,6 +32,7 @@ describe("createHandReceipt", () => {
         notes: "Sensitive items stay in the wall locker.",
       },
       handReceiptRepository,
+      auditRepository,
       now: new Date("2026-04-30T12:00:00.000Z"),
       createHandReceiptId: () => "created-hand-receipt-1",
     });
@@ -40,7 +43,7 @@ describe("createHandReceipt", () => {
       notes: "Sensitive items stay in the wall locker.",
       status: "active",
     });
-    expect(handReceiptRepository.auditEvents).toMatchObject([
+    expect(auditRepository.events).toMatchObject([
       {
         accountId: account.id,
         actorId: account.userId,
@@ -54,9 +57,10 @@ describe("createHandReceipt", () => {
     ]);
   });
 
-  it("does not create a hand receipt when the audit event cannot be recorded", async () => {
+  it("propagates audit recording failures to the caller", async () => {
     const handReceiptRepository = new InMemoryHandReceiptRepository();
-    handReceiptRepository.failAuditRecording = true;
+    const auditRepository = new InMemoryAuditRepository();
+    auditRepository.failRecording = true;
 
     await expect(
       createHandReceipt({
@@ -66,11 +70,11 @@ describe("createHandReceipt", () => {
           name: "Unaudited receipt",
         },
         handReceiptRepository,
+        auditRepository,
       }),
     ).rejects.toThrow("Audit event was not recorded.");
 
-    expect(handReceiptRepository.handReceipts).toEqual([]);
-    expect(handReceiptRepository.auditEvents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("requires a non-empty name", async () => {
@@ -82,6 +86,7 @@ describe("createHandReceipt", () => {
           name: "   ",
         },
         handReceiptRepository: new InMemoryHandReceiptRepository(),
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("Hand receipt name is required.");
   });
@@ -98,6 +103,7 @@ describe("createHandReceipt", () => {
           name: "Read-only receipt",
         },
         handReceiptRepository: new InMemoryHandReceiptRepository(),
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("This account is read-only.");
   });
@@ -157,6 +163,7 @@ describe("createHandReceipt", () => {
           name: "Charlie",
         },
         handReceiptRepository,
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).resolves.toMatchObject({
       name: "Charlie",
@@ -170,6 +177,7 @@ describe("createHandReceipt", () => {
           name: "Delta",
         },
         handReceiptRepository,
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("Active hand receipt limit reached.");
   });
@@ -203,6 +211,7 @@ describe("createHandReceipt", () => {
         handReceiptRepository: new InMemoryHandReceiptRepository(
           seededReceipts,
         ),
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).resolves.toMatchObject({
       name: "Trial receipt",
@@ -220,6 +229,7 @@ describe("createHandReceipt", () => {
         handReceiptRepository: new InMemoryHandReceiptRepository(
           seededReceipts,
         ),
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).resolves.toMatchObject({
       name: "Pro receipt",

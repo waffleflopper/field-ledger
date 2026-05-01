@@ -128,20 +128,23 @@ export const handReceiptsRouter = createTRPCRouter({
     .input(createHandReceiptInput)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await createHandReceipt({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          input: {
-            name: input.name,
-            notes: input.notes,
-            handReceiptNumber: input.handReceiptNumber,
-            holderName: input.holderName,
-            unitName: input.unitName,
-            uic: input.uic,
-            effectiveDate: input.effectiveDate,
-          },
-          handReceiptRepository: ctx.handReceiptRepository,
-        });
+        return await ctx.unitOfWork.run((repositories) =>
+          createHandReceipt({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            input: {
+              name: input.name,
+              notes: input.notes,
+              handReceiptNumber: input.handReceiptNumber,
+              holderName: input.holderName,
+              unitName: input.unitName,
+              uic: input.uic,
+              effectiveDate: input.effectiveDate,
+            },
+            handReceiptRepository: repositories.handReceiptRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+        );
       } catch (error) {
         toTRPCError(error);
       }
@@ -150,21 +153,24 @@ export const handReceiptsRouter = createTRPCRouter({
     .input(updateHandReceiptInput)
     .mutation(async ({ ctx, input }) => {
       try {
-        const updated = await updateHandReceipt({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          handReceiptId: input.id,
-          input: {
-            name: input.name,
-            notes: input.notes,
-            handReceiptNumber: input.handReceiptNumber,
-            holderName: input.holderName,
-            unitName: input.unitName,
-            uic: input.uic,
-            effectiveDate: input.effectiveDate,
-          },
-          handReceiptRepository: ctx.handReceiptRepository,
-        });
+        const updated = await ctx.unitOfWork.run((repositories) =>
+          updateHandReceipt({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            handReceiptId: input.id,
+            input: {
+              name: input.name,
+              notes: input.notes,
+              handReceiptNumber: input.handReceiptNumber,
+              holderName: input.holderName,
+              unitName: input.unitName,
+              uic: input.uic,
+              effectiveDate: input.effectiveDate,
+            },
+            handReceiptRepository: repositories.handReceiptRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+        );
 
         if (!updated) {
           throw new TRPCError({
@@ -186,12 +192,15 @@ export const handReceiptsRouter = createTRPCRouter({
     .input(handReceiptIdInput)
     .mutation(async ({ ctx, input }) => {
       try {
-        const archived = await archiveHandReceipt({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          handReceiptId: input.id,
-          handReceiptRepository: ctx.handReceiptRepository,
-        });
+        const archived = await ctx.unitOfWork.run((repositories) =>
+          archiveHandReceipt({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            handReceiptId: input.id,
+            handReceiptRepository: repositories.handReceiptRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+        );
 
         if (!archived) {
           throw new TRPCError({
@@ -213,12 +222,15 @@ export const handReceiptsRouter = createTRPCRouter({
     .input(handReceiptIdInput)
     .mutation(async ({ ctx, input }) => {
       try {
-        const restored = await restoreHandReceipt({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          handReceiptId: input.id,
-          handReceiptRepository: ctx.handReceiptRepository,
-        });
+        const restored = await ctx.unitOfWork.run((repositories) =>
+          restoreHandReceipt({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            handReceiptId: input.id,
+            handReceiptRepository: repositories.handReceiptRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+        );
 
         if (!restored) {
           throw new TRPCError({

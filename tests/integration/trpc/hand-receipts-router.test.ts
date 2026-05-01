@@ -5,6 +5,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
+import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
@@ -38,6 +39,10 @@ function createCaller({
     accountRepository: createEmptyAccountRepository(),
     auditRepository,
     handReceiptRepository,
+    unitOfWork: createInMemoryAppUnitOfWork({
+      auditRepository,
+      handReceiptRepository,
+    }),
   });
 }
 
@@ -127,6 +132,26 @@ describe("handReceiptsRouter", () => {
         name: "",
       }),
     ).rejects.toBeInstanceOf(TRPCError);
+  });
+
+  it("rolls back hand receipt creation when audit recording fails in the unit of work", async () => {
+    const repository = new InMemoryHandReceiptRepository();
+    const auditRepository = new InMemoryAuditRepository();
+    auditRepository.failRecording = true;
+
+    await expect(
+      createCaller({
+        auditRepository,
+        handReceiptRepository: repository,
+      }).handReceipts.create({
+        name: "Unaudited receipt",
+      }),
+    ).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Audit event was not recorded.",
+    });
+    expect(repository.handReceipts).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("enforces capability limits through the typed procedure", async () => {
@@ -246,6 +271,7 @@ describe("handReceiptsRouter", () => {
 
   it("updates hand receipt details and records update audit history", async () => {
     const handReceiptId = "895c4267-19a7-4629-a873-3e7224d00528";
+    const auditRepository = new InMemoryAuditRepository();
     const repository = new InMemoryHandReceiptRepository([
       {
         id: handReceiptId,
@@ -265,6 +291,7 @@ describe("handReceiptsRouter", () => {
 
     const updated = await createCaller({
       handReceiptRepository: repository,
+      auditRepository,
     }).handReceipts.update({
       id: handReceiptId,
       name: "Updated receipt",
@@ -278,7 +305,7 @@ describe("handReceiptsRouter", () => {
       notes: "Edited in detail.",
       holderName: "SSG Rivera",
     });
-    expect(repository.auditEvents).toMatchObject([
+    expect(auditRepository.events).toMatchObject([
       {
         accountId: "account-1",
         actorId: "owner-1",
@@ -330,6 +357,7 @@ describe("handReceiptsRouter", () => {
 
   it("archives and restores through the typed procedures with audit history", async () => {
     const handReceiptId = "ce34705f-369b-45f0-91fd-c5f03f18b952";
+    const auditRepository = new InMemoryAuditRepository();
     const repository = new InMemoryHandReceiptRepository([
       {
         id: handReceiptId,
@@ -346,7 +374,10 @@ describe("handReceiptsRouter", () => {
         updatedAt: new Date("2026-04-30T12:00:00.000Z"),
       },
     ]);
-    const caller = createCaller({ handReceiptRepository: repository });
+    const caller = createCaller({
+      auditRepository,
+      handReceiptRepository: repository,
+    });
 
     await expect(
       caller.handReceipts.archive({ id: handReceiptId }),
@@ -368,7 +399,7 @@ describe("handReceiptsRouter", () => {
       id: handReceiptId,
       status: "active",
     });
-    expect(repository.auditEvents).toMatchObject([
+    expect(auditRepository.events).toMatchObject([
       {
         action: "hand_receipt.archived",
         targetId: handReceiptId,
@@ -389,6 +420,7 @@ describe("handReceiptsRouter", () => {
   it("blocks archive and restore mutations for read-only accounts without audit history", async () => {
     const activeId = "b09c3dc7-02fe-4205-80ec-712dd7567347";
     const archivedId = "b12b070b-4f35-48db-b3d2-ddc36f5ee5cd";
+    const auditRepository = new InMemoryAuditRepository();
     const repository = new InMemoryHandReceiptRepository([
       {
         id: activeId,
@@ -424,6 +456,7 @@ describe("handReceiptsRouter", () => {
         accessState: "paused_read_only",
         subscriptionTier: "pro",
       }),
+      auditRepository,
       handReceiptRepository: repository,
     });
 
@@ -439,6 +472,6 @@ describe("handReceiptsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
-    expect(repository.auditEvents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 });

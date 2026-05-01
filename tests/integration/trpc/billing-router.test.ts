@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { createEmptyAuditRepository } from "../../support/audit-repository";
+import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 describe("billingRouter", () => {
@@ -24,6 +25,7 @@ describe("billingRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository: createEmptyAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
     await expect(caller.billing.capabilities()).resolves.toMatchObject({

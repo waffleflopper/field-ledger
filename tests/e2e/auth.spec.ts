@@ -4,7 +4,7 @@ test("signed-in users can sign out from the app shell", async ({ page }) => {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
   const email = `signout-${suffix}@example.test`;
 
-  await page.goto("/auth/login?next=/app");
+  await page.goto("/auth/login?next=/app/dashboard");
   await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");

@@ -4,6 +4,7 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import { appRouter } from "@/server/trpc/router";
 import { createEmptyAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
+import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(): AccountRecord {
@@ -30,6 +31,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository: new InMemoryAuditRepository(),
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toEqual([]);
@@ -70,6 +72,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
     await expect(caller.audit.listRecentActivity()).resolves.toMatchObject([
@@ -135,6 +138,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
     await expect(
@@ -186,6 +190,7 @@ describe("auditRouter", () => {
       accountRepository: createEmptyAccountRepository(),
       auditRepository,
       handReceiptRepository: createEmptyHandReceiptRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
     await expect(

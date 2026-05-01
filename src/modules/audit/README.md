@@ -18,6 +18,10 @@ changes happen; routes and UI components do not write audit rows directly.
   session so RLS evaluates the app-owned `app.current_auth_subject` setting.
   Do not remove that boundary or replace it with direct privileged database
   access.
+- Workflows that need the domain write and audit event to commit atomically
+  should run through the app-owned unit-of-work boundary. The unit of work
+  supplies a transaction-scoped `AuditRepository`; domain repositories should
+  not insert `audit_events` directly.
 
 ## Actions
 

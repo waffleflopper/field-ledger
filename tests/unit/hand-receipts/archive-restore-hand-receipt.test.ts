@@ -5,6 +5,7 @@ import {
   archiveHandReceipt,
   restoreHandReceipt,
 } from "@/modules/hand-receipts";
+import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
@@ -57,12 +58,14 @@ describe("archiveHandReceipt", () => {
   it("archives an active hand receipt and records audit history", async () => {
     const account = createAccount();
     const repository = createRepository();
+    const auditRepository = new InMemoryAuditRepository();
 
     const archived = await archiveHandReceipt({
       account,
       actorId: account.userId,
       handReceiptId: "active-receipt",
       handReceiptRepository: repository,
+      auditRepository,
       now: new Date("2026-04-30T13:00:00.000Z"),
     });
 
@@ -71,7 +74,7 @@ describe("archiveHandReceipt", () => {
       status: "archived",
       updatedAt: new Date("2026-04-30T13:00:00.000Z"),
     });
-    expect(repository.auditEvents).toMatchObject([
+    expect(auditRepository.events).toMatchObject([
       {
         accountId: account.id,
         actorId: account.userId,
@@ -95,12 +98,14 @@ describe("archiveHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "active-receipt",
         handReceiptRepository: createRepository(),
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("This account is read-only.");
   });
 
   it("does not archive an already archived hand receipt", async () => {
     const repository = createRepository();
+    const auditRepository = new InMemoryAuditRepository();
 
     await expect(
       archiveHandReceipt({
@@ -108,9 +113,10 @@ describe("archiveHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "archived-receipt",
         handReceiptRepository: repository,
+        auditRepository,
       }),
     ).rejects.toThrow("Hand receipt is already archived.");
-    expect(repository.auditEvents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 });
 
@@ -118,12 +124,14 @@ describe("restoreHandReceipt", () => {
   it("restores an archived hand receipt and records audit history", async () => {
     const account = createAccount();
     const repository = createRepository();
+    const auditRepository = new InMemoryAuditRepository();
 
     const restored = await restoreHandReceipt({
       account,
       actorId: account.userId,
       handReceiptId: "archived-receipt",
       handReceiptRepository: repository,
+      auditRepository,
       now: new Date("2026-04-30T13:30:00.000Z"),
     });
 
@@ -132,7 +140,7 @@ describe("restoreHandReceipt", () => {
       status: "active",
       updatedAt: new Date("2026-04-30T13:30:00.000Z"),
     });
-    expect(repository.auditEvents).toMatchObject([
+    expect(auditRepository.events).toMatchObject([
       {
         accountId: account.id,
         actorId: account.userId,
@@ -185,13 +193,14 @@ describe("restoreHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "archived-receipt",
         handReceiptRepository: repository,
+        auditRepository: new InMemoryAuditRepository(),
       }),
     ).rejects.toThrow("Active hand receipt limit reached.");
-    expect(repository.auditEvents).toEqual([]);
   });
 
   it("does not restore an already active hand receipt", async () => {
     const repository = createRepository();
+    const auditRepository = new InMemoryAuditRepository();
 
     await expect(
       restoreHandReceipt({
@@ -199,8 +208,9 @@ describe("restoreHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "active-receipt",
         handReceiptRepository: repository,
+        auditRepository,
       }),
     ).rejects.toThrow("Hand receipt is already active.");
-    expect(repository.auditEvents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 });

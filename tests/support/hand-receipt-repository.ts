@@ -1,4 +1,3 @@
-import type { AuditEventRecord, NewAuditEventRecord } from "@/modules/audit";
 import type {
   HandReceiptRecord,
   HandReceiptRepository,
@@ -8,14 +7,12 @@ import type {
 
 export class InMemoryHandReceiptRepository implements HandReceiptRepository {
   handReceipts: HandReceiptRecord[] = [];
-  auditEvents: AuditEventRecord[] = [];
-  failAuditRecording = false;
 
   constructor(handReceipts: HandReceiptRecord[] = []) {
     this.handReceipts = [...handReceipts];
   }
 
-  private async create(handReceipt: NewHandReceiptRecord) {
+  async create(handReceipt: NewHandReceiptRecord) {
     const createdHandReceipt = {
       id: `hand-receipt-${this.handReceipts.length + 1}`,
       createdAt: handReceipt.createdAt ?? new Date(),
@@ -24,25 +21,6 @@ export class InMemoryHandReceiptRepository implements HandReceiptRepository {
     };
 
     this.handReceipts.push(createdHandReceipt);
-    return createdHandReceipt;
-  }
-
-  async createWithAuditEvent(
-    handReceipt: NewHandReceiptRecord,
-    auditEvent: NewAuditEventRecord,
-  ) {
-    if (this.failAuditRecording) {
-      throw new Error("Audit event was not recorded.");
-    }
-
-    const createdHandReceipt = await this.create(handReceipt);
-    const createdAuditEvent = {
-      id: `event-${this.auditEvents.length + 1}`,
-      createdAt: auditEvent.createdAt ?? auditEvent.occurredAt,
-      ...auditEvent,
-    };
-
-    this.auditEvents.push(createdAuditEvent);
     return createdHandReceipt;
   }
 
@@ -71,16 +49,11 @@ export class InMemoryHandReceiptRepository implements HandReceiptRepository {
     );
   }
 
-  async updateWithAuditEvent(
+  async update(
     accountId: string,
     handReceiptId: string,
     updates: UpdateHandReceiptRecord,
-    auditEvent: NewAuditEventRecord,
   ) {
-    if (this.failAuditRecording) {
-      throw new Error("Audit event was not recorded.");
-    }
-
     const index = this.handReceipts.findIndex(
       (handReceipt) =>
         handReceipt.accountId === accountId && handReceipt.id === handReceiptId,
@@ -103,11 +76,6 @@ export class InMemoryHandReceiptRepository implements HandReceiptRepository {
     };
 
     this.handReceipts[index] = updatedHandReceipt;
-    this.auditEvents.push({
-      id: `event-${this.auditEvents.length + 1}`,
-      createdAt: auditEvent.createdAt ?? auditEvent.occurredAt,
-      ...auditEvent,
-    });
 
     return updatedHandReceipt;
   }

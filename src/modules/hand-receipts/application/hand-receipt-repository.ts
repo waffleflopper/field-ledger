@@ -1,4 +1,3 @@
-import type { NewAuditEventRecord } from "@/modules/audit";
 import type {
   HandReceiptRecord,
   HandReceiptStatus,
@@ -7,10 +6,7 @@ import type {
 } from "./types";
 
 export interface HandReceiptRepository {
-  createWithAuditEvent(
-    handReceipt: NewHandReceiptRecord,
-    auditEvent: NewAuditEventRecord,
-  ): Promise<HandReceiptRecord>;
+  create(handReceipt: NewHandReceiptRecord): Promise<HandReceiptRecord>;
   findByAccountId(
     accountId: string,
     options?: { status?: HandReceiptStatus },
@@ -19,18 +15,17 @@ export interface HandReceiptRepository {
     accountId: string,
     handReceiptId: string,
   ): Promise<HandReceiptRecord | null>;
-  updateWithAuditEvent(
+  update(
     accountId: string,
     handReceiptId: string,
     updates: UpdateHandReceiptRecord,
-    auditEvent: NewAuditEventRecord,
   ): Promise<HandReceiptRecord | null>;
   countActiveByAccountId(accountId: string): Promise<number>;
 }
 
 export function createUnavailableHandReceiptRepository(): HandReceiptRepository {
   return {
-    async createWithAuditEvent() {
+    async create() {
       throw new Error("An authenticated database session is required.");
     },
     async findByAccountId() {
@@ -39,7 +34,7 @@ export function createUnavailableHandReceiptRepository(): HandReceiptRepository 
     async findById() {
       throw new Error("An authenticated database session is required.");
     },
-    async updateWithAuditEvent() {
+    async update() {
       throw new Error("An authenticated database session is required.");
     },
     async countActiveByAccountId() {
