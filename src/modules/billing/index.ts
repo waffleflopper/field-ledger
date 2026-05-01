@@ -1,6 +1,7 @@
 export {
   canArchiveHandReceipt,
   canCreateHandReceipt,
+  canMoveItem,
   canRestoreHandReceipt,
   getActiveHandReceiptLimit,
   isAccountReadOnly,

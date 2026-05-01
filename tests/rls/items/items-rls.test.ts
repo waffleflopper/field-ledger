@@ -178,6 +178,16 @@ describe("items RLS", () => {
     ).resolves.toEqual([{ id: ownerOneItemId }]);
   });
 
+  it("prevents an owner from moving an item to another account's hand receipt", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set hand_receipt_id = ${ownerTwoHandReceiptId} where id = ${ownerOneItemId} returning id`,
+      ),
+    ).rejects.toThrow();
+  });
+
   it("allows an owner to archive and restore their own items", async () => {
     await expect(
       asAuthenticatedOwner(

@@ -119,11 +119,17 @@ Rules:
   reviewable through archived-record views.
 - Restoring an archived item emits `item.restored` and returns the same item
   record to active workflows.
+- Moving an active item between active hand receipts emits `item.moved`, keeps
+  the same item record, generated ID, identifiers, notes, and item activity
+  history, and changes only the current hand receipt relationship.
 - Identifier edits cannot leave the item without ECN, serial number, or a
   generated app ID.
 - Generated ID is permanent and human-friendly, such as `FL-000123`.
 - Generated IDs are account-sequential and allocated from the account record.
-- Item with active 2062 cannot move to another hand receipt until the active 2062 link is closed.
+- Item with active 2062 cannot move to another hand receipt until the active
+  2062 link is closed. Until formal 2062 assignment enforcement lands, item
+  movement keeps a dedicated application-service hook for this future block but
+  does not implement assignments, documents, active links, or enforcement.
 - When item requirements exist, archived items should suppress day-to-day
   requirement reminders while remaining available for historical review.
 - Future 2062 work should define whether archived items with active 2062

@@ -38,6 +38,34 @@ function createHandReceiptRepository() {
       createdAt: new Date("2026-04-30T12:00:00.000Z"),
       updatedAt: new Date("2026-04-30T12:00:00.000Z"),
     },
+    {
+      id: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      accountId: "account-1",
+      name: "Motor pool hand receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "active",
+      createdAt: new Date("2026-04-30T13:00:00.000Z"),
+      updatedAt: new Date("2026-04-30T13:00:00.000Z"),
+    },
+    {
+      id: "ed871afb-990f-4370-8e7e-8b53c097091d",
+      accountId: "account-2",
+      name: "Other account hand receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "active",
+      createdAt: new Date("2026-04-30T14:00:00.000Z"),
+      updatedAt: new Date("2026-04-30T14:00:00.000Z"),
+    },
   ]);
 }
 
@@ -304,7 +332,96 @@ describe("itemsRouter", () => {
     ]);
   });
 
-  it("maps read-only archive and restore attempts to FORBIDDEN", async () => {
+  it("moves an item between active hand receipts and records item activity", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Move-ready radio",
+        ecn: "ECN-501",
+        serialNumber: "SER-501",
+        generatedId: "FL-000501",
+        notes: "Preserve these notes",
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({ auditRepository, itemRepository });
+
+    await expect(
+      caller.items.move({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        targetHandReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      }),
+    ).resolves.toMatchObject({
+      id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      handReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      nomenclature: "Move-ready radio",
+      ecn: "ECN-501",
+      serialNumber: "SER-501",
+      generatedId: "FL-000501",
+      notes: "Preserve these notes",
+    });
+    await expect(
+      caller.items.listByHandReceipt({
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+      }),
+    ).resolves.toEqual([]);
+    await expect(
+      caller.items.listByHandReceipt({
+        handReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      }),
+    ).resolves.toMatchObject([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        nomenclature: "Move-ready radio",
+      },
+    ]);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "item.moved",
+        targetType: "item",
+        targetId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        metadata: {
+          fromHandReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+          toHandReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+        },
+      },
+    ]);
+  });
+
+  it("rejects cross-account item moves as not found", async () => {
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Scoped radio",
+        ecn: "ECN-601",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({ itemRepository }).items.move({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        targetHandReceiptId: "ed871afb-990f-4370-8e7e-8b53c097091d",
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Item or target hand receipt was not found.",
+    });
+  });
+
+  it("maps read-only archive, restore, and move attempts to FORBIDDEN", async () => {
     const itemRepository = new InMemoryItemRepository([
       {
         id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
@@ -349,6 +466,15 @@ describe("itemsRouter", () => {
     });
     await expect(
       caller.items.restore({ id: "209de9cc-73cc-4f2c-99d8-0af00d94574c" }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.items.move({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        targetHandReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
       message: "This account is read-only.",

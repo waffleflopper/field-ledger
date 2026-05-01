@@ -9,6 +9,7 @@ import {
   listActiveItemsByHandReceipt,
   listArchivedItemsByHandReceipt,
   listItems,
+  moveItem,
   restoreItem,
   updateItem,
 } from "@/modules/items";
@@ -60,6 +61,11 @@ const itemIdInput = z.object({
   id: z.uuid(),
 });
 
+const moveItemInput = z.object({
+  id: z.uuid(),
+  targetHandReceiptId: z.uuid(),
+});
+
 const updateItemInput = z.object({
   id: z.uuid(),
   nomenclature: z
@@ -108,6 +114,10 @@ function toTRPCError(error: unknown): never {
     case "Hand receipt is not active.":
     case "Item is already archived.":
     case "Item is already active.":
+    case "Cannot move an archived item.":
+    case "Cannot move item from an archived hand receipt.":
+    case "Cannot move item to an archived hand receipt.":
+    case "Cannot move item with active 2062 coverage.":
       throw new TRPCError({
         code: "CONFLICT",
         message,
@@ -289,5 +299,29 @@ export const itemsRouter = createTRPCRouter({
       }
 
       return restored;
+    }),
+  move: protectedProcedure
+    .input(moveItemInput)
+    .mutation(async ({ ctx, input }) => {
+      const moved = await runInUnitOfWork(ctx, (repositories) =>
+        moveItem({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemId: input.id,
+          targetHandReceiptId: input.targetHandReceiptId,
+          auditRepository: repositories.auditRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      );
+
+      if (!moved) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item or target hand receipt was not found.",
+        });
+      }
+
+      return moved;
     }),
 });

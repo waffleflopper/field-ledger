@@ -5,6 +5,7 @@ export * from "./application/generated-id";
 export * from "./application/get-item";
 export * from "./application/item-repository";
 export * from "./application/list-items";
+export * from "./application/move-item";
 export * from "./application/types";
 export * from "./application/update-item";
 export * from "./application/validate-item-identifiers";

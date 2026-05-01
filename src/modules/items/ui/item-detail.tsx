@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Archive,
   ArrowLeft,
+  ArrowRightLeft,
   ClipboardList,
   FileText,
   Hash,
@@ -24,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
 import type { ItemRecord } from "@/modules/items";
 import { trpc } from "@/trpc/react";
@@ -102,11 +104,13 @@ function DetailSummary({
   isReadOnly,
   onArchive,
   onEdit,
+  onMove,
 }: {
   item: ItemRecord;
   isReadOnly: boolean;
   onArchive: () => void;
   onEdit: () => void;
+  onMove: () => void;
 }) {
   return (
     <section className="rounded-lg border bg-card p-4 text-card-foreground">
@@ -131,16 +135,27 @@ function DetailSummary({
         ) : (
           <div className="flex items-center gap-2">
             {item.status === "active" ? (
-              <Button
-                aria-label="Archive item"
-                onClick={onArchive}
-                size="icon-sm"
-                title="Archive item"
-                type="button"
-                variant="destructive"
-              >
-                <Archive aria-hidden="true" className="size-4" />
-              </Button>
+              <>
+                <Button
+                  onClick={onMove}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <ArrowRightLeft aria-hidden="true" className="size-4" />
+                  Move
+                </Button>
+                <Button
+                  aria-label="Archive item"
+                  onClick={onArchive}
+                  size="icon-sm"
+                  title="Archive item"
+                  type="button"
+                  variant="destructive"
+                >
+                  <Archive aria-hidden="true" className="size-4" />
+                </Button>
+              </>
             ) : null}
             <Button onClick={onEdit} size="sm" type="button" variant="outline">
               <Pencil aria-hidden="true" className="size-4" />
@@ -171,6 +186,8 @@ function DetailSummary({
 export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [targetHandReceiptId, setTargetHandReceiptId] = useState("");
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const utilities = trpc.useUtils();
   const itemQuery = trpc.items.getById.useQuery({ id: itemId });
@@ -183,9 +200,16 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
     targetId: itemId,
     limit: 6,
   });
+  const activeHandReceiptsQuery = trpc.handReceipts.list.useQuery({
+    status: "active",
+  });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
   const item = itemQuery.data;
   const handReceipt = handReceiptQuery.data;
+  const moveTargets =
+    activeHandReceiptsQuery.data?.filter(
+      (receipt) => receipt.id !== item?.handReceiptId,
+    ) ?? [];
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
   const archiveMutation = trpc.items.archive.useMutation({
     onSuccess: async (archived) => {
@@ -204,13 +228,36 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       setLifecycleError(error.message);
     },
   });
+  const moveMutation = trpc.items.move.useMutation({
+    onSuccess: async (moved) => {
+      const previousHandReceiptId = item?.handReceiptId ?? handReceiptId;
 
-  async function refreshItemLifecycleContext(updated: ItemRecord) {
+      setIsMoveDialogOpen(false);
+      setTargetHandReceiptId("");
+      await refreshItemLifecycleContext(moved, previousHandReceiptId);
+    },
+    onError: (error) => {
+      setLifecycleError(error.message);
+    },
+  });
+
+  async function refreshItemLifecycleContext(
+    updated: ItemRecord,
+    previousHandReceiptId = updated.handReceiptId,
+  ) {
     setLifecycleError(null);
     utilities.items.getById.setData({ id: itemId }, updated);
     await Promise.all([
       utilities.items.getById.invalidate({ id: itemId }),
       utilities.items.list.invalidate(),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId: previousHandReceiptId,
+        status: "active",
+      }),
+      utilities.items.listByHandReceipt.invalidate({
+        handReceiptId: previousHandReceiptId,
+        status: "archived",
+      }),
       utilities.items.listByHandReceipt.invalidate({
         handReceiptId: updated.handReceiptId,
         status: "active",
@@ -219,6 +266,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         handReceiptId: updated.handReceiptId,
         status: "archived",
       }),
+      utilities.handReceipts.getById.invalidate({ id: updated.handReceiptId }),
       utilities.audit.listRecentActivity.invalidate(),
       utilities.audit.listTargetActivity.invalidate({
         targetType: "item",
@@ -310,6 +358,63 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         </Button>
       ) : null}
 
+      <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move item</DialogTitle>
+            <DialogDescription>
+              Move {item.nomenclature} to another active hand receipt. The item
+              record, identifiers, and activity history stay preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="target-hand-receipt">Target hand receipt</Label>
+            {moveTargets.length > 0 ? (
+              <select
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                id="target-hand-receipt"
+                onChange={(event) => setTargetHandReceiptId(event.target.value)}
+                value={targetHandReceiptId}
+              >
+                <option value="">Select active receipt</option>
+                {moveTargets.map((receipt) => (
+                  <option key={receipt.id} value={receipt.id}>
+                    {receipt.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
+                Create another active hand receipt before moving this item.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={moveMutation.isPending}
+              onClick={() => setIsMoveDialogOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!targetHandReceiptId || moveMutation.isPending}
+              onClick={() =>
+                moveMutation.mutate({
+                  id: item.id,
+                  targetHandReceiptId,
+                })
+              }
+              type="button"
+            >
+              <ArrowRightLeft aria-hidden="true" className="size-4" />
+              {moveMutation.isPending ? "Moving" : "Move"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -383,6 +488,11 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
           item={item}
           onArchive={() => setIsArchiveDialogOpen(true)}
           onEdit={() => setIsEditing(true)}
+          onMove={() => {
+            setLifecycleError(null);
+            setTargetHandReceiptId(moveTargets[0]?.id ?? "");
+            setIsMoveDialogOpen(true);
+          }}
         />
       )}
 

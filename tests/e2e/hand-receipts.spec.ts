@@ -206,6 +206,51 @@ test("users can archive, review, and restore property items", async ({
   ).toBeVisible();
 });
 
+test("users can move an item between active hand receipts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Source move receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Target move receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await page.getByRole("link", { name: "Open Source move receipt" }).click();
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createDialog.getByLabel("Nomenclature").fill("Move test radio");
+  await createDialog.getByLabel("ECN").fill("ECN-MOVE");
+  await createDialog.getByRole("button", { name: "Create item" }).click();
+
+  await page.getByRole("link", { name: "Open Move test radio" }).click();
+  await page.getByRole("button", { name: "Move" }).click();
+  const moveDialog = page.getByRole("dialog", { name: "Move item" });
+  await moveDialog
+    .getByLabel("Target hand receipt")
+    .selectOption({ label: "Target move receipt" });
+  await moveDialog.getByRole("button", { name: "Move" }).click();
+
+  await expect(
+    page.getByRole("link", { name: "Target move receipt" }),
+  ).toBeVisible();
+  await expect(page.getByText("Item moved")).toBeVisible();
+
+  await page.getByRole("link", { name: "Back to hand receipt" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Target move receipt" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open Move test radio" }),
+  ).toBeVisible();
+});
+
 test("hand receipt activity appears in detail, dashboard, and Activity route", async ({
   page,
 }) => {

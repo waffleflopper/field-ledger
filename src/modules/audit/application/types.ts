@@ -7,6 +7,7 @@ export type KnownAuditAction =
   | "hand_receipt.restored"
   | "item.created"
   | "item.archived"
+  | "item.moved"
   | "item.restored"
   | "item.updated";
 
