@@ -569,6 +569,11 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       <ContactPicker
         currentContactName={item.signedToContactName ?? null}
         disabled={isReadOnly || item.status !== "active"}
+        disabledReason={
+          isReadOnly
+            ? "Signed-to changes are paused while this account is read-only."
+            : "Signed-to changes are unavailable for archived items."
+        }
         isPending={signedToMutationPending}
         onAssignExisting={(contactId) =>
           assignSignedToMutation.mutate({

@@ -87,11 +87,10 @@ describe("locations RLS", () => {
   });
 
   it("allows an owner to insert locations for their own account", async () => {
-    await expect(
-      asAuthenticatedOwner(
-        ownerOneId,
-        async (transaction) =>
-          transaction`insert into locations (
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`insert into locations (
             id,
             account_id,
             name
@@ -99,9 +98,16 @@ describe("locations RLS", () => {
             ${ownerOneInsertAllowedLocationId},
             ${ownerOneAccountId},
             'Allowed location'
-          )`,
-      ),
-    ).resolves.not.toThrow();
+          ) returning id, account_id, name`,
+    );
+
+    expect(rows).toEqual([
+      {
+        id: ownerOneInsertAllowedLocationId,
+        account_id: ownerOneAccountId,
+        name: "Allowed location",
+      },
+    ]);
   });
 
   it("prevents an owner from inserting locations for another account", async () => {

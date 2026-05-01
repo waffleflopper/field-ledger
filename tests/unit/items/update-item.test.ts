@@ -13,7 +13,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -208,6 +208,36 @@ describe("updateItem", () => {
     ).rejects.toThrow("Location was not found.");
   });
 
+  it("treats a blank location update as clearing the item location", async () => {
+    const account = createAccount();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        ...createRepository().items[0]!,
+        locationId: "location-1",
+        locationName: "Arms room",
+      },
+    ]);
+
+    await expect(
+      updateItem({
+        account,
+        actorId: account.userId,
+        itemId: "item-1",
+        input: {
+          locationId: "   ",
+        },
+        itemRepository,
+        locationRepository: new InMemoryLocationRepository(),
+        auditRepository: new InMemoryAuditRepository(),
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        id: "item-1",
+        locationId: null,
+      },
+    });
+  });
+
   it("returns the existing item without audit history when nothing changed", async () => {
     const account = createAccount();
     const itemRepository = createRepository();
@@ -342,6 +372,49 @@ describe("updateItem", () => {
       item: {
         id: "item-1",
         ecn: "ECN-DUP",
+      },
+    });
+  });
+
+  it("normalizes identifiers before duplicate checks", async () => {
+    const account = createAccount();
+    const itemRepository = new InMemoryItemRepository([
+      ...createRepository().items,
+      {
+        id: "item-2",
+        accountId: "account-1",
+        handReceiptId: "hand-receipt-1",
+        nomenclature: "Existing duplicate",
+        ecn: null,
+        serialNumber: "SER-DUP",
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      updateItem({
+        account,
+        actorId: account.userId,
+        itemId: "item-1",
+        input: {
+          serialNumber: " SER-DUP ",
+        },
+        itemRepository,
+        locationRepository: new InMemoryLocationRepository(),
+        auditRepository: new InMemoryAuditRepository(),
+      }),
+    ).resolves.toMatchObject({
+      duplicateWarning: {
+        hasDuplicate: true,
+        existingItems: [
+          {
+            id: "item-2",
+          },
+        ],
       },
     });
   });

@@ -20,7 +20,10 @@ const searchLocationsInput = z.object({
   query: z.string().max(120).optional().default(""),
 });
 
-function toTRPCError(error: unknown): never {
+function toTRPCError(
+  error: unknown,
+  context: { accountId: string; operation: string; userId: string },
+): never {
   const message =
     error instanceof Error ? error.message : "Unable to update locations.";
 
@@ -30,12 +33,26 @@ function toTRPCError(error: unknown): never {
     case "Location name is required.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
     default:
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      console.error("Unexpected locations tRPC error.", {
+        accountId: context.accountId,
+        operation: context.operation,
+        userId: context.userId,
+        error,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unable to update locations.",
+      });
   }
 }
 
 async function runInUnitOfWork<T>(
-  ctx: { unitOfWork: AppUnitOfWork },
+  ctx: {
+    account: { id: string };
+    session: { userId: string };
+    unitOfWork: AppUnitOfWork;
+  },
+  operationName: string,
   operation: (repositories: AppUnitOfWorkRepositories) => Promise<T>,
 ): Promise<T> {
   try {
@@ -45,7 +62,11 @@ async function runInUnitOfWork<T>(
       throw error;
     }
 
-    toTRPCError(error);
+    toTRPCError(error, {
+      accountId: ctx.account.id,
+      operation: operationName,
+      userId: ctx.session.userId,
+    });
   }
 }
 
@@ -68,7 +89,7 @@ export const locationsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(locationNameInput)
     .mutation(({ ctx, input }) =>
-      runInUnitOfWork(ctx, (repositories) =>
+      runInUnitOfWork(ctx, "locations.create", (repositories) =>
         createLocation({
           account: ctx.account,
           actorId: ctx.session.userId,

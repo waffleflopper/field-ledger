@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import type { AppUnitOfWork } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { appRouter } from "@/server/trpc/router";
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
@@ -17,7 +18,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -27,10 +28,12 @@ function createCaller({
   account = createAccount(),
   auditRepository = new InMemoryAuditRepository(),
   locationRepository = new InMemoryLocationRepository(),
+  unitOfWork,
 }: {
   account?: AccountRecord;
   auditRepository?: InMemoryAuditRepository;
   locationRepository?: InMemoryLocationRepository;
+  unitOfWork?: AppUnitOfWork;
 } = {}) {
   const accountRepository = new InMemoryAccountRepository([account]);
   const contactRepository = createEmptyContactRepository();
@@ -49,14 +52,16 @@ function createCaller({
     handReceiptRepository,
     itemRepository,
     locationRepository,
-    unitOfWork: createInMemoryAppUnitOfWork({
-      accountRepository,
-      auditRepository,
-      contactRepository,
-      handReceiptRepository,
-      itemRepository,
-      locationRepository,
-    }),
+    unitOfWork:
+      unitOfWork ??
+      createInMemoryAppUnitOfWork({
+        accountRepository,
+        auditRepository,
+        contactRepository,
+        handReceiptRepository,
+        itemRepository,
+        locationRepository,
+      }),
   });
 }
 
@@ -124,5 +129,41 @@ describe("locationsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
+  });
+
+  it("logs unexpected location creation failures without exposing backend messages", async () => {
+    const backendError = new Error("storage adapter secret leaked");
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const caller = createCaller({
+      unitOfWork: {
+        async run() {
+          throw backendError;
+        },
+      },
+    });
+
+    try {
+      await expect(
+        caller.locations.create({
+          name: "Motor pool",
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unable to update locations.",
+      });
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Unexpected locations tRPC error.",
+        expect.objectContaining({
+          accountId: "account-1",
+          operation: "locations.create",
+          userId: "owner-1",
+          error: backendError,
+        }),
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

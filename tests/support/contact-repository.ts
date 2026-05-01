@@ -13,9 +13,9 @@ export class InMemoryContactRepository implements ContactRepository {
 
   async create(contact: NewContactRecord) {
     const createdContact: ContactRecord = {
+      ...contact,
       createdAt: contact.createdAt ?? new Date(),
       updatedAt: contact.updatedAt ?? new Date(),
-      ...contact,
     };
 
     this.contacts.push(createdContact);

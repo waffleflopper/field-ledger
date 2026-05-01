@@ -135,6 +135,7 @@ export function ItemEditForm({
       return;
     }
 
+    const nomenclature = form.nomenclature.trim();
     const ecn = blankToNull(form.ecn);
     const serialNumber = blankToNull(form.serialNumber);
     const notes = blankToNull(form.notes);
@@ -144,12 +145,22 @@ export function ItemEditForm({
       ecn !== item.ecn || serialNumber !== item.serialNumber;
 
     if (!confirmDuplicate && identifiersChanged) {
-      const duplicateCheck =
-        await utilities.items.checkDuplicateIdentifier.fetch({
+      let duplicateCheck: DuplicateCheckResult;
+
+      try {
+        duplicateCheck = await utilities.items.checkDuplicateIdentifier.fetch({
           itemId: item.id,
           ecn,
           serialNumber,
         });
+      } catch (caughtError) {
+        setError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Duplicate check could not be completed.",
+        );
+        return;
+      }
 
       if (duplicateCheck.hasDuplicate) {
         setPendingDuplicate(duplicateCheck);
@@ -159,7 +170,7 @@ export function ItemEditForm({
 
     updateMutation.mutate({
       id: item.id,
-      nomenclature: form.nomenclature,
+      nomenclature,
       ecn,
       serialNumber,
       notes,

@@ -9,5 +9,11 @@ export function searchContacts({
   query: string;
   repository: ContactRepository;
 }) {
-  return repository.searchByName(accountId, query.trim());
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    return [];
+  }
+
+  return repository.searchByName(accountId, trimmedQuery);
 }

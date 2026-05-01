@@ -151,7 +151,10 @@ export class InMemoryItemRepository implements ItemRepository {
         (candidate) => candidate.id === item.handReceiptId,
       );
 
-      if (!handReceipt || handReceipt.status === "archived") {
+      if (
+        !handReceipt ||
+        (!input.includeArchived && handReceipt.status === "archived")
+      ) {
         continue;
       }
 

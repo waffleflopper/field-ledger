@@ -9,6 +9,7 @@ import { ItemDetail } from "./item-detail";
 
 export function ItemGlobalDetail({ itemId }: { itemId: string }) {
   const itemQuery = trpc.items.getById.useQuery({ id: itemId });
+  const isNotFound = itemQuery.error?.data?.code === "NOT_FOUND";
 
   if (itemQuery.isLoading) {
     return (
@@ -20,7 +21,42 @@ export function ItemGlobalDetail({ itemId }: { itemId: string }) {
     );
   }
 
-  if (itemQuery.error || !itemQuery.data) {
+  if (itemQuery.error && !isNotFound) {
+    return (
+      <section className="space-y-4">
+        <Button asChild variant="outline">
+          <Link href="/app/items">
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Items
+          </Link>
+        </Button>
+        <div
+          className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4"
+          role="alert"
+        >
+          <div>
+            <h1 className="text-xl font-semibold tracking-normal text-destructive">
+              Item could not be loaded
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-destructive">
+              {itemQuery.error.message ||
+                "Retry before treating this item as missing."}
+            </p>
+          </div>
+          <Button
+            onClick={() => void itemQuery.refetch()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  if (isNotFound || !itemQuery.data) {
     return (
       <section className="space-y-4">
         <Button asChild variant="outline">

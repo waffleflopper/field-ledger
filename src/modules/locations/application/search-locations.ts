@@ -9,5 +9,11 @@ export function searchLocations({
   query: string;
   repository: LocationRepository;
 }) {
-  return repository.searchByName(accountId, query);
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    return [];
+  }
+
+  return repository.searchByName(accountId, trimmedQuery);
 }

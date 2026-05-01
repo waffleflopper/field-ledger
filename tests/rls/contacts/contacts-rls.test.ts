@@ -87,11 +87,10 @@ describe("contacts RLS", () => {
   });
 
   it("allows an owner to insert contacts for their own account", async () => {
-    await expect(
-      asAuthenticatedOwner(
-        ownerOneId,
-        async (transaction) =>
-          transaction`insert into contacts (
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`insert into contacts (
             id,
             account_id,
             display_name
@@ -99,9 +98,16 @@ describe("contacts RLS", () => {
             ${ownerOneInsertAllowedContactId},
             ${ownerOneAccountId},
             'Allowed contact'
-          )`,
-      ),
-    ).resolves.not.toThrow();
+          ) returning id, account_id, display_name`,
+    );
+
+    expect(rows).toEqual([
+      {
+        id: ownerOneInsertAllowedContactId,
+        account_id: ownerOneAccountId,
+        display_name: "Allowed contact",
+      },
+    ]);
   });
 
   it("prevents an owner from inserting contacts for another account", async () => {

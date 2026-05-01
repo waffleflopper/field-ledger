@@ -9,6 +9,7 @@ import { trpc } from "@/trpc/react";
 
 type ContactPickerProps = {
   disabled?: boolean;
+  disabledReason?: string | null;
   currentContactName?: string | null;
   onAssignExisting: (contactId: string) => void;
   onAssignNew: (displayName: string) => void;
@@ -18,6 +19,7 @@ type ContactPickerProps = {
 
 export function ContactPicker({
   disabled = false,
+  disabledReason = null,
   currentContactName = null,
   onAssignExisting,
   onAssignNew,
@@ -86,7 +88,8 @@ export function ContactPicker({
         />
         {disabled ? (
           <p className="text-sm text-muted-foreground">
-            Signed-to changes are paused while this account is read-only.
+            {disabledReason ??
+              "Signed-to changes are unavailable for this item."}
           </p>
         ) : null}
         {!disabled && contacts.length > 0 ? (

@@ -254,7 +254,10 @@ export const locations = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("locations_account_id_name_idx").on(table.accountId, table.name),
+    uniqueIndex("locations_account_id_lower_name_unique_idx").on(
+      table.accountId,
+      sql`lower(${table.name})`,
+    ),
   ],
 ).enableRLS();
 

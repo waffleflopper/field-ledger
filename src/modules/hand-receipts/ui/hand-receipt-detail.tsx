@@ -246,6 +246,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
         targetType: "item",
         targetId: updated.id,
       }),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "hand_receipt",
+        targetId: handReceiptId,
+      }),
     ]);
   }
 
@@ -486,6 +490,25 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
             ) : null}
             {itemsQuery.isLoading ? (
               <div className="h-24 rounded-lg border bg-secondary" />
+            ) : itemsQuery.error ? (
+              <div
+                className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+                role="alert"
+              >
+                <p className="font-medium">Items could not be loaded.</p>
+                <p className="leading-6">
+                  {itemsQuery.error.message ||
+                    "Refresh this item list before making changes."}
+                </p>
+                <Button
+                  onClick={() => void itemsQuery.refetch()}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
             ) : (
               <ItemList
                 canRestore={!isReadOnly && isViewingArchivedItems}

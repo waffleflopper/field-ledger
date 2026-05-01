@@ -63,7 +63,7 @@ function nextEditableItemValues(
     locationId:
       input.locationId === undefined
         ? (current.locationId ?? null)
-        : input.locationId,
+        : normalizeOptionalText(input.locationId),
   };
 }
 

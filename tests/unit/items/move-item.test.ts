@@ -13,7 +13,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };

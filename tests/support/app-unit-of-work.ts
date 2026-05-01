@@ -67,6 +67,14 @@ export function createInMemoryAppUnitOfWork(
         inMemoryLocationRepository !== null
           ? [...inMemoryLocationRepository.locations]
           : null;
+      const inMemoryAccountRepository =
+        accountRepository instanceof InMemoryAccountRepository
+          ? accountRepository
+          : null;
+      const accountSnapshot =
+        inMemoryAccountRepository !== null
+          ? inMemoryAccountRepository.snapshotState()
+          : null;
 
       try {
         return await operation({
@@ -96,6 +104,10 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryLocationRepository && locationSnapshot) {
           inMemoryLocationRepository.locations = locationSnapshot;
+        }
+
+        if (inMemoryAccountRepository && accountSnapshot) {
+          inMemoryAccountRepository.restoreState(accountSnapshot);
         }
 
         throw error;

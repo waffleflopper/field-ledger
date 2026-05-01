@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ export function ItemSearchInput({
   onChange: (value: string) => void;
   value: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="relative">
       <Search
@@ -23,6 +26,7 @@ export function ItemSearchInput({
         className="h-11 rounded-lg bg-card pl-9 pr-10 text-sm"
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search ECN, serial, item, receipt, contact, or location"
+        ref={inputRef}
         type="search"
         value={value}
       />
@@ -30,7 +34,10 @@ export function ItemSearchInput({
         <Button
           aria-label="Clear search"
           className="absolute right-2 top-1/2 -translate-y-1/2"
-          onClick={() => onChange("")}
+          onClick={() => {
+            onChange("");
+            inputRef.current?.focus();
+          }}
           size="icon-sm"
           type="button"
           variant="ghost"

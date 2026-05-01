@@ -13,6 +13,11 @@ function byUniqueItem(items: ItemRecord[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
+function normalizeIdentifier(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export async function checkDuplicateIdentifiers({
   accountId,
   ecn,
@@ -20,10 +25,14 @@ export async function checkDuplicateIdentifiers({
   excludeItemId,
   repository,
 }: CheckDuplicateIdentifiersInput): Promise<DuplicateCheckResult> {
+  const normalizedEcn = normalizeIdentifier(ecn);
+  const normalizedSerialNumber = normalizeIdentifier(serialNumber);
   const matches = await Promise.all([
-    ecn ? repository.findByEcn(accountId, ecn) : Promise.resolve([]),
-    serialNumber
-      ? repository.findBySerialNumber(accountId, serialNumber)
+    normalizedEcn
+      ? repository.findByEcn(accountId, normalizedEcn)
+      : Promise.resolve([]),
+    normalizedSerialNumber
+      ? repository.findBySerialNumber(accountId, normalizedSerialNumber)
       : Promise.resolve([]),
   ]);
   const existingItems = byUniqueItem(matches.flat()).filter(

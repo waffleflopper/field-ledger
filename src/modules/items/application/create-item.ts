@@ -60,7 +60,7 @@ export async function createItem({
   const ecn = cleanOptionalText(input.ecn);
   const serialNumber = cleanOptionalText(input.serialNumber);
   const notes = cleanOptionalText(input.notes);
-  const locationId = input.locationId ?? null;
+  const locationId = cleanOptionalText(input.locationId);
 
   if (!nomenclature) {
     throw new Error("Item nomenclature is required.");

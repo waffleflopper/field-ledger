@@ -24,7 +24,10 @@ const searchContactsInput = z.object({
   query: z.string().max(120).optional().default(""),
 });
 
-function toTRPCError(error: unknown): never {
+function toTRPCError(
+  error: unknown,
+  context: { accountId: string; operation: string; userId: string },
+): never {
   const message =
     error instanceof Error ? error.message : "Unable to update contacts.";
 
@@ -34,12 +37,26 @@ function toTRPCError(error: unknown): never {
     case "Contact display name is required.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
     default:
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      console.error("Unexpected contacts tRPC error.", {
+        accountId: context.accountId,
+        operation: context.operation,
+        userId: context.userId,
+        error,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unable to update contacts.",
+      });
   }
 }
 
 async function runInUnitOfWork<T>(
-  ctx: { unitOfWork: AppUnitOfWork },
+  ctx: {
+    account: { id: string };
+    session: { userId: string };
+    unitOfWork: AppUnitOfWork;
+  },
+  operationName: string,
   operation: (repositories: AppUnitOfWorkRepositories) => Promise<T>,
 ): Promise<T> {
   try {
@@ -49,7 +66,11 @@ async function runInUnitOfWork<T>(
       throw error;
     }
 
-    toTRPCError(error);
+    toTRPCError(error, {
+      accountId: ctx.account.id,
+      operation: operationName,
+      userId: ctx.session.userId,
+    });
   }
 }
 
@@ -72,7 +93,7 @@ export const contactsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(contactDisplayNameInput)
     .mutation(({ ctx, input }) =>
-      runInUnitOfWork(ctx, (repositories) =>
+      runInUnitOfWork(ctx, "contacts.create", (repositories) =>
         createContact({
           account: ctx.account,
           actorId: ctx.session.userId,

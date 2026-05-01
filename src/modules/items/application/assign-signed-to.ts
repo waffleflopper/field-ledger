@@ -66,6 +66,13 @@ async function assignItemToContact({
   auditRepository: AuditRepository;
   now: Date;
 }): Promise<ItemRecord | null> {
+  if (item.signedToContactId === contact.id) {
+    return {
+      ...item,
+      signedToContactName: item.signedToContactName ?? contact.displayName,
+    };
+  }
+
   const updated = await itemRepository.update(accountId, item.id, {
     signedToContactId: contact.id,
     updatedAt: now,

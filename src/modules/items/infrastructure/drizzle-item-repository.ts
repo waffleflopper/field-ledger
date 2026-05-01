@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, or, sql, type SQLWrapper } from "drizzle-orm";
 
 import { contacts, handReceipts, items, locations } from "@/db/schema";
 import {
@@ -99,6 +99,14 @@ function toSearchResult(row: ItemSearchRow, query: string): ItemSearchResult {
       : null,
     matchedFields,
   };
+}
+
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, (match) => `\\${match}`);
+}
+
+function containsCaseInsensitive(column: SQLWrapper, query: string) {
+  return sql`${column} ilike ${`%${escapeLikePattern(query)}%`} escape '\\'`;
 }
 
 function createItemRepository(run: ItemOperation): ItemRepository {
@@ -259,24 +267,23 @@ function createItemRepository(run: ItemOperation): ItemRepository {
         return [];
       }
 
-      const pattern = `%${trimmedQuery}%`;
       const filters = [
         eq(items.accountId, accountId),
         eq(handReceipts.accountId, accountId),
-        eq(handReceipts.status, "active" as const),
         or(
-          ilike(items.ecn, pattern),
-          ilike(items.serialNumber, pattern),
-          ilike(items.generatedId, pattern),
-          ilike(items.nomenclature, pattern),
-          ilike(handReceipts.name, pattern),
-          ilike(contacts.displayName, pattern),
-          ilike(locations.name, pattern),
+          containsCaseInsensitive(items.ecn, trimmedQuery),
+          containsCaseInsensitive(items.serialNumber, trimmedQuery),
+          containsCaseInsensitive(items.generatedId, trimmedQuery),
+          containsCaseInsensitive(items.nomenclature, trimmedQuery),
+          containsCaseInsensitive(handReceipts.name, trimmedQuery),
+          containsCaseInsensitive(contacts.displayName, trimmedQuery),
+          containsCaseInsensitive(locations.name, trimmedQuery),
         ),
       ];
 
       if (!input.includeArchived) {
         filters.push(eq(items.status, "active"));
+        filters.push(eq(handReceipts.status, "active"));
       }
 
       const rows = await run((transaction) =>

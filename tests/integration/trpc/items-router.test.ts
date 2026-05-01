@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import type { AppUnitOfWork } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { appRouter } from "@/server/trpc/router";
 import { InMemoryAccountRepository } from "../../support/account-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
@@ -18,7 +19,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -79,6 +80,7 @@ function createCaller({
   handReceiptRepository = createHandReceiptRepository(),
   itemRepository = new InMemoryItemRepository(),
   locationRepository = new InMemoryLocationRepository(),
+  unitOfWork,
 }: {
   account?: AccountRecord;
   accountRepository?: InMemoryAccountRepository;
@@ -87,6 +89,7 @@ function createCaller({
   handReceiptRepository?: InMemoryHandReceiptRepository;
   itemRepository?: InMemoryItemRepository;
   locationRepository?: InMemoryLocationRepository;
+  unitOfWork?: AppUnitOfWork;
 } = {}) {
   return appRouter.createCaller({
     session: {
@@ -100,14 +103,16 @@ function createCaller({
     handReceiptRepository,
     itemRepository,
     locationRepository,
-    unitOfWork: createInMemoryAppUnitOfWork({
-      accountRepository,
-      auditRepository,
-      contactRepository,
-      handReceiptRepository,
-      itemRepository,
-      locationRepository,
-    }),
+    unitOfWork:
+      unitOfWork ??
+      createInMemoryAppUnitOfWork({
+        accountRepository,
+        auditRepository,
+        contactRepository,
+        handReceiptRepository,
+        itemRepository,
+        locationRepository,
+      }),
   });
 }
 
@@ -206,6 +211,44 @@ describe("itemsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
+  });
+
+  it("logs unexpected item creation failures without exposing backend messages", async () => {
+    const backendError = new Error("raw postgres failure with credentials");
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const caller = createCaller({
+      unitOfWork: {
+        async run() {
+          throw backendError;
+        },
+      },
+    });
+
+    try {
+      await expect(
+        caller.items.create({
+          handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+          nomenclature: "Blocked item",
+          ecn: "ECN-001",
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unable to update item.",
+      });
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Unexpected items tRPC error.",
+        expect.objectContaining({
+          accountId: "account-1",
+          operation: "items.create",
+          userId: "owner-1",
+          error: backendError,
+        }),
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it("validates identifier input through the typed procedure", async () => {

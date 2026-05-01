@@ -15,7 +15,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -237,6 +237,80 @@ describe("createItem", () => {
     expect(confirmed.item).toMatchObject({
       id: "item-2",
       ecn: "ECN-DUP",
+    });
+  });
+
+  it("normalizes duplicate identifiers and blank item locations", async () => {
+    const account = createAccount();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "existing-item",
+        accountId: account.id,
+        handReceiptId: "hand-receipt-1",
+        nomenclature: "Existing compass",
+        ecn: "ECN-DUP",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        locationId: null,
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createItem({
+        account,
+        actorId: account.userId,
+        input: {
+          handReceiptId: "hand-receipt-1",
+          nomenclature: "Another compass",
+          ecn: " ECN-DUP ",
+          locationId: "   ",
+        },
+        itemRepository,
+        handReceiptRepository: createHandReceiptRepository(),
+        locationRepository: new InMemoryLocationRepository(),
+        accountRepository: new InMemoryAccountRepository([account]),
+        auditRepository: new InMemoryAuditRepository(),
+        createItemId: () => "item-2",
+      }),
+    ).resolves.toMatchObject({
+      duplicateWarning: {
+        hasDuplicate: true,
+        existingItems: [
+          {
+            id: "existing-item",
+          },
+        ],
+      },
+    });
+
+    await expect(
+      createItem({
+        account,
+        actorId: account.userId,
+        input: {
+          handReceiptId: "hand-receipt-1",
+          nomenclature: "Another compass",
+          ecn: " ECN-NEW ",
+          locationId: "   ",
+          confirmDuplicate: true,
+        },
+        itemRepository,
+        handReceiptRepository: createHandReceiptRepository(),
+        locationRepository: new InMemoryLocationRepository(),
+        accountRepository: new InMemoryAccountRepository([account]),
+        auditRepository: new InMemoryAuditRepository(),
+        createItemId: () => "item-2",
+      }),
+    ).resolves.toMatchObject({
+      item: {
+        id: "item-2",
+        ecn: "ECN-NEW",
+        locationId: null,
+      },
     });
   });
 

@@ -12,7 +12,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -107,5 +107,25 @@ describe("locations", () => {
         name: "Arms room",
       },
     ]);
+  });
+
+  it("returns no location suggestions for blank searches", async () => {
+    const repository = new InMemoryLocationRepository([
+      {
+        id: "location-1",
+        accountId: "account-1",
+        name: "Arms room",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+
+    expect(
+      searchLocations({
+        accountId: "account-1",
+        query: "   ",
+        repository,
+      }),
+    ).toEqual([]);
   });
 });

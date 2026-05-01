@@ -139,11 +139,10 @@ describe("items RLS", () => {
   });
 
   it("allows an owner to insert items for their own account", async () => {
-    await expect(
-      asAuthenticatedOwner(
-        ownerOneId,
-        async (transaction) =>
-          transaction`insert into items (
+    const rows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`insert into items (
             id,
             account_id,
             hand_receipt_id,
@@ -155,9 +154,17 @@ describe("items RLS", () => {
             ${ownerOneHandReceiptId},
             'Allowed item',
             'FL-000099'
-          )`,
-      ),
-    ).resolves.not.toThrow();
+          ) returning id, account_id, hand_receipt_id, generated_id`,
+    );
+
+    expect(rows).toEqual([
+      {
+        id: ownerOneInsertAllowedItemId,
+        account_id: ownerOneAccountId,
+        hand_receipt_id: ownerOneHandReceiptId,
+        generated_id: "FL-000099",
+      },
+    ]);
   });
 
   it("prevents an owner from inserting items for another account", async () => {
@@ -266,6 +273,26 @@ describe("items RLS", () => {
           transaction`update items set signed_to_contact_id = ${ownerTwoContactId} where id = ${ownerOneItemId} returning id`,
       ),
     ).rejects.toThrow();
+  });
+
+  it("allows an owner to assign and clear their own manual signed-to contact", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set signed_to_contact_id = ${ownerOneContactId} where id = ${ownerOneItemId} returning id, signed_to_contact_id`,
+      ),
+    ).resolves.toEqual([
+      { id: ownerOneItemId, signed_to_contact_id: ownerOneContactId },
+    ]);
+
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update items set signed_to_contact_id = null where id = ${ownerOneItemId} returning id, signed_to_contact_id`,
+      ),
+    ).resolves.toEqual([{ id: ownerOneItemId, signed_to_contact_id: null }]);
   });
 
   it("prevents an owner from assigning another account's location", async () => {

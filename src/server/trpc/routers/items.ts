@@ -115,7 +115,10 @@ const checkDuplicateIdentifierInput = z.object({
   serialNumber: optionalText,
 });
 
-function toTRPCError(error: unknown): never {
+function toTRPCError(
+  error: unknown,
+  context: { accountId: string; operation: string; userId: string },
+): never {
   const message =
     error instanceof Error ? error.message : "Unable to update item.";
 
@@ -155,15 +158,26 @@ function toTRPCError(error: unknown): never {
         message,
       });
     default:
+      console.error("Unexpected items tRPC error.", {
+        accountId: context.accountId,
+        operation: context.operation,
+        userId: context.userId,
+        error,
+      });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message,
+        message: "Unable to update item.",
       });
   }
 }
 
 async function runInUnitOfWork<T>(
-  ctx: { unitOfWork: AppUnitOfWork },
+  ctx: {
+    account: { id: string };
+    session: { userId: string };
+    unitOfWork: AppUnitOfWork;
+  },
+  operationName: string,
   operation: (repositories: AppUnitOfWorkRepositories) => Promise<T>,
 ): Promise<T> {
   try {
@@ -173,7 +187,11 @@ async function runInUnitOfWork<T>(
       throw error;
     }
 
-    toTRPCError(error);
+    toTRPCError(error, {
+      accountId: ctx.account.id,
+      operation: operationName,
+      userId: ctx.session.userId,
+    });
   }
 }
 
@@ -241,7 +259,7 @@ export const itemsRouter = createTRPCRouter({
       }),
     ),
   create: protectedProcedure.input(createItemInput).mutation(({ ctx, input }) =>
-    runInUnitOfWork(ctx, (repositories) =>
+    runInUnitOfWork(ctx, "items.create", (repositories) =>
       createItem({
         account: ctx.account,
         actorId: ctx.session.userId,
@@ -270,27 +288,30 @@ export const itemsRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateItemInput)
     .mutation(async ({ ctx, input }) => {
-      const result = await runInUnitOfWork(ctx, (repositories) =>
-        updateItem({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          input: {
-            nomenclature: input.nomenclature,
-            ecn: input.ecn,
-            serialNumber: input.serialNumber,
-            notes: input.notes,
-            ...(input.locationId !== undefined
-              ? { locationId: input.locationId }
-              : {}),
-            ...(input.confirmDuplicate !== undefined
-              ? { confirmDuplicate: input.confirmDuplicate }
-              : {}),
-          },
-          auditRepository: repositories.auditRepository,
-          itemRepository: repositories.itemRepository,
-          locationRepository: repositories.locationRepository,
-        }),
+      const result = await runInUnitOfWork(
+        ctx,
+        "items.update",
+        (repositories) =>
+          updateItem({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            input: {
+              nomenclature: input.nomenclature,
+              ecn: input.ecn,
+              serialNumber: input.serialNumber,
+              notes: input.notes,
+              ...(input.locationId !== undefined
+                ? { locationId: input.locationId }
+                : {}),
+              ...(input.confirmDuplicate !== undefined
+                ? { confirmDuplicate: input.confirmDuplicate }
+                : {}),
+            },
+            auditRepository: repositories.auditRepository,
+            itemRepository: repositories.itemRepository,
+            locationRepository: repositories.locationRepository,
+          }),
       );
 
       if (result.item === null) {
@@ -305,14 +326,17 @@ export const itemsRouter = createTRPCRouter({
   archive: protectedProcedure
     .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
-      const archived = await runInUnitOfWork(ctx, (repositories) =>
-        archiveItem({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          auditRepository: repositories.auditRepository,
-          itemRepository: repositories.itemRepository,
-        }),
+      const archived = await runInUnitOfWork(
+        ctx,
+        "items.archive",
+        (repositories) =>
+          archiveItem({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            auditRepository: repositories.auditRepository,
+            itemRepository: repositories.itemRepository,
+          }),
       );
 
       if (!archived) {
@@ -327,14 +351,17 @@ export const itemsRouter = createTRPCRouter({
   restore: protectedProcedure
     .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
-      const restored = await runInUnitOfWork(ctx, (repositories) =>
-        restoreItem({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          auditRepository: repositories.auditRepository,
-          itemRepository: repositories.itemRepository,
-        }),
+      const restored = await runInUnitOfWork(
+        ctx,
+        "items.restore",
+        (repositories) =>
+          restoreItem({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            auditRepository: repositories.auditRepository,
+            itemRepository: repositories.itemRepository,
+          }),
       );
 
       if (!restored) {
@@ -349,7 +376,7 @@ export const itemsRouter = createTRPCRouter({
   move: protectedProcedure
     .input(moveItemInput)
     .mutation(async ({ ctx, input }) => {
-      const moved = await runInUnitOfWork(ctx, (repositories) =>
+      const moved = await runInUnitOfWork(ctx, "items.move", (repositories) =>
         moveItem({
           account: ctx.account,
           actorId: ctx.session.userId,
@@ -373,16 +400,19 @@ export const itemsRouter = createTRPCRouter({
   assignSignedTo: protectedProcedure
     .input(assignSignedToInput)
     .mutation(async ({ ctx, input }) => {
-      const assigned = await runInUnitOfWork(ctx, (repositories) =>
-        assignSignedTo({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          contactId: input.contactId,
-          auditRepository: repositories.auditRepository,
-          contactRepository: repositories.contactRepository,
-          itemRepository: repositories.itemRepository,
-        }),
+      const assigned = await runInUnitOfWork(
+        ctx,
+        "items.assignSignedTo",
+        (repositories) =>
+          assignSignedTo({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            contactId: input.contactId,
+            auditRepository: repositories.auditRepository,
+            contactRepository: repositories.contactRepository,
+            itemRepository: repositories.itemRepository,
+          }),
       );
 
       if (!assigned) {
@@ -397,16 +427,19 @@ export const itemsRouter = createTRPCRouter({
   assignSignedToWithNewContact: protectedProcedure
     .input(assignSignedToWithNewContactInput)
     .mutation(async ({ ctx, input }) => {
-      const assigned = await runInUnitOfWork(ctx, (repositories) =>
-        assignSignedToWithNewContact({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          contactDisplayName: input.contactDisplayName,
-          auditRepository: repositories.auditRepository,
-          contactRepository: repositories.contactRepository,
-          itemRepository: repositories.itemRepository,
-        }),
+      const assigned = await runInUnitOfWork(
+        ctx,
+        "items.assignSignedToWithNewContact",
+        (repositories) =>
+          assignSignedToWithNewContact({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            contactDisplayName: input.contactDisplayName,
+            auditRepository: repositories.auditRepository,
+            contactRepository: repositories.contactRepository,
+            itemRepository: repositories.itemRepository,
+          }),
       );
 
       if (!assigned) {
@@ -421,14 +454,17 @@ export const itemsRouter = createTRPCRouter({
   clearSignedTo: protectedProcedure
     .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
-      const cleared = await runInUnitOfWork(ctx, (repositories) =>
-        clearSignedTo({
-          account: ctx.account,
-          actorId: ctx.session.userId,
-          itemId: input.id,
-          auditRepository: repositories.auditRepository,
-          itemRepository: repositories.itemRepository,
-        }),
+      const cleared = await runInUnitOfWork(
+        ctx,
+        "items.clearSignedTo",
+        (repositories) =>
+          clearSignedTo({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            itemId: input.id,
+            auditRepository: repositories.auditRepository,
+            itemRepository: repositories.itemRepository,
+          }),
       );
 
       if (!cleared) {

@@ -17,7 +17,7 @@ function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
     accessState: "active",
     subscriptionTier: "base",
     trialStartsAt: new Date("2026-04-01T12:00:00.000Z"),
-    trialEndsAt: new Date("2026-05-01T12:00:00.000Z"),
+    trialEndsAt: new Date("2100-01-01T00:00:00.000Z"),
     onboardingCompletedAt: null,
     ...overrides,
   };
@@ -125,6 +125,37 @@ describe("assignSignedTo", () => {
       "contact.created",
       "item.signed_to_assigned",
     ]);
+  });
+
+  it("does not rewrite or audit when assigning the same contact", async () => {
+    const account = createAccount();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        ...createItemRepository().items[0]!,
+        signedToContactId: "contact-1",
+        signedToContactName: "SSG Rivera",
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const item = await assignSignedTo({
+      account,
+      actorId: account.userId,
+      itemId: "item-1",
+      contactId: "contact-1",
+      itemRepository,
+      contactRepository: createContactRepository(),
+      auditRepository,
+      now: new Date("2026-05-01T12:30:00.000Z"),
+    });
+
+    expect(item).toMatchObject({
+      id: "item-1",
+      signedToContactId: "contact-1",
+      signedToContactName: "SSG Rivera",
+      updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+    });
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("clears signed-to state and records the change", async () => {

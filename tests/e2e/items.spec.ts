@@ -8,7 +8,9 @@ async function signInLocalUser(page: Page) {
   await page.getByRole("tab", { name: "Register" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("button", { name: "Create account" }),
+  ).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/hand-receipts$/);
   await page
@@ -27,7 +29,9 @@ test("users can search items globally and open item detail on mobile", async ({
   await page.getByLabel("Name").fill("Search receipt");
   await page.getByRole("button", { name: "Create" }).click();
   await page.getByRole("link", { name: "Open Search receipt" }).click();
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("heading", { name: "Search receipt" }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {
@@ -78,7 +82,9 @@ test("archived item records appear only when deliberately included", async ({
   await page
     .getByRole("link", { name: "Open Archived search receipt" })
     .click();
-  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("heading", { name: "Archived search receipt" }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Add item" }).click();
   const createDialog = page.getByRole("dialog", {

@@ -34,7 +34,8 @@ type CreateItemFormProps = {
 };
 
 function blankStringToNull(value: string) {
-  return value.trim() ? value : null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
 }
 
 function getSubmitButtonLabel({
@@ -110,6 +111,11 @@ export function CreateItemForm({
     }
   }
 
+  function clearDuplicateConfirmation() {
+    setConfirmDuplicate(false);
+    setDuplicateWarning(undefined);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -128,7 +134,7 @@ export function CreateItemForm({
 
     try {
       const result = await onSubmit({
-        nomenclature,
+        nomenclature: nomenclature.trim(),
         ecn: blankStringToNull(ecn),
         serialNumber: blankStringToNull(serialNumber),
         notes: blankStringToNull(notes),
@@ -197,7 +203,10 @@ export function CreateItemForm({
                 autoComplete="off"
                 id={ecnId}
                 maxLength={120}
-                onChange={(event) => setEcn(event.target.value)}
+                onChange={(event) => {
+                  setEcn(event.target.value);
+                  clearDuplicateConfirmation();
+                }}
                 placeholder="ECN-001"
                 value={ecn}
               />
@@ -208,7 +217,10 @@ export function CreateItemForm({
                 autoComplete="off"
                 id={serialNumberId}
                 maxLength={120}
-                onChange={(event) => setSerialNumber(event.target.value)}
+                onChange={(event) => {
+                  setSerialNumber(event.target.value);
+                  clearDuplicateConfirmation();
+                }}
                 placeholder="SN123456"
                 value={serialNumber}
               />
@@ -222,9 +234,10 @@ export function CreateItemForm({
               checked={generateFieldLedgerId}
               className="mt-1"
               id={generatedIdId}
-              onChange={(event) =>
-                setGenerateFieldLedgerId(event.target.checked)
-              }
+              onChange={(event) => {
+                setGenerateFieldLedgerId(event.target.checked);
+                clearDuplicateConfirmation();
+              }}
               type="checkbox"
             />
             <span>

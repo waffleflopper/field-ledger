@@ -13,9 +13,9 @@ export class InMemoryLocationRepository implements LocationRepository {
 
   async create(location: NewLocationRecord) {
     const createdLocation: LocationRecord = {
+      ...location,
       createdAt: location.createdAt ?? new Date(),
       updatedAt: location.updatedAt ?? new Date(),
-      ...location,
     };
 
     this.locations.push(createdLocation);

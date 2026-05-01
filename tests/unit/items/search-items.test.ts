@@ -233,9 +233,18 @@ describe("searchItems", () => {
       repository: itemRepository,
     });
 
-    expect(archivedResults).toHaveLength(2);
+    expect(archivedResults).toHaveLength(3);
     expect(archivedResults).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          item: expect.objectContaining({
+            id: "archived-receipt-match",
+          }),
+          handReceipt: expect.objectContaining({
+            id: "receipt-2",
+            status: "archived",
+          }),
+        }),
         expect.objectContaining({
           item: expect.objectContaining({
             id: "archived-item-match",

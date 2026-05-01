@@ -10,7 +10,7 @@ ALTER TABLE "locations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "items" ADD COLUMN "location_id" uuid;--> statement-breakpoint
 ALTER TABLE "items" ADD CONSTRAINT "items_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "locations_account_id_name_idx" ON "locations" USING btree ("account_id","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "locations_account_id_lower_name_unique_idx" ON "locations" USING btree ("account_id", lower("name"));--> statement-breakpoint
 CREATE INDEX "items_account_id_location_id_idx" ON "items" USING btree ("account_id","location_id");--> statement-breakpoint
 GRANT SELECT, INSERT, UPDATE ON TABLE "locations" TO authenticated;--> statement-breakpoint
 CREATE POLICY "locations_owner_select" ON "locations" FOR SELECT TO authenticated USING ("account_id" = (SELECT "id" FROM "accounts" WHERE "auth_user_id" = "app"."current_auth_subject"()));--> statement-breakpoint
