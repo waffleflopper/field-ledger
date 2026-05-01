@@ -89,6 +89,8 @@ describe("archiveHandReceipt", () => {
   });
 
   it("blocks archiving for read-only accounts", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+
     await expect(
       archiveHandReceipt({
         account: createAccount({
@@ -98,9 +100,10 @@ describe("archiveHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "active-receipt",
         handReceiptRepository: createRepository(),
-        auditRepository: new InMemoryAuditRepository(),
+        auditRepository,
       }),
     ).rejects.toThrow("This account is read-only.");
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("does not archive an already archived hand receipt", async () => {
@@ -155,6 +158,7 @@ describe("restoreHandReceipt", () => {
   });
 
   it("blocks restore when Base is already at the active limit", async () => {
+    const auditRepository = new InMemoryAuditRepository();
     const repository = new InMemoryHandReceiptRepository([
       ...createRepository().handReceipts,
       {
@@ -193,9 +197,10 @@ describe("restoreHandReceipt", () => {
         actorId: "owner-1",
         handReceiptId: "archived-receipt",
         handReceiptRepository: repository,
-        auditRepository: new InMemoryAuditRepository(),
+        auditRepository,
       }),
     ).rejects.toThrow("Active hand receipt limit reached.");
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("does not restore an already active hand receipt", async () => {

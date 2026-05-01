@@ -22,8 +22,12 @@ async function acknowledgeOnboardingIfPresent(page: Page) {
 
   try {
     await expect(notice).toBeVisible({ timeout: 8_000 });
-  } catch {
-    return;
+  } catch (error) {
+    if (error instanceof Error && /timed out/i.test(error.message)) {
+      return;
+    }
+
+    throw error;
   }
 
   await acknowledgment.click();

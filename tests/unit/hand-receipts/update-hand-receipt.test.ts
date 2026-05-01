@@ -120,6 +120,8 @@ describe("updateHandReceipt", () => {
   });
 
   it("requires a non-empty name", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+
     await expect(
       updateHandReceipt({
         account: createAccount(),
@@ -129,12 +131,15 @@ describe("updateHandReceipt", () => {
           name: "   ",
         },
         handReceiptRepository: createRepository(),
-        auditRepository: new InMemoryAuditRepository(),
+        auditRepository,
       }),
     ).rejects.toThrow("Hand receipt name is required.");
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("blocks paused or read-only accounts", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+
     await expect(
       updateHandReceipt({
         account: createAccount({
@@ -147,9 +152,10 @@ describe("updateHandReceipt", () => {
           name: "Blocked update",
         },
         handReceiptRepository: createRepository(),
-        auditRepository: new InMemoryAuditRepository(),
+        auditRepository,
       }),
     ).rejects.toThrow("This account is read-only.");
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("returns null without recording audit history when the record is not owned by the account", async () => {
