@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -34,6 +35,11 @@ export const accessStateEnum = pgEnum("access_state", [
 export const subscriptionTierEnum = pgEnum("subscription_tier", [
   "base",
   "pro",
+]);
+
+export const handReceiptStatusEnum = pgEnum("hand_receipt_status", [
+  "active",
+  "archived",
 ]);
 
 export const authUser = pgTable("user", {
@@ -170,6 +176,37 @@ export const auditEvents = pgTable(
     index("audit_events_account_id_occurred_at_idx").on(
       table.accountId,
       table.occurredAt.desc(),
+    ),
+  ],
+).enableRLS();
+
+export const handReceipts = pgTable(
+  "hand_receipts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    name: text("name").notNull(),
+    notes: text("notes"),
+    handReceiptNumber: text("hand_receipt_number"),
+    holderName: text("holder_name"),
+    unitName: text("unit_name"),
+    uic: text("uic"),
+    effectiveDate: date("effective_date"),
+    status: handReceiptStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("hand_receipts_account_id_status_created_at_idx").on(
+      table.accountId,
+      table.status,
+      table.createdAt.desc(),
     ),
   ],
 ).enableRLS();

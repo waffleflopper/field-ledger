@@ -1,4 +1,9 @@
 import { ClipboardList, FileText, Search } from "lucide-react";
+import Link from "next/link";
+
+import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { createTRPCContext } from "@/server/trpc/context";
+import { appRouter } from "@/server/trpc/router";
 
 const dashboardSections = [
   {
@@ -21,7 +26,10 @@ const dashboardSections = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const caller = appRouter.createCaller(await createTRPCContext());
+  const activity = await caller.audit.listRecentActivity({ limit: 5 });
+
   return (
     <section className="space-y-6">
       <div className="space-y-3">
@@ -58,6 +66,31 @@ export default function DashboardPage() {
           </article>
         ))}
       </div>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold tracking-normal">
+              Recent Activity
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Account changes, kept below the operational queue.
+            </p>
+          </div>
+          <Link
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            href="/app/activity"
+          >
+            View all
+          </Link>
+        </div>
+        <ActivityList
+          activity={activity}
+          emptyDescription="Hand receipt changes will appear here after you create or update records."
+          emptyTitle="No recent changes"
+          isCompact
+        />
+      </section>
     </section>
   );
 }

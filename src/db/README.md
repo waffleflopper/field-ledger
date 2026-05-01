@@ -30,7 +30,12 @@ stable action name, optional target, event timestamp, small metadata payload,
 and creation timestamp. `actor_id` stores the opaque auth subject that caused
 the event, not a Supabase UUID. RLS policies for audit and account-owned tables
 must use application-set session context, currently
-`set_config('app.current_auth_subject', ...)`, rather than `auth.uid()`. There
-are no update or delete policies; accountable history should be preserved.
-Runtime reads and writes for account-owned tables must use the authenticated
+`set_config('app.current_auth_subject', ...)`, rather than `auth.uid()`. Audit
+events have no update or delete policies because accountable history should be
+preserved.
+
+Product tables grant only the owner-scoped operations each workflow slice needs.
+For example, hand receipts currently allow authenticated owners to select,
+insert, and update their own rows while delete remains unavailable. Runtime
+reads and writes for account-owned tables must use the authenticated
 database-session boundary, not the privileged scaffold connection directly.

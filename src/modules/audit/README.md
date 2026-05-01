@@ -10,6 +10,8 @@ changes happen; routes and UI components do not write audit rows directly.
   small contextual metadata.
 - `listRecentActivity` returns user-visible recent activity for the current
   account.
+- `listTargetActivity` returns recent activity for one account-owned target,
+  such as a hand receipt detail page.
 - `AuditRepository` is the application port. The Drizzle adapter is an
   infrastructure detail and should stay out of domain/UI code.
 - The Drizzle adapter runs each operation inside an authenticated database
@@ -23,11 +25,17 @@ Current action names:
 
 - `system.initialized`
 - `account.onboarding_completed`
+- `hand_receipt.created`
+- `hand_receipt.updated`
+- `hand_receipt.archived`
+- `hand_receipt.restored`
 
 Future slices should add stable domain action names when they add real
-workflows. Prefer names such as `hand_receipt.created`,
-`hand_receipt.updated`, `hand_receipt.archived`, and
-`hand_receipt.restored` over implementation-specific labels.
+workflows. Prefer stable domain lifecycle labels over implementation-specific
+names.
+
+Unknown action names must not be displayed raw in product UI. Use a generic
+fallback label until a stable domain label is added.
 
 ## Emission Expectations
 
@@ -45,3 +53,10 @@ Activity is the readable product surface derived from audit events. The Audit
 Log is the internal append-only record. MVP Activity should stay simple and
 recent-focused; advanced filtering, export, and investigation tooling are not
 part of this slice.
+
+Current Activity surfaces:
+
+- `/app/activity`: broader account recent activity.
+- `/app/dashboard`: low-priority recent activity below operational dashboard
+  priorities.
+- `/app/hand-receipts/[id]`: scoped recent activity for that hand receipt.

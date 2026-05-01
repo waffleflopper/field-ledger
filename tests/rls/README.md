@@ -8,5 +8,8 @@ as the privileged migration user, then run read/write probes as the
 subject. That proves an owner can see their own account row and cannot read or
 update another owner account row without relying on Supabase Auth UUIDs.
 
-When future slices add account-owned tables, add tests here that prove one
-account cannot read or write another account's rows.
+The audit and hand receipt RLS tests use the same pattern for account-owned
+tables. Each table-level test proves one account cannot read or write another
+account's rows, and each repository-level test proves runtime adapters execute
+through the authenticated database-session boundary instead of privileged
+database access.

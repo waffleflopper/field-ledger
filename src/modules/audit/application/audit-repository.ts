@@ -4,10 +4,20 @@ export type ListAuditEventsOptions = {
   limit?: number;
 };
 
+export type AuditTargetFilter = {
+  targetType: string;
+  targetId: string;
+};
+
 export interface AuditRepository {
   record(event: NewAuditEventRecord): Promise<AuditEventRecord>;
   listByAccountId(
     accountId: string,
+    options?: ListAuditEventsOptions,
+  ): Promise<AuditEventRecord[]>;
+  listByTarget(
+    accountId: string,
+    target: AuditTargetFilter,
     options?: ListAuditEventsOptions,
   ): Promise<AuditEventRecord[]>;
 }
@@ -18,6 +28,9 @@ export function createUnavailableAuditRepository(): AuditRepository {
       throw new Error("An authenticated database session is required.");
     },
     async listByAccountId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async listByTarget() {
       throw new Error("An authenticated database session is required.");
     },
   };

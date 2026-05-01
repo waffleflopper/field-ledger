@@ -64,7 +64,28 @@ Status:
 - active
 - archived
 
-Archived hand receipts are hidden from day-to-day workflows and suppress contained item reminders.
+Archived hand receipts are hidden from day-to-day workflows.
+Creation of a hand receipt emits `hand_receipt.created` through the audit
+logger boundary. Editing a hand receipt emits `hand_receipt.updated` with the
+changed field names in metadata. Archiving and restoring a hand receipt emit
+`hand_receipt.archived` and `hand_receipt.restored`.
+
+Activity is the user-readable surface over audit events. Hand receipt activity
+labels are:
+
+- `hand_receipt.created`: Hand receipt created
+- `hand_receipt.updated`: Hand receipt updated
+- `hand_receipt.archived`: Hand receipt archived
+- `hand_receipt.restored`: Hand receipt restored
+
+Activity reads are account-scoped. The general Activity route can show recent
+account history, the dashboard shows a lower-priority recent activity section,
+and hand receipt detail shows only recent events for that receipt. Activity UI
+should show readable labels and receipt names when available, not raw action
+strings, target type names, or database ids.
+
+When item requirements exist, archived hand receipts should suppress contained
+item reminders so inactive buckets do not create day-to-day requirement noise.
 
 ## Property Items
 
