@@ -10,6 +10,7 @@ import { InMemoryContactRepository } from "../../support/contact-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
 import { InMemoryLocationRepository } from "../../support/location-repository";
+import { InMemoryRequirementCompletionRepository } from "../../support/requirement-completion-repository";
 import { InMemoryRequirementRepository } from "../../support/requirement-repository";
 
 const itemOneId = "95e3d383-6453-466b-b425-c8a630bf866d";
@@ -75,6 +76,7 @@ function createCaller({
   handReceiptRepository = new InMemoryHandReceiptRepository(),
   itemRepository = createItemRepository(),
   locationRepository = new InMemoryLocationRepository(),
+  requirementCompletionRepository = new InMemoryRequirementCompletionRepository(),
   requirementRepository = new InMemoryRequirementRepository(),
 } = {}) {
   return appRouter.createCaller({
@@ -89,6 +91,7 @@ function createCaller({
     handReceiptRepository,
     itemRepository,
     locationRepository,
+    requirementCompletionRepository,
     requirementRepository,
     unitOfWork: createInMemoryAppUnitOfWork({
       accountRepository,
@@ -97,6 +100,7 @@ function createCaller({
       handReceiptRepository,
       itemRepository,
       locationRepository,
+      requirementCompletionRepository,
       requirementRepository,
     }),
   });
@@ -280,5 +284,105 @@ describe("requirementsRouter", () => {
         itemId: itemOneId,
       }),
     ).resolves.toMatchObject([{ id: "requirement-1" }]);
+  });
+
+  it("completes a requirement through the typed API and lists permanent history", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementCompletionRepository =
+      new InMemoryRequirementCompletionRepository();
+    const requirementRepository = new InMemoryRequirementRepository([
+      {
+        id: "4fa10114-b1d8-472f-8a60-e7a102108f56",
+        accountId: "account-1",
+        itemId: itemOneId,
+        name: "Monthly function check",
+        intervalType: "monthly",
+        intervalValue: null,
+        nextDueDate: "2026-05-15",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      auditRepository,
+      requirementCompletionRepository,
+      requirementRepository,
+    });
+
+    await expect(
+      caller.requirements.complete({
+        requirementId: "4fa10114-b1d8-472f-8a60-e7a102108f56",
+        completedOn: "2026-05-01",
+        notes: "Completed during layout.",
+      }),
+    ).resolves.toMatchObject({
+      completion: {
+        requirementId: "4fa10114-b1d8-472f-8a60-e7a102108f56",
+        completedOn: "2026-05-01",
+        notes: "Completed during layout.",
+      },
+      requirement: {
+        nextDueDate: "2026-06-01",
+      },
+    });
+    await expect(
+      caller.requirements.listCompletionHistory({
+        requirementId: "4fa10114-b1d8-472f-8a60-e7a102108f56",
+      }),
+    ).resolves.toMatchObject([
+      {
+        completedOn: "2026-05-01",
+        notes: "Completed during layout.",
+      },
+    ]);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "requirement.completed",
+      },
+    ]);
+  });
+
+  it("maps invalid completion attempts to typed errors", async () => {
+    const requirementRepository = new InMemoryRequirementRepository([
+      {
+        id: "2a8f563a-ea60-4286-89a6-67c26b79608f",
+        accountId: "account-1",
+        itemId: itemOneId,
+        name: "Monthly function check",
+        intervalType: "monthly",
+        intervalValue: null,
+        nextDueDate: "2026-05-15",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({ requirementRepository }).requirements.complete({
+        requirementId: "2a8f563a-ea60-4286-89a6-67c26b79608f",
+        completedOn: "2999-01-01",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Completion date cannot be in the future.",
+    });
+
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+        requirementRepository,
+      }).requirements.complete({
+        requirementId: "2a8f563a-ea60-4286-89a6-67c26b79608f",
+        completedOn: "2026-05-01",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
   });
 });

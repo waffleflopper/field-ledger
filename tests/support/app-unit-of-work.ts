@@ -8,6 +8,7 @@ import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
 import { InMemoryItemRepository } from "./item-repository";
 import { InMemoryLocationRepository } from "./location-repository";
+import { InMemoryRequirementCompletionRepository } from "./requirement-completion-repository";
 import { InMemoryRequirementRepository } from "./requirement-repository";
 
 export function createInMemoryAppUnitOfWork(
@@ -27,6 +28,9 @@ export function createInMemoryAppUnitOfWork(
     repositories.locationRepository ?? new InMemoryLocationRepository();
   const requirementRepository =
     repositories.requirementRepository ?? new InMemoryRequirementRepository();
+  const requirementCompletionRepository =
+    repositories.requirementCompletionRepository ??
+    new InMemoryRequirementCompletionRepository();
 
   return {
     async run(operation) {
@@ -86,6 +90,15 @@ export function createInMemoryAppUnitOfWork(
         inMemoryRequirementRepository !== null
           ? [...inMemoryRequirementRepository.requirements]
           : null;
+      const inMemoryRequirementCompletionRepository =
+        requirementCompletionRepository instanceof
+        InMemoryRequirementCompletionRepository
+          ? requirementCompletionRepository
+          : null;
+      const requirementCompletionSnapshot =
+        inMemoryRequirementCompletionRepository !== null
+          ? [...inMemoryRequirementCompletionRepository.completions]
+          : null;
 
       try {
         return await operation({
@@ -95,6 +108,7 @@ export function createInMemoryAppUnitOfWork(
           handReceiptRepository,
           itemRepository,
           locationRepository,
+          requirementCompletionRepository,
           requirementRepository,
         });
       } catch (error) {
@@ -124,6 +138,14 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryRequirementRepository && requirementSnapshot) {
           inMemoryRequirementRepository.requirements = requirementSnapshot;
+        }
+
+        if (
+          inMemoryRequirementCompletionRepository &&
+          requirementCompletionSnapshot
+        ) {
+          inMemoryRequirementCompletionRepository.completions =
+            requirementCompletionSnapshot;
         }
 
         throw error;

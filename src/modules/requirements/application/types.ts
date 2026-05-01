@@ -45,6 +45,23 @@ export type NewRequirementRecord = Omit<
   updatedAt?: Date;
 };
 
+export type RequirementCompletionRecord = {
+  id: string;
+  accountId: string;
+  requirementId: string;
+  completedOn: string;
+  notes: string | null;
+  createdAt: Date;
+};
+
+export type NewRequirementCompletionRecord = Omit<
+  RequirementCompletionRecord,
+  "id" | "createdAt"
+> & {
+  id?: string;
+  createdAt?: Date;
+};
+
 export type CreateRequirementResult =
   | {
       requirement: RequirementRecord;

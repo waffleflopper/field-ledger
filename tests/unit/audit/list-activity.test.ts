@@ -173,6 +173,53 @@ describe("listRecentActivity", () => {
     ]);
   });
 
+  it("returns readable target context from requirement completion metadata", async () => {
+    const repository: AuditRepository = {
+      async record(event) {
+        return {
+          id: "event-1",
+          createdAt: event.createdAt ?? event.occurredAt,
+          ...event,
+        };
+      },
+      async listByAccountId() {
+        return [
+          {
+            id: "event-1",
+            accountId: "account-1",
+            actorId: "user-1",
+            action: "requirement.completed",
+            targetType: "requirement",
+            targetId: "requirement-1",
+            occurredAt: new Date("2026-05-01T12:00:00.000Z"),
+            metadata: {
+              name: "Monthly PMCS",
+              requirementName: "Monthly PMCS",
+              completedOn: "2026-05-01",
+              nextDueDate: "2026-06-01",
+            },
+            createdAt: new Date("2026-05-01T12:00:01.000Z"),
+          },
+        ];
+      },
+      async listByTarget() {
+        return [];
+      },
+    };
+
+    await expect(
+      listRecentActivity({
+        accountId: "account-1",
+        repository,
+      }),
+    ).resolves.toMatchObject([
+      {
+        label: "Requirement completed",
+        targetLabel: "Monthly PMCS",
+      },
+    ]);
+  });
+
   it("passes target filters to the repository for contextual activity", async () => {
     const { repository, getReceivedTarget } = createRecordingRepository();
 

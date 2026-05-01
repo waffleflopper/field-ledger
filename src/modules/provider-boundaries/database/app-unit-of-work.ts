@@ -11,6 +11,8 @@ import { createTransactionalDrizzleItemRepository } from "@/modules/items/infras
 import type { LocationRepository } from "@/modules/locations";
 import { createTransactionalDrizzleLocationRepository } from "@/modules/locations/infrastructure/drizzle-location-repository";
 import type { RequirementRepository } from "@/modules/requirements";
+import type { RequirementCompletionRepository } from "@/modules/requirements";
+import { createTransactionalDrizzleRequirementCompletionRepository } from "@/modules/requirements/infrastructure/drizzle-requirement-completion-repository";
 import { createTransactionalDrizzleRequirementRepository } from "@/modules/requirements/infrastructure/drizzle-requirement-repository";
 import type { AuthenticatedDatabaseSession } from "./authenticated-session";
 import { runWithAuthenticatedDatabaseSession } from "./authenticated-session";
@@ -25,6 +27,7 @@ export type AppUnitOfWorkRepositories = {
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   locationRepository: LocationRepository;
+  requirementCompletionRepository: RequirementCompletionRepository;
   requirementRepository: RequirementRepository;
 };
 
@@ -61,6 +64,10 @@ export function createDrizzleAppUnitOfWork(
           itemRepository: createTransactionalDrizzleItemRepository(transaction),
           locationRepository:
             createTransactionalDrizzleLocationRepository(transaction),
+          requirementCompletionRepository:
+            createTransactionalDrizzleRequirementCompletionRepository(
+              transaction,
+            ),
           requirementRepository:
             createTransactionalDrizzleRequirementRepository(transaction),
         }),

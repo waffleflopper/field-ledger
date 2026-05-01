@@ -110,11 +110,27 @@ async function main() {
       async create() {
         throw new Error("Foundation check should not create requirements.");
       },
+      async findById() {
+        return null;
+      },
       async findByItemId() {
         return [];
       },
       async findByName() {
         return null;
+      },
+      async updateNextDueDate() {
+        throw new Error("Foundation check should not update requirements.");
+      },
+    },
+    requirementCompletionRepository: {
+      async create() {
+        throw new Error(
+          "Foundation check should not create requirement completions.",
+        );
+      },
+      async listByRequirementId() {
+        return [];
       },
     },
     unitOfWork: {

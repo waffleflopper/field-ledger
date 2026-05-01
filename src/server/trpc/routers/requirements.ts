@@ -1,7 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createRequirement, listRequirements } from "@/modules/requirements";
+import {
+  completeRequirement,
+  createRequirement,
+  listRequirementCompletions,
+  listRequirements,
+} from "@/modules/requirements";
 import type {
   AppUnitOfWork,
   AppUnitOfWorkRepositories,
@@ -31,6 +36,24 @@ const listRequirementsInput = z.object({
   itemId: z.uuid(),
 });
 
+const requirementIdInput = z.object({
+  requirementId: z.uuid(),
+});
+
+const completeRequirementInput = z.object({
+  requirementId: z.uuid(),
+  completedOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Completion date must use YYYY-MM-DD format.")
+    .optional(),
+  notes: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform((value) => value ?? null),
+});
+
 function toTRPCError(
   error: unknown,
   context: { accountId: string; operation: string; userId: string },
@@ -46,6 +69,8 @@ function toTRPCError(
     case "Preset requirement intervals cannot include a value.":
     case "Custom requirement intervals need a positive whole number.":
     case "Next due date must use YYYY-MM-DD format.":
+    case "Completion date must use YYYY-MM-DD format.":
+    case "Completion date cannot be in the future.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
     case "Item was not found.":
       throw new TRPCError({ code: "NOT_FOUND", message });
@@ -121,5 +146,45 @@ export const requirementsRouter = createTRPCRouter({
           requirementRepository: repositories.requirementRepository,
         }),
       ),
+    ),
+  complete: protectedProcedure
+    .input(completeRequirementInput)
+    .mutation(async ({ ctx, input }) => {
+      const result = await runInUnitOfWork(
+        ctx,
+        "requirements.complete",
+        (repositories) =>
+          completeRequirement({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            input: {
+              requirementId: input.requirementId,
+              ...(input.completedOn ? { completedOn: input.completedOn } : {}),
+              notes: input.notes,
+            },
+            auditRepository: repositories.auditRepository,
+            completionRepository: repositories.requirementCompletionRepository,
+            requirementRepository: repositories.requirementRepository,
+          }),
+      );
+
+      if (result === null) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Requirement was not found.",
+        });
+      }
+
+      return result;
+    }),
+  listCompletionHistory: protectedProcedure
+    .input(requirementIdInput)
+    .query(({ ctx, input }) =>
+      listRequirementCompletions({
+        accountId: ctx.account.id,
+        requirementId: input.requirementId,
+        repository: ctx.requirementCompletionRepository,
+        limit: 10,
+      }),
     ),
 });

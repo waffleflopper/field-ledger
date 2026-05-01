@@ -254,6 +254,8 @@ Rules:
 - Completion creates permanent history.
 - Completion date defaults to today, allows past dates, blocks future dates.
 - Completion can include optional notes.
+- Completing a requirement emits `requirement.completed` and updates the next
+  due date from the entered completion date.
 - Next due date can be manually adjusted and audited.
 - Duplicate requirement names on the same item warn but are allowed.
 

@@ -55,6 +55,22 @@ function createRequirementRepository(
 
       return toRequirementRecord(createdRequirement);
     },
+    async findById(accountId, requirementId) {
+      const [row] = await run((transaction) =>
+        transaction
+          .select()
+          .from(requirements)
+          .where(
+            and(
+              eq(requirements.accountId, accountId),
+              eq(requirements.id, requirementId),
+            ),
+          )
+          .limit(1),
+      );
+
+      return row ? toRequirementRecord(row) : null;
+    },
     async findByItemId(accountId, itemId) {
       const rows = await run((transaction) =>
         transaction
@@ -89,6 +105,25 @@ function createRequirementRepository(
       );
 
       return row ? toRequirementRecord(row) : null;
+    },
+    async updateNextDueDate(accountId, requirementId, input) {
+      const [updated] = await run((transaction) =>
+        transaction
+          .update(requirements)
+          .set({
+            nextDueDate: input.nextDueDate,
+            updatedAt: input.updatedAt,
+          })
+          .where(
+            and(
+              eq(requirements.accountId, accountId),
+              eq(requirements.id, requirementId),
+            ),
+          )
+          .returning(),
+      );
+
+      return updated ? toRequirementRecord(updated) : null;
     },
   };
 }

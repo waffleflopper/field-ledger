@@ -109,6 +109,21 @@ test("users can create and see an item requirement from item detail", async ({
   ).toBeVisible();
   await expect(page.getByText("Monthly", { exact: true })).toBeVisible();
   await expect(page.getByText("Due Jun 15, 2026")).toBeVisible();
+
+  await page.getByRole("button", { name: "Complete" }).click();
+  const completionDialog = page.getByRole("dialog", {
+    name: "Complete requirement",
+  });
+  await completionDialog.getByLabel("Completion date").fill("2026-01-15");
+  await completionDialog.getByLabel("Notes").fill("PMCS annotated in binder.");
+  await completionDialog
+    .getByRole("button", { name: "Record completion" })
+    .click();
+
+  await expect(page.getByText("Due Feb 15, 2026")).toBeVisible();
+  await expect(page.getByText("Recent completions")).toBeVisible();
+  await expect(page.getByText("Jan 15, 2026")).toBeVisible();
+  await expect(page.getByText("PMCS annotated in binder.")).toBeVisible();
 });
 
 test("archived item records appear only when deliberately included", async ({

@@ -23,6 +23,16 @@ export class InMemoryRequirementRepository implements RequirementRepository {
     return createdRequirement;
   }
 
+  async findById(accountId: string, requirementId: string) {
+    return (
+      this.requirements.find(
+        (requirement) =>
+          requirement.accountId === accountId &&
+          requirement.id === requirementId,
+      ) ?? null
+    );
+  }
+
   async findByItemId(accountId: string, itemId: string) {
     return this.requirements.filter(
       (requirement) =>
@@ -44,6 +54,36 @@ export class InMemoryRequirementRepository implements RequirementRepository {
           requirement.name.toLowerCase() === normalizedName,
       ) ?? null
     );
+  }
+
+  async updateNextDueDate(
+    accountId: string,
+    requirementId: string,
+    input: { nextDueDate: string; updatedAt: Date },
+  ) {
+    const index = this.requirements.findIndex(
+      (requirement) =>
+        requirement.accountId === accountId && requirement.id === requirementId,
+    );
+
+    if (index === -1) {
+      return null;
+    }
+
+    const existing = this.requirements[index];
+
+    if (!existing) {
+      return null;
+    }
+
+    const updated = {
+      ...existing,
+      nextDueDate: input.nextDueDate,
+      updatedAt: input.updatedAt,
+    };
+
+    this.requirements[index] = updated;
+    return updated;
   }
 }
 

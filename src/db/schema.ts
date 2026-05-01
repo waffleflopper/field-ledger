@@ -362,3 +362,31 @@ export const requirements = pgTable(
     ),
   ],
 ).enableRLS();
+
+export const requirementCompletions = pgTable(
+  "requirement_completions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    requirementId: uuid("requirement_id")
+      .notNull()
+      .references(() => requirements.id),
+    completedOn: date("completed_on").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("requirement_completions_requirement_completed_idx").on(
+      table.requirementId,
+      table.completedOn.desc(),
+    ),
+    index("requirement_completions_account_id_created_at_idx").on(
+      table.accountId,
+      table.createdAt.desc(),
+    ),
+  ],
+).enableRLS();
