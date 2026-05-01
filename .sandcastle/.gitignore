@@ -1,0 +1,7 @@
+.env
+.gitconfig
+gh-config/
+logs/
+npm-cache/
+pnpm-store/
+worktrees/
