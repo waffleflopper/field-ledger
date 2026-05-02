@@ -29,6 +29,13 @@ type FormErrors = Partial<
   Record<"name" | "intervalValue" | "nextDueDate" | "form", string>
 >;
 
+const passwordManagerIgnoreProps = {
+  autoComplete: "off",
+  "data-1p-ignore": "true",
+  "data-bwignore": "true",
+  "data-lpignore": "true",
+} as const;
+
 const intervalOptions: {
   value: RequirementIntervalType;
   label: string;
@@ -178,7 +185,11 @@ export function CreateRequirementForm({
               : "Requirement creation is unavailable for archived items."}
           </div>
         ) : (
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form
+            className="space-y-4"
+            onSubmit={handleSubmit}
+            {...passwordManagerIgnoreProps}
+          >
             <div className="space-y-2">
               <Label htmlFor="requirement-name">Name</Label>
               <Input
@@ -186,6 +197,7 @@ export function CreateRequirementForm({
                 maxLength={200}
                 onChange={(event) => setName(event.target.value)}
                 value={name}
+                {...passwordManagerIgnoreProps}
               />
               {errors.name ? (
                 <p className="text-sm font-medium text-destructive">
@@ -226,6 +238,7 @@ export function CreateRequirementForm({
                     onChange={(event) => setIntervalValue(event.target.value)}
                     type="number"
                     value={intervalValue}
+                    {...passwordManagerIgnoreProps}
                   />
                 </div>
               ) : null}
@@ -244,6 +257,7 @@ export function CreateRequirementForm({
                 onChange={(event) => setNextDueDate(event.target.value)}
                 type="date"
                 value={nextDueDate}
+                {...passwordManagerIgnoreProps}
               />
               {errors.nextDueDate ? (
                 <p className="text-sm font-medium text-destructive">
