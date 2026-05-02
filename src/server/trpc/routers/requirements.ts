@@ -5,12 +5,14 @@ import {
   adjustRequirementNextDue,
   completeRequirement,
   createRequirement,
+  listDashboardRequirements,
   listRequirementCompletions,
   listRequirements,
   pauseRequirement,
   resumeRequirement,
   updateRequirement,
 } from "@/modules/requirements";
+import { deriveAccountCapabilities } from "@/modules/billing";
 import type {
   AppUnitOfWork,
   AppUnitOfWorkRepositories,
@@ -153,6 +155,26 @@ async function runInUnitOfWork<T>(
 }
 
 export const requirementsRouter = createTRPCRouter({
+  dashboardWork: protectedProcedure.query(({ ctx }) => {
+    const capabilities = deriveAccountCapabilities(ctx.account);
+
+    if (capabilities.isReadOnly) {
+      return {
+        isReadOnly: true,
+        overdue: [],
+        dueSoon: [],
+        upcoming: [],
+      };
+    }
+
+    return listDashboardRequirements({
+      accountId: ctx.account.id,
+      repository: ctx.requirementRepository,
+    }).then((requirements) => ({
+      isReadOnly: false,
+      ...requirements,
+    }));
+  }),
   list: protectedProcedure
     .input(listRequirementsInput)
     .query(({ ctx, input }) =>

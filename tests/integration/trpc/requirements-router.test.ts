@@ -126,6 +126,125 @@ function createCaller({
 }
 
 describe("requirementsRouter", () => {
+  it("returns dashboard requirement work with account capability context", async () => {
+    const requirementRepository = new InMemoryRequirementRepository(
+      [
+        {
+          id: "dashboard-overdue",
+          accountId: "account-1",
+          itemId: itemOneId,
+          name: "Overdue PMCS",
+          notes: null,
+          intervalType: "monthly",
+          intervalValue: null,
+          nextDueDate: "2026-04-01",
+          status: "active",
+          pausedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+        {
+          id: "dashboard-paused",
+          accountId: "account-1",
+          itemId: itemTwoId,
+          name: "Paused compass check",
+          notes: null,
+          intervalType: "weekly",
+          intervalValue: null,
+          nextDueDate: "2026-05-03",
+          status: "active",
+          pausedAt: new Date("2026-05-01T12:00:00.000Z"),
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ],
+      [
+        {
+          requirementId: "dashboard-overdue",
+          requirementName: "Overdue PMCS",
+          nextDueDate: "2026-04-01",
+          itemId: itemOneId,
+          itemNomenclature: "M4 carbine",
+          handReceiptId: "hand-receipt-1",
+          handReceiptName: "Primary receipt",
+        },
+        {
+          requirementId: "dashboard-paused",
+          requirementName: "Paused compass check",
+          nextDueDate: "2026-05-03",
+          itemId: itemTwoId,
+          itemNomenclature: "Compass",
+          handReceiptId: "hand-receipt-1",
+          handReceiptName: "Primary receipt",
+        },
+      ],
+    );
+
+    await expect(
+      createCaller({ requirementRepository }).requirements.dashboardWork(),
+    ).resolves.toMatchObject({
+      isReadOnly: false,
+      overdue: [
+        {
+          requirementName: "Overdue PMCS",
+          itemNomenclature: "M4 carbine",
+          handReceiptName: "Primary receipt",
+          urgency: "overdue",
+        },
+      ],
+      dueSoon: [],
+      upcoming: [],
+    });
+  });
+
+  it("does not present active dashboard reminders for read-only accounts", async () => {
+    const account = createAccount({
+      accessState: "paused_read_only",
+      subscriptionTier: "pro",
+    });
+    const requirementRepository = new InMemoryRequirementRepository(
+      [
+        {
+          id: "dashboard-overdue",
+          accountId: "account-1",
+          itemId: itemOneId,
+          name: "Overdue PMCS",
+          notes: null,
+          intervalType: "monthly",
+          intervalValue: null,
+          nextDueDate: "2026-05-01",
+          status: "active",
+          pausedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ],
+      [
+        {
+          requirementId: "dashboard-overdue",
+          requirementName: "Overdue PMCS",
+          nextDueDate: "2026-05-01",
+          itemId: itemOneId,
+          itemNomenclature: "M4 carbine",
+          handReceiptId: "hand-receipt-1",
+          handReceiptName: "Primary receipt",
+        },
+      ],
+    );
+
+    await expect(
+      createCaller({
+        account,
+        requirementRepository,
+      }).requirements.dashboardWork(),
+    ).resolves.toEqual({
+      isReadOnly: true,
+      overdue: [],
+      dueSoon: [],
+      upcoming: [],
+    });
+  });
+
   it("creates and lists requirements for an item through the typed API", async () => {
     const requirementRepository = new InMemoryRequirementRepository();
     const caller = createCaller({ requirementRepository });

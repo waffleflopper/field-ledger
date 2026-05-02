@@ -1,14 +1,20 @@
 import type {
+  DashboardRequirementCandidate,
   NewRequirementRecord,
   RequirementRecord,
   RequirementRepository,
 } from "@/modules/requirements";
 
 export class InMemoryRequirementRepository implements RequirementRepository {
+  dashboardRequirements: DashboardRequirementCandidate[] = [];
   requirements: RequirementRecord[] = [];
 
-  constructor(requirements: RequirementRecord[] = []) {
+  constructor(
+    requirements: RequirementRecord[] = [],
+    dashboardRequirements: DashboardRequirementCandidate[] = [],
+  ) {
     this.requirements = [...requirements];
+    this.dashboardRequirements = [...dashboardRequirements];
   }
 
   async create(requirement: NewRequirementRecord) {
@@ -55,6 +61,23 @@ export class InMemoryRequirementRepository implements RequirementRepository {
           requirement.status === "active" &&
           requirement.name.toLowerCase() === normalizedName,
       ) ?? null
+    );
+  }
+
+  async findDashboardRequirements(
+    accountId: string,
+    options: { maxNextDueDate: string },
+  ) {
+    return this.dashboardRequirements.filter(
+      (requirement) =>
+        requirement.nextDueDate <= options.maxNextDueDate &&
+        this.requirements.some(
+          (record) =>
+            record.accountId === accountId &&
+            record.id === requirement.requirementId &&
+            record.status === "active" &&
+            record.pausedAt === null,
+        ),
     );
   }
 

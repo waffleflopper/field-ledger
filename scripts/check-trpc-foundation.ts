@@ -119,6 +119,9 @@ async function main() {
       async findByName() {
         return null;
       },
+      async findDashboardRequirements() {
+        return [];
+      },
       async update() {
         throw new Error("Foundation check should not update requirements.");
       },

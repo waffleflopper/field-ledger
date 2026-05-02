@@ -1,4 +1,5 @@
 import type {
+  DashboardRequirementCandidate,
   NewRequirementRecord,
   RequirementIntervalType,
   RequirementRecord,
@@ -31,6 +32,10 @@ export interface RequirementRepository {
     itemId: string,
     name: string,
   ): Promise<RequirementRecord | null>;
+  findDashboardRequirements(
+    accountId: string,
+    options: { maxNextDueDate: string },
+  ): Promise<DashboardRequirementCandidate[]>;
   update(
     accountId: string,
     requirementId: string,
@@ -60,6 +65,9 @@ export function createUnavailableRequirementRepository(): RequirementRepository 
       throw new Error("An authenticated database session is required.");
     },
     async findByName() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findDashboardRequirements() {
       throw new Error("An authenticated database session is required.");
     },
     async update() {

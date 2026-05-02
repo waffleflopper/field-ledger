@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 
-import { requirements } from "@/db/schema";
+import { handReceipts, items, requirements } from "@/db/schema";
 import type { RequirementRepository } from "@/modules/requirements";
 import type {
   RequirementIntervalType,
@@ -107,6 +107,38 @@ function createRequirementRepository(
       );
 
       return row ? toRequirementRecord(row) : null;
+    },
+    async findDashboardRequirements(accountId, options) {
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            requirementId: requirements.id,
+            requirementName: requirements.name,
+            nextDueDate: requirements.nextDueDate,
+            itemId: items.id,
+            itemNomenclature: items.nomenclature,
+            handReceiptId: handReceipts.id,
+            handReceiptName: handReceipts.name,
+          })
+          .from(requirements)
+          .innerJoin(items, eq(requirements.itemId, items.id))
+          .innerJoin(handReceipts, eq(items.handReceiptId, handReceipts.id))
+          .where(
+            and(
+              eq(requirements.accountId, accountId),
+              eq(requirements.status, "active"),
+              sql`${requirements.pausedAt} is null`,
+              sql`${requirements.nextDueDate} <= ${options.maxNextDueDate}`,
+              eq(items.accountId, accountId),
+              eq(items.status, "active"),
+              eq(handReceipts.accountId, accountId),
+              eq(handReceipts.status, "active"),
+            ),
+          )
+          .orderBy(asc(requirements.nextDueDate), asc(requirements.name)),
+      );
+
+      return rows;
     },
     async update(accountId, requirementId, input) {
       const [updated] = await run((transaction) =>

@@ -362,6 +362,10 @@ export const requirements = pgTable(
       table.itemId,
       table.status,
     ),
+    index("requirements_account_id_next_due_idx").on(
+      table.accountId,
+      table.nextDueDate,
+    ),
   ],
 ).enableRLS();
 

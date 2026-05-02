@@ -22,6 +22,7 @@ export type PresetRequirementIntervalType =
   (typeof presetRequirementIntervalTypes)[number];
 
 export type RequirementStatus = "active";
+export type RequirementUrgency = "overdue" | "due_soon" | "upcoming" | "beyond";
 
 export type RequirementRecord = {
   id: string;
@@ -82,6 +83,26 @@ export type CreateRequirementResult =
 export type UpdateRequirementResult = {
   requirement: RequirementRecord;
   duplicateWarning: boolean;
+};
+
+export type DashboardRequirementCandidate = {
+  requirementId: string;
+  requirementName: string;
+  nextDueDate: string;
+  itemId: string;
+  itemNomenclature: string;
+  handReceiptId: string;
+  handReceiptName: string;
+};
+
+export type DashboardRequirementRow = DashboardRequirementCandidate & {
+  urgency: Exclude<RequirementUrgency, "beyond">;
+};
+
+export type DashboardRequirementsResult = {
+  overdue: DashboardRequirementRow[];
+  dueSoon: DashboardRequirementRow[];
+  upcoming: DashboardRequirementRow[];
 };
 
 export function isRequirementIntervalType(

@@ -11,6 +11,7 @@ export { updateRequirement } from "@/modules/requirements/application/update-req
 export { pauseRequirement } from "@/modules/requirements/application/pause-requirement";
 export { resumeRequirement } from "@/modules/requirements/application/resume-requirement";
 export { listRequirementCompletions } from "@/modules/requirements/application/list-requirement-completions";
+export { listDashboardRequirements } from "@/modules/requirements/application/list-dashboard-requirements";
 export { listRequirements } from "@/modules/requirements/application/list-requirements";
 export {
   createUnavailableRequirementCompletionRepository,
@@ -26,6 +27,9 @@ export {
   presetRequirementIntervalTypes,
   requirementIntervalTypes,
   type CreateRequirementResult,
+  type DashboardRequirementCandidate,
+  type DashboardRequirementRow,
+  type DashboardRequirementsResult,
   type NewRequirementCompletionRecord,
   type NewRequirementRecord,
   type PresetRequirementIntervalType,
@@ -33,5 +37,6 @@ export {
   type RequirementIntervalType,
   type RequirementRecord,
   type RequirementStatus,
+  type RequirementUrgency,
   type UpdateRequirementResult,
 } from "@/modules/requirements/application/types";
