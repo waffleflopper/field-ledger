@@ -73,7 +73,7 @@
 | **Overdue** | A requirement state where the next due date is before today. | Late task |
 | **Due Soon** | A requirement state where the next due date is today through 14 days from today. | Upcoming |
 | **Upcoming** | A requirement state where the next due date is 15 through 30 days from today. | Due soon |
-| **Suppressed Requirement** | A requirement hidden from active dashboard work because its item or hand receipt is archived or the account is paused. | Deleted requirement |
+| **Suppressed Requirement** | A requirement hidden from active dashboard work because it is paused with `pausedAt`, its item or hand receipt is archived, or the account is paused. | Deleted requirement |
 | **Cyclic Inventory** | A commander or property book office inventory process that Field Ledger does not manage in MVP. | Requirement |
 
 ## History and Lifecycle
@@ -86,7 +86,7 @@
 | **Archive** | A reversible lifecycle action that removes a record from normal workflows while preserving history. | Delete |
 | **Restore** | A lifecycle action that returns an archived record to active workflows. | Recreate |
 | **Close** | A lifecycle action that ends a 2062 assignment or item link while preserving history and documents. | Delete, destroy, deactivate |
-| **Pause** | A lifecycle action that suppresses requirement behavior without deleting the requirement. | Archive, complete |
+| **Pause** | A lifecycle action that sets requirement `pausedAt` to suppress active requirement behavior without deleting the requirement. | Archive, complete |
 
 ## Future Boundaries
 

@@ -272,6 +272,10 @@ Rules:
 - Individual requirements can be paused and resumed. A paused requirement stays
   visible on item detail but is excluded from active requirement work and cannot
   be completed until resumed.
+- Requirement pause state is timestamp-driven: `pausedAt` is set while the
+  requirement is paused and cleared when it is resumed. Requirement `status`
+  remains reserved for broader record lifecycle state, not the pause/resume
+  toggle.
 - Resuming a requirement returns it to active behavior unless its item or hand
   receipt is archived.
 - Requirement next due adjustment, pause, and resume emit
