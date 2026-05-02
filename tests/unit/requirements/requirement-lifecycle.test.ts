@@ -215,12 +215,13 @@ describe("requirement lifecycle controls", () => {
 
   it("fails a stale pause when the requirement is paused between read and write", async () => {
     const auditRepository = new InMemoryAuditRepository();
+    const concurrentPausedAt = new Date("2026-05-10T19:59:00.000Z");
     const requirementRepository = new MutatingRequirementRepository(
       [createRequirement()],
       (repository) => {
         repository.requirements[0] = {
           ...repository.requirements[0]!,
-          pausedAt: new Date("2026-05-10T19:59:00.000Z"),
+          pausedAt: concurrentPausedAt,
         };
       },
     );
@@ -237,6 +238,9 @@ describe("requirement lifecycle controls", () => {
     ).rejects.toThrow("Requirement state has changed.");
 
     expect(auditRepository.events).toEqual([]);
+    expect(requirementRepository.requirements[0]!.pausedAt).toEqual(
+      concurrentPausedAt,
+    );
   });
 
   it("fails a stale resume when the requirement is resumed between read and write", async () => {
@@ -269,10 +273,12 @@ describe("requirement lifecycle controls", () => {
     ).rejects.toThrow("Requirement state has changed.");
 
     expect(auditRepository.events).toEqual([]);
+    expect(requirementRepository.requirements[0]!.pausedAt).toBeNull();
   });
 
   it("fails a stale resume when the requirement is resumed and paused again between read and write", async () => {
     const auditRepository = new InMemoryAuditRepository();
+    const concurrentPausedAt = new Date("2026-05-10T19:30:00.000Z");
     const requirementRepository = new MutatingRequirementRepository(
       [
         createRequirement({
@@ -282,7 +288,7 @@ describe("requirement lifecycle controls", () => {
       (repository) => {
         repository.requirements[0] = {
           ...repository.requirements[0]!,
-          pausedAt: new Date("2026-05-10T19:30:00.000Z"),
+          pausedAt: concurrentPausedAt,
         };
       },
     );
@@ -301,6 +307,9 @@ describe("requirement lifecycle controls", () => {
     ).rejects.toThrow("Requirement state has changed.");
 
     expect(auditRepository.events).toEqual([]);
+    expect(requirementRepository.requirements[0]!.pausedAt).toEqual(
+      concurrentPausedAt,
+    );
   });
 
   it("blocks lifecycle changes for read-only accounts and invalid paused transitions", async () => {

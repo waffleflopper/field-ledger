@@ -35,7 +35,7 @@ row for filtering and display.
   requirement behavior.
 - Concurrency-sensitive pause/resume writes should condition updates on the
   expected `pausedAt` state: pause only when `pausedAt` is null, and resume only
-  when `pausedAt` is not null.
+  when the stored `pausedAt` still matches the timestamp read by the service.
 - If requirements later gain more mutually exclusive lifecycle states, a future
   ADR should revisit whether `status` should absorb pause state.
 

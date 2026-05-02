@@ -766,4 +766,46 @@ describe("requirementsRouter", () => {
 
     expect(auditRepository.events).toEqual([]);
   });
+
+  it("maps stale resume writes to a conflict response", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementRepository = new MutatingRequirementRepository(
+      [
+        {
+          id: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+          accountId: "account-1",
+          itemId: itemOneId,
+          name: "Monthly function check",
+          notes: null,
+          intervalType: "monthly",
+          intervalValue: null,
+          nextDueDate: "2026-05-15",
+          status: "active",
+          pausedAt: new Date("2026-05-01T12:00:00.000Z"),
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ],
+      (repository) => {
+        repository.requirements[0] = {
+          ...repository.requirements[0]!,
+          pausedAt: new Date("2026-05-01T12:30:00.000Z"),
+        };
+      },
+    );
+
+    await expect(
+      createCaller({
+        auditRepository,
+        requirementRepository,
+      }).requirements.resume({
+        requirementId: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Requirement state has changed.",
+    });
+
+    expect(auditRepository.events).toEqual([]);
+  });
 });
