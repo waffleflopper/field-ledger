@@ -5,6 +5,7 @@ import type {
 import { InMemoryAccountRepository } from "./account-repository";
 import { InMemoryAuditRepository } from "./audit-repository";
 import { InMemoryContactRepository } from "./contact-repository";
+import { InMemoryDocumentRepository } from "./document-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
 import { InMemoryItemRepository } from "./item-repository";
 import { InMemoryLocationRepository } from "./location-repository";
@@ -20,6 +21,8 @@ export function createInMemoryAppUnitOfWork(
     repositories.auditRepository ?? new InMemoryAuditRepository();
   const contactRepository =
     repositories.contactRepository ?? new InMemoryContactRepository();
+  const documentRepository =
+    repositories.documentRepository ?? new InMemoryDocumentRepository();
   const accountRepository =
     repositories.accountRepository ?? new InMemoryAccountRepository();
   const itemRepository =
@@ -66,6 +69,14 @@ export function createInMemoryAppUnitOfWork(
         inMemoryContactRepository !== null
           ? [...inMemoryContactRepository.contacts]
           : null;
+      const inMemoryDocumentRepository =
+        documentRepository instanceof InMemoryDocumentRepository
+          ? documentRepository
+          : null;
+      const documentSnapshot =
+        inMemoryDocumentRepository !== null
+          ? [...inMemoryDocumentRepository.documents]
+          : null;
       const inMemoryLocationRepository =
         locationRepository instanceof InMemoryLocationRepository
           ? locationRepository
@@ -105,6 +116,7 @@ export function createInMemoryAppUnitOfWork(
           accountRepository,
           auditRepository,
           contactRepository,
+          documentRepository,
           handReceiptRepository,
           itemRepository,
           locationRepository,
@@ -126,6 +138,10 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryContactRepository && contactSnapshot) {
           inMemoryContactRepository.contacts = contactSnapshot;
+        }
+
+        if (inMemoryDocumentRepository && documentSnapshot) {
+          inMemoryDocumentRepository.documents = documentSnapshot;
         }
 
         if (inMemoryLocationRepository && locationSnapshot) {

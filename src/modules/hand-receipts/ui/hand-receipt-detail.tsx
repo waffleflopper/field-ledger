@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   CalendarDays,
   ClipboardList,
-  FileUp,
   History,
   Pencil,
   RotateCcw,
@@ -23,6 +22,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { DocumentList } from "@/modules/documents/ui/document-list";
+import { DocumentUpload } from "@/modules/documents/ui/document-upload";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import type { ItemRecord } from "@/modules/items";
 import { CreateItemForm } from "@/modules/items/ui/create-item-form";
@@ -64,30 +65,6 @@ function MetadataRow({
         {value || "Not set"}
       </dd>
     </div>
-  );
-}
-
-function FutureSection({
-  icon: Icon,
-  label,
-  text,
-}: {
-  icon: typeof FileUp;
-  label: string;
-  text: string;
-}) {
-  return (
-    <section className="rounded-lg border bg-card p-4">
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-          <Icon aria-hidden="true" className="size-4" />
-        </span>
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-sm font-semibold tracking-normal">{label}</h2>
-          <p className="text-sm leading-6 text-muted-foreground">{text}</p>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -223,6 +200,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
       utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
       utilities.items.search.invalidate(),
       utilities.billing.capabilities.invalidate(),
+      utilities.documents.list.invalidate(),
     ]);
   }
 
@@ -522,11 +500,19 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
               />
             )}
           </section>
-          <FutureSection
-            icon={FileUp}
-            label="Upload 2062"
-            text="The future upload flow starts from this receipt and keeps the selected bucket in context."
-          />
+          <div className="space-y-3">
+            <DocumentUpload
+              disabled={isReadOnly || handReceipt.status !== "active"}
+              handReceiptId={handReceiptId}
+              onUploadComplete={() => {
+                void Promise.all([
+                  utilities.documents.list.invalidate({ handReceiptId }),
+                  utilities.audit.listRecentActivity.invalidate(),
+                ]);
+              }}
+            />
+            <DocumentList handReceiptId={handReceiptId} />
+          </div>
         </div>
 
         <section className="space-y-3">

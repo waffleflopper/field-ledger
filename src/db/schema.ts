@@ -334,6 +334,46 @@ export const items = pgTable(
   ],
 ).enableRLS();
 
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    handReceiptId: uuid("hand_receipt_id")
+      .notNull()
+      .references(() => handReceipts.id),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storagePath: text("storage_path").notNull(),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("documents_account_id_created_at_idx").on(
+      table.accountId,
+      table.createdAt.desc(),
+    ),
+    index("documents_account_id_hand_receipt_id_idx").on(
+      table.accountId,
+      table.handReceiptId,
+    ),
+    uniqueIndex("documents_account_id_storage_path_unique_idx").on(
+      table.accountId,
+      table.storagePath,
+    ),
+  ],
+).enableRLS();
+
 export const requirements = pgTable(
   "requirements",
   {

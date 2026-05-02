@@ -6,6 +6,8 @@ import {
   createUnavailableRequirementCompletionRepository,
   createUnavailableRequirementRepository,
 } from "@/modules/requirements";
+import { createUnavailableDocumentRepository } from "@/modules/documents";
+import { createUnavailableStoragePort } from "@/modules/provider-boundaries/storage";
 import type { TRPCContext } from "@/server/trpc/context";
 
 const t = initTRPC.context<TRPCContext>().create({
@@ -29,6 +31,8 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       accountRepository: ctx.accountRepository,
       auditRepository: ctx.auditRepository,
       contactRepository: ctx.contactRepository,
+      documentRepository:
+        ctx.documentRepository ?? createUnavailableDocumentRepository(),
       handReceiptRepository: ctx.handReceiptRepository,
       itemRepository: ctx.itemRepository,
       locationRepository: ctx.locationRepository,
@@ -38,6 +42,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       requirementRepository:
         ctx.requirementRepository ?? createUnavailableRequirementRepository(),
       unitOfWork: ctx.unitOfWork,
+      storagePort: ctx.storagePort ?? createUnavailableStoragePort(),
     },
   });
 });

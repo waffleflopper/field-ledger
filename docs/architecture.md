@@ -83,6 +83,13 @@ service. Future lifecycle transitions with similar read-then-write races should
 use the same conditional-write shape so stale operations fail before
 audit/activity history is recorded.
 
+Document upload behavior is owned by `src/modules/documents/`. The module
+validates accepted PDF/image types and the application upload-size limit,
+requests private upload/read URLs through the file-storage provider boundary,
+persists account-owned hand-receipt-scoped metadata only after the browser file
+upload succeeds, and emits `document.uploaded` activity without storing file
+contents or sensitive document snapshots in audit metadata.
+
 ## App Shell
 
 Authenticated product routes live under the literal `/app` URL path. The

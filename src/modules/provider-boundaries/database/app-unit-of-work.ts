@@ -2,6 +2,8 @@ import type { AuditRepository } from "@/modules/audit";
 import { createTransactionalDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
 import type { ContactRepository } from "@/modules/contacts";
 import { createTransactionalDrizzleContactRepository } from "@/modules/contacts/infrastructure/drizzle-contact-repository";
+import type { DocumentRepository } from "@/modules/documents";
+import { createTransactionalDrizzleDocumentRepository } from "@/modules/documents/infrastructure/drizzle-document-repository";
 import type { AccountRepository } from "@/modules/accounts/application/ensure-account";
 import { createTransactionalDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
@@ -24,6 +26,7 @@ export type AppUnitOfWorkRepositories = {
   accountRepository: AccountRepository;
   auditRepository: AuditRepository;
   contactRepository: ContactRepository;
+  documentRepository: DocumentRepository;
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   locationRepository: LocationRepository;
@@ -59,6 +62,8 @@ export function createDrizzleAppUnitOfWork(
             createTransactionalDrizzleAuditRepository(transaction),
           contactRepository:
             createTransactionalDrizzleContactRepository(transaction),
+          documentRepository:
+            createTransactionalDrizzleDocumentRepository(transaction),
           handReceiptRepository:
             createTransactionalDrizzleHandReceiptRepository(transaction),
           itemRepository: createTransactionalDrizzleItemRepository(transaction),
