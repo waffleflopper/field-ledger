@@ -16,6 +16,8 @@ This plan implements item-level recurring requirements, completion history, and 
 - **Operational dates**: date-only.
 - **Dashboard windows**: overdue, due soon through 14 days, upcoming 15-30 days.
 - **Priority**: no manual priority in MVP.
+- **Pause state**: requirement pause is represented by `pausedAt`, not by a
+  `status = "paused"` enum value. Pause sets `pausedAt`; resume clears it.
 
 ---
 
@@ -73,6 +75,7 @@ Allow manual next due date adjustment and requirement pause/resume behavior.
 - [x] Next completion recalculates from completion date.
 - [x] Requirement can be paused/resumed.
 - [x] Adjustments and pause/resume emit audit events.
+- [x] Pause state uses `pausedAt` as the current suppression marker.
 
 ---
 
