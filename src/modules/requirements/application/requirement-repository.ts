@@ -20,6 +20,10 @@ export type RequirementLifecycleUpdateInput = {
   updatedAt: Date;
 };
 
+export type RequirementLifecycleUpdateOptions = {
+  expectedPausedAt?: Date | null;
+};
+
 export interface RequirementRepository {
   create(requirement: NewRequirementRecord): Promise<RequirementRecord>;
   findById(
@@ -50,6 +54,7 @@ export interface RequirementRepository {
     accountId: string,
     requirementId: string,
     input: RequirementLifecycleUpdateInput,
+    options?: RequirementLifecycleUpdateOptions,
   ): Promise<RequirementRecord | null>;
 }
 

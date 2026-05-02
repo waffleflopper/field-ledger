@@ -76,6 +76,13 @@ application services. Item-detail and dashboard routes compose requirement UI
 and typed tRPC procedures; they do not calculate due windows or write audit
 events directly.
 
+Requirement pause/resume uses a conditional repository write against
+`paused_at`: pause only succeeds while the persisted value is null, and resume
+only succeeds while the persisted value still matches the timestamp read by the
+service. Future lifecycle transitions with similar read-then-write races should
+use the same conditional-write shape so stale operations fail before
+audit/activity history is recorded.
+
 ## App Shell
 
 Authenticated product routes live under the literal `/app` URL path. The

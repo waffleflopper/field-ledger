@@ -51,10 +51,13 @@ export async function pauseRequirement({
       pausedAt: now,
       updatedAt: now,
     },
+    {
+      expectedPausedAt: null,
+    },
   );
 
   if (!updated) {
-    throw new Error("Requirement was not found.");
+    throw new Error("Requirement state has changed.");
   }
 
   await recordAuditEvent({

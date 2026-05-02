@@ -155,6 +155,9 @@ export class InMemoryRequirementRepository implements RequirementRepository {
       pausedAt?: Date | null;
       updatedAt: Date;
     },
+    options?: {
+      expectedPausedAt?: Date | null;
+    },
   ) {
     const index = this.requirements.findIndex(
       (requirement) =>
@@ -168,6 +171,14 @@ export class InMemoryRequirementRepository implements RequirementRepository {
     const existing = this.requirements[index];
 
     if (!existing) {
+      return null;
+    }
+
+    if (
+      options &&
+      "expectedPausedAt" in options &&
+      !samePausedAt(existing.pausedAt, options.expectedPausedAt)
+    ) {
       return null;
     }
 
@@ -185,4 +196,12 @@ export class InMemoryRequirementRepository implements RequirementRepository {
 
 export function createEmptyRequirementRepository() {
   return new InMemoryRequirementRepository();
+}
+
+function samePausedAt(left: Date | null, right: Date | null | undefined) {
+  if (left === null || right === null || right === undefined) {
+    return left === right;
+  }
+
+  return left.getTime() === right.getTime();
 }

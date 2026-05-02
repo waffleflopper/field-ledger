@@ -182,7 +182,14 @@ function createRequirementRepository(
 
       return updated ? toRequirementRecord(updated) : null;
     },
-    async updateLifecycle(accountId, requirementId, input) {
+    async updateLifecycle(accountId, requirementId, input, options) {
+      const pausedAtCondition =
+        options && "expectedPausedAt" in options
+          ? options.expectedPausedAt === null
+            ? sql`${requirements.pausedAt} is null`
+            : eq(requirements.pausedAt, options.expectedPausedAt)
+          : undefined;
+
       const [updated] = await run((transaction) =>
         transaction
           .update(requirements)
@@ -197,6 +204,7 @@ function createRequirementRepository(
             and(
               eq(requirements.accountId, accountId),
               eq(requirements.id, requirementId),
+              pausedAtCondition,
             ),
           )
           .returning(),

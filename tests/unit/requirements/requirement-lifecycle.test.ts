@@ -88,6 +88,29 @@ function createHandReceiptRepository(status: "active" | "archived" = "active") {
   ]);
 }
 
+class MutatingRequirementRepository extends InMemoryRequirementRepository {
+  constructor(
+    requirements: RequirementRecord[],
+    private readonly mutateAfterRead: (
+      repository: InMemoryRequirementRepository,
+    ) => void,
+  ) {
+    super(requirements);
+  }
+
+  override async findById(accountId: string, requirementId: string) {
+    const requirement = await super.findById(accountId, requirementId);
+
+    if (requirement) {
+      const snapshot = { ...requirement };
+      this.mutateAfterRead(this);
+      return snapshot;
+    }
+
+    return null;
+  }
+}
+
 describe("requirement lifecycle controls", () => {
   it("manually adjusts next due without changing the interval and records activity", async () => {
     const auditRepository = new InMemoryAuditRepository();
@@ -188,6 +211,96 @@ describe("requirement lifecycle controls", () => {
       "requirement.paused",
       "requirement.resumed",
     ]);
+  });
+
+  it("fails a stale pause when the requirement is paused between read and write", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementRepository = new MutatingRequirementRepository(
+      [createRequirement()],
+      (repository) => {
+        repository.requirements[0] = {
+          ...repository.requirements[0]!,
+          pausedAt: new Date("2026-05-10T19:59:00.000Z"),
+        };
+      },
+    );
+
+    await expect(
+      pauseRequirement({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: { requirementId: "requirement-1" },
+        auditRepository,
+        requirementRepository,
+        now: new Date("2026-05-10T20:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Requirement state has changed.");
+
+    expect(auditRepository.events).toEqual([]);
+  });
+
+  it("fails a stale resume when the requirement is resumed between read and write", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementRepository = new MutatingRequirementRepository(
+      [
+        createRequirement({
+          pausedAt: new Date("2026-05-10T19:00:00.000Z"),
+        }),
+      ],
+      (repository) => {
+        repository.requirements[0] = {
+          ...repository.requirements[0]!,
+          pausedAt: null,
+        };
+      },
+    );
+
+    await expect(
+      resumeRequirement({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: { requirementId: "requirement-1" },
+        auditRepository,
+        handReceiptRepository: createHandReceiptRepository(),
+        itemRepository: createItemRepository(),
+        requirementRepository,
+        now: new Date("2026-05-10T20:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Requirement state has changed.");
+
+    expect(auditRepository.events).toEqual([]);
+  });
+
+  it("fails a stale resume when the requirement is resumed and paused again between read and write", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementRepository = new MutatingRequirementRepository(
+      [
+        createRequirement({
+          pausedAt: new Date("2026-05-10T19:00:00.000Z"),
+        }),
+      ],
+      (repository) => {
+        repository.requirements[0] = {
+          ...repository.requirements[0]!,
+          pausedAt: new Date("2026-05-10T19:30:00.000Z"),
+        };
+      },
+    );
+
+    await expect(
+      resumeRequirement({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: { requirementId: "requirement-1" },
+        auditRepository,
+        handReceiptRepository: createHandReceiptRepository(),
+        itemRepository: createItemRepository(),
+        requirementRepository,
+        now: new Date("2026-05-10T20:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Requirement state has changed.");
+
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("blocks lifecycle changes for read-only accounts and invalid paused transitions", async () => {

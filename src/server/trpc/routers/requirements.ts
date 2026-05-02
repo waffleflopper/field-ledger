@@ -110,6 +110,7 @@ function toTRPCError(
     case "Requirement is already paused.":
     case "Requirement is not paused.":
     case "Requirement is paused.":
+    case "Requirement state has changed.":
     case "Cannot resume requirement on archived item.":
     case "Cannot resume requirement on archived hand receipt.":
       throw new TRPCError({ code: "CONFLICT", message });
