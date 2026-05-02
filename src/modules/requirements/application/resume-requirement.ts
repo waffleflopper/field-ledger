@@ -72,10 +72,13 @@ export async function resumeRequirement({
       pausedAt: null,
       updatedAt: now,
     },
+    {
+      expectedPausedAt: existing.pausedAt,
+    },
   );
 
   if (!updated) {
-    throw new Error("Requirement was not found.");
+    throw new Error("Requirement state has changed.");
   }
 
   await recordAuditEvent({

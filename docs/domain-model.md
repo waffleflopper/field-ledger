@@ -253,6 +253,14 @@ Rules:
 - Requirement edits emit `requirement.updated` with changed-field metadata.
 - Paused/read-only accounts can view requirements but cannot create or edit
   requirements.
+- Pausing a requirement sets `paused_at`; resuming clears it. Pause writes are
+  conditional on `paused_at` still being null, and resume writes are
+  conditional on the stored `paused_at` still matching the timestamp read by
+  the service. Stale concurrent operations fail with a state-changed conflict
+  instead of overwriting the current lifecycle state.
+- Requirement pause/resume audit events are recorded only after a successful
+  lifecycle transition. Clients that receive a conflict should refetch the
+  requirement before retrying or updating the visible state.
 - Active requirements are listed on item detail by next due date.
 - Due dates calculate from last completed date.
 - Editing an interval recalculates next due from the latest completion date, or
