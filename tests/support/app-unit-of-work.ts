@@ -8,6 +8,8 @@ import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryHandReceiptRepository } from "./hand-receipt-repository";
 import { InMemoryItemRepository } from "./item-repository";
 import { InMemoryLocationRepository } from "./location-repository";
+import { InMemoryRequirementCompletionRepository } from "./requirement-completion-repository";
+import { InMemoryRequirementRepository } from "./requirement-repository";
 
 export function createInMemoryAppUnitOfWork(
   repositories: Partial<AppUnitOfWorkRepositories> = {},
@@ -24,6 +26,11 @@ export function createInMemoryAppUnitOfWork(
     repositories.itemRepository ?? new InMemoryItemRepository();
   const locationRepository =
     repositories.locationRepository ?? new InMemoryLocationRepository();
+  const requirementRepository =
+    repositories.requirementRepository ?? new InMemoryRequirementRepository();
+  const requirementCompletionRepository =
+    repositories.requirementCompletionRepository ??
+    new InMemoryRequirementCompletionRepository();
 
   return {
     async run(operation) {
@@ -75,6 +82,23 @@ export function createInMemoryAppUnitOfWork(
         inMemoryAccountRepository !== null
           ? inMemoryAccountRepository.snapshotState()
           : null;
+      const inMemoryRequirementRepository =
+        requirementRepository instanceof InMemoryRequirementRepository
+          ? requirementRepository
+          : null;
+      const requirementSnapshot =
+        inMemoryRequirementRepository !== null
+          ? [...inMemoryRequirementRepository.requirements]
+          : null;
+      const inMemoryRequirementCompletionRepository =
+        requirementCompletionRepository instanceof
+        InMemoryRequirementCompletionRepository
+          ? requirementCompletionRepository
+          : null;
+      const requirementCompletionSnapshot =
+        inMemoryRequirementCompletionRepository !== null
+          ? [...inMemoryRequirementCompletionRepository.completions]
+          : null;
 
       try {
         return await operation({
@@ -84,6 +108,8 @@ export function createInMemoryAppUnitOfWork(
           handReceiptRepository,
           itemRepository,
           locationRepository,
+          requirementCompletionRepository,
+          requirementRepository,
         });
       } catch (error) {
         if (inMemoryHandReceiptRepository && handReceiptSnapshot) {
@@ -108,6 +134,18 @@ export function createInMemoryAppUnitOfWork(
 
         if (inMemoryAccountRepository && accountSnapshot) {
           inMemoryAccountRepository.restoreState(accountSnapshot);
+        }
+
+        if (inMemoryRequirementRepository && requirementSnapshot) {
+          inMemoryRequirementRepository.requirements = requirementSnapshot;
+        }
+
+        if (
+          inMemoryRequirementCompletionRepository &&
+          requirementCompletionSnapshot
+        ) {
+          inMemoryRequirementCompletionRepository.completions =
+            requirementCompletionSnapshot;
         }
 
         throw error;

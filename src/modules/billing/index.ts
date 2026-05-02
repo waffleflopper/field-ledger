@@ -1,6 +1,8 @@
 export {
   canArchiveHandReceipt,
   canCreateHandReceipt,
+  canCreateRequirement,
+  canEditRequirement,
   canMoveItem,
   canRestoreHandReceipt,
   getActiveHandReceiptLimit,

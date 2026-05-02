@@ -1,17 +1,12 @@
-import { ClipboardList, FileText, Search } from "lucide-react";
+import { ClipboardList, Search } from "lucide-react";
 import Link from "next/link";
 
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { DashboardRequirements } from "@/modules/requirements/ui/dashboard-requirements";
 import { createTRPCContext } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
 const dashboardSections = [
-  {
-    description:
-      "Overdue and due-soon requirements will appear here before lower-priority context.",
-    icon: FileText,
-    label: "Requirements",
-  },
   {
     description:
       "Fast entry points will support adding items, reviewing hand receipts, and uploading 2062s.",
@@ -28,7 +23,10 @@ const dashboardSections = [
 
 export default async function DashboardPage() {
   const caller = appRouter.createCaller(await createTRPCContext());
-  const activity = await caller.audit.listRecentActivity({ limit: 5 });
+  const [dashboardWork, activity] = await Promise.all([
+    caller.requirements.dashboardWork(),
+    caller.audit.listRecentActivity({ limit: 5 }),
+  ]);
 
   return (
     <section className="space-y-6">
@@ -46,7 +44,9 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <DashboardRequirements {...dashboardWork} />
+
+      <div className="grid gap-3 lg:grid-cols-2">
         {dashboardSections.map(({ description, icon: Icon, label }) => (
           <article
             className="rounded-lg border bg-card p-4 text-card-foreground"

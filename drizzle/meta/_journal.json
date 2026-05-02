@@ -113,6 +113,41 @@
       "when": 1777619460000,
       "tag": "0015_locations_item_location",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777672889212,
+      "tag": "0016_wet_giant_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777676139360,
+      "tag": "0017_chief_blue_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777681901917,
+      "tag": "0018_charming_squadron_supreme",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777691572323,
+      "tag": "0019_glorious_randall_flagg",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777693332050,
+      "tag": "0020_pale_timeslip",
+      "breakpoints": true
     }
   ]
 }

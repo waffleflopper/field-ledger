@@ -106,6 +106,45 @@ async function main() {
         return [];
       },
     },
+    requirementRepository: {
+      async create() {
+        throw new Error("Foundation check should not create requirements.");
+      },
+      async findById() {
+        return null;
+      },
+      async findByItemId() {
+        return [];
+      },
+      async findByName() {
+        return null;
+      },
+      async findDashboardRequirements() {
+        return [];
+      },
+      async update() {
+        throw new Error("Foundation check should not update requirements.");
+      },
+      async updateNextDueDate() {
+        throw new Error("Foundation check should not update requirements.");
+      },
+      async updateLifecycle() {
+        throw new Error("Foundation check should not update requirements.");
+      },
+    },
+    requirementCompletionRepository: {
+      async create() {
+        throw new Error(
+          "Foundation check should not create requirement completions.",
+        );
+      },
+      async listByRequirementId() {
+        return [];
+      },
+      async findLatestByRequirementId() {
+        return null;
+      },
+    },
     unitOfWork: {
       async run() {
         throw new Error("Foundation check should not start a unit of work.");

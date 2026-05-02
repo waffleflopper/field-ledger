@@ -8,6 +8,7 @@ import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 import { createEmptyLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 describe("foundationRouter", () => {
   it("serves health through the typed tRPC caller", async () => {
@@ -20,6 +21,7 @@ describe("foundationRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 

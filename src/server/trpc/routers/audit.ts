@@ -40,7 +40,7 @@ export const auditRouter = createTRPCRouter({
       z.object({
         limit: z.number().int().min(1).max(50).optional(),
         targetId: z.string().min(1),
-        targetType: z.enum(["hand_receipt", "item"]),
+        targetType: z.enum(["hand_receipt", "item", "requirement"]),
       }),
     )
     .query(({ ctx, input }) =>

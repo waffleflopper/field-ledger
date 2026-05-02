@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -11,6 +12,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -44,6 +46,18 @@ export const handReceiptStatusEnum = pgEnum("hand_receipt_status", [
 ]);
 
 export const itemStatusEnum = pgEnum("item_status", ["active", "archived"]);
+
+export const requirementIntervalTypeEnum = pgEnum("requirement_interval_type", [
+  "weekly",
+  "monthly",
+  "quarterly",
+  "semiannual",
+  "annual",
+  "custom_days",
+  "custom_months",
+]);
+
+export const requirementStatusEnum = pgEnum("requirement_status", ["active"]);
 
 export const authUser = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -316,6 +330,83 @@ export const items = pgTable(
     index("items_account_id_location_id_idx").on(
       table.accountId,
       table.locationId,
+    ),
+  ],
+).enableRLS();
+
+export const requirements = pgTable(
+  "requirements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id),
+    name: text("name").notNull(),
+    notes: text("notes"),
+    intervalType: requirementIntervalTypeEnum("interval_type").notNull(),
+    intervalValue: integer("interval_value"),
+    nextDueDate: date("next_due_date").notNull(),
+    status: requirementStatusEnum("status").notNull().default("active"),
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("requirements_id_account_id_key").on(table.id, table.accountId),
+    index("requirements_account_id_item_id_status_idx").on(
+      table.accountId,
+      table.itemId,
+      table.status,
+    ),
+    index("requirements_account_id_next_due_idx").on(
+      table.accountId,
+      table.nextDueDate,
+    ),
+    check(
+      "requirements_interval_value_chk",
+      sql`(
+        (${table.intervalType} in ('custom_days', 'custom_months') and ${table.intervalValue} is not null and ${table.intervalValue} > 0)
+        or
+        (${table.intervalType} in ('weekly', 'monthly', 'quarterly', 'semiannual', 'annual') and ${table.intervalValue} is null)
+      )`,
+    ),
+  ],
+).enableRLS();
+
+export const requirementCompletions = pgTable(
+  "requirement_completions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    requirementId: uuid("requirement_id").notNull(),
+    completedOn: date("completed_on").notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.requirementId, table.accountId],
+      foreignColumns: [requirements.id, requirements.accountId],
+      name: "requirement_completions_requirement_account_fk",
+    }),
+    index("requirement_completions_requirement_completed_idx").on(
+      table.requirementId,
+      table.completedOn.desc(),
+    ),
+    index("requirement_completions_account_id_created_at_idx").on(
+      table.accountId,
+      table.createdAt.desc(),
     ),
   ],
 ).enableRLS();

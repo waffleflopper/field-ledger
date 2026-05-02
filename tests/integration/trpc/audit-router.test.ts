@@ -9,6 +9,7 @@ import { createEmptyContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 import { createEmptyLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 function createAccount(): AccountRecord {
   return {
@@ -37,6 +38,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork(),
     });
 
@@ -81,6 +83,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -150,6 +153,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 
@@ -163,6 +167,51 @@ describe("auditRouter", () => {
         id: "event-1",
         label: "Hand receipt created",
         targetLabel: "Alpha hand receipt",
+      },
+    ]);
+  });
+
+  it("returns target-scoped requirement activity for the current account", async () => {
+    const account = createAccount();
+    const auditRepository = new InMemoryAuditRepository([
+      {
+        id: "event-1",
+        accountId: account.id,
+        actorId: account.userId,
+        action: "requirement.completed",
+        targetType: "requirement",
+        targetId: "requirement-1",
+        occurredAt: new Date("2026-04-29T12:00:00.000Z"),
+        metadata: { name: "Monthly PMCS" },
+        createdAt: new Date("2026-04-29T12:00:01.000Z"),
+      },
+    ]);
+    const caller = appRouter.createCaller({
+      session: {
+        userId: account.userId,
+        email: "owner@example.com",
+      },
+      account,
+      accountRepository: createEmptyAccountRepository(),
+      auditRepository,
+      contactRepository: createEmptyContactRepository(),
+      handReceiptRepository: createEmptyHandReceiptRepository(),
+      itemRepository: createEmptyItemRepository(),
+      locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
+      unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
+    });
+
+    await expect(
+      caller.audit.listTargetActivity({
+        targetType: "requirement",
+        targetId: "requirement-1",
+      }),
+    ).resolves.toMatchObject([
+      {
+        id: "event-1",
+        label: "Requirement completed",
+        targetLabel: "Monthly PMCS",
       },
     ]);
   });
@@ -205,6 +254,7 @@ describe("auditRouter", () => {
       handReceiptRepository: createEmptyHandReceiptRepository(),
       itemRepository: createEmptyItemRepository(),
       locationRepository: createEmptyLocationRepository(),
+      requirementRepository: createEmptyRequirementRepository(),
       unitOfWork: createInMemoryAppUnitOfWork({ auditRepository }),
     });
 

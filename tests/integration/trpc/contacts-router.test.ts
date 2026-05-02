@@ -10,6 +10,7 @@ import { InMemoryContactRepository } from "../../support/contact-repository";
 import { createEmptyHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { createEmptyItemRepository } from "../../support/item-repository";
 import { createEmptyLocationRepository } from "../../support/location-repository";
+import { createEmptyRequirementRepository } from "../../support/requirement-repository";
 
 function createAccount(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
@@ -39,6 +40,7 @@ function createCaller({
   const handReceiptRepository = createEmptyHandReceiptRepository();
   const itemRepository = createEmptyItemRepository();
   const locationRepository = createEmptyLocationRepository();
+  const requirementRepository = createEmptyRequirementRepository();
 
   return appRouter.createCaller({
     session: {
@@ -52,6 +54,7 @@ function createCaller({
     handReceiptRepository,
     itemRepository,
     locationRepository,
+    requirementRepository,
     unitOfWork:
       unitOfWork ??
       createInMemoryAppUnitOfWork({
@@ -61,6 +64,7 @@ function createCaller({
         handReceiptRepository,
         itemRepository,
         locationRepository,
+        requirementRepository,
       }),
   });
 }

@@ -7,6 +7,7 @@ import { foundationRouter } from "@/server/trpc/routers/foundation";
 import { handReceiptsRouter } from "@/server/trpc/routers/hand-receipts";
 import { itemsRouter } from "@/server/trpc/routers/items";
 import { locationsRouter } from "@/server/trpc/routers/locations";
+import { requirementsRouter } from "@/server/trpc/routers/requirements";
 
 export const appRouter = createTRPCRouter({
   accounts: accountsRouter,
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   handReceipts: handReceiptsRouter,
   items: itemsRouter,
   locations: locationsRouter,
+  requirements: requirementsRouter,
 });
 
 export type AppRouter = typeof appRouter;

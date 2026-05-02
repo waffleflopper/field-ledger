@@ -41,6 +41,10 @@ function formatTargetLabel(event: AuditEventRecord) {
     return metadataName(event.metadata) ?? "Item";
   }
 
+  if (event.targetType === "requirement") {
+    return metadataName(event.metadata) ?? "Requirement";
+  }
+
   if (event.targetType === "account") {
     return "Account";
   }

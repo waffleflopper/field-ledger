@@ -182,7 +182,6 @@ function Sidebar({
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
-          aria-describedby="mobile-sidebar-description"
           dir={dir}
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -197,9 +196,7 @@ function Sidebar({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription id="mobile-sidebar-description">
-              Displays the mobile sidebar.
-            </SheetDescription>
+            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

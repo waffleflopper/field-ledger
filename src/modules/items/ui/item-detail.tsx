@@ -13,7 +13,6 @@ import {
   PackageSearch,
   Pencil,
   RotateCcw,
-  ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,7 @@ import { ActivityList } from "@/modules/audit/ui/activity-list";
 import { ContactPicker } from "@/modules/contacts/ui/contact-picker";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import type { ItemRecord } from "@/modules/items";
+import { RequirementsPanel } from "@/modules/requirements/ui/requirements-list";
 import { trpc } from "@/trpc/react";
 import { ItemEditForm } from "./item-edit-form";
 
@@ -594,11 +594,11 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <FutureSection
-          icon={ShieldCheck}
-          label="Requirements"
-          text="Future item-level recurring requirements will live here without depending on item photos."
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <RequirementsPanel
+          isItemActive={item.status === "active"}
+          isReadOnly={isReadOnly}
+          itemId={item.id}
         />
         <FutureSection
           icon={FileText}

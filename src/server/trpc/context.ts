@@ -28,6 +28,14 @@ import {
   type LocationRepository,
 } from "@/modules/locations";
 import { createDrizzleLocationRepository } from "@/modules/locations/infrastructure/drizzle-location-repository";
+import {
+  createUnavailableRequirementCompletionRepository,
+  createUnavailableRequirementRepository,
+  type RequirementCompletionRepository,
+  type RequirementRepository,
+} from "@/modules/requirements";
+import { createDrizzleRequirementCompletionRepository } from "@/modules/requirements/infrastructure/drizzle-requirement-completion-repository";
+import { createDrizzleRequirementRepository } from "@/modules/requirements/infrastructure/drizzle-requirement-repository";
 import { type AppSession } from "@/modules/provider-boundaries/auth";
 import { getCurrentServerAppSession } from "@/modules/provider-boundaries/auth/server-session";
 import {
@@ -46,6 +54,8 @@ export async function createTRPCContext(): Promise<{
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   locationRepository: LocationRepository;
+  requirementCompletionRepository?: RequirementCompletionRepository;
+  requirementRepository: RequirementRepository;
   unitOfWork: AppUnitOfWork;
 }> {
   const db = getDrizzleClient();
@@ -62,6 +72,9 @@ export async function createTRPCContext(): Promise<{
       handReceiptRepository: createUnavailableHandReceiptRepository(),
       itemRepository: createUnavailableItemRepository(),
       locationRepository: createUnavailableLocationRepository(),
+      requirementCompletionRepository:
+        createUnavailableRequirementCompletionRepository(),
+      requirementRepository: createUnavailableRequirementRepository(),
       unitOfWork: createUnavailableAppUnitOfWork(),
     };
   }
@@ -88,6 +101,13 @@ export async function createTRPCContext(): Promise<{
       authSubject: session.userId,
     }),
     locationRepository: createDrizzleLocationRepository(db, {
+      authSubject: session.userId,
+    }),
+    requirementCompletionRepository:
+      createDrizzleRequirementCompletionRepository(db, {
+        authSubject: session.userId,
+      }),
+    requirementRepository: createDrizzleRequirementRepository(db, {
       authSubject: session.userId,
     }),
     unitOfWork: createDrizzleAppUnitOfWork(db, {

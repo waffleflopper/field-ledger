@@ -1,0 +1,1 @@
+CREATE INDEX "requirements_account_id_next_due_idx" ON "requirements" USING btree ("account_id","next_due_date");

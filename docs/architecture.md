@@ -69,6 +69,13 @@ must not be reimplemented in route components or UI-only code. See
 `docs/hand-receipt-archive-behavior.md` for deferred requirement and 2062
 boundaries.
 
+Requirement lifecycle behavior is owned by `src/modules/requirements/`.
+Requirement create, edit, complete, next-due adjustment, pause, resume,
+dashboard-window classification, and completion-history listing live in module
+application services. Item-detail and dashboard routes compose requirement UI
+and typed tRPC procedures; they do not calculate due windows or write audit
+events directly.
+
 ## App Shell
 
 Authenticated product routes live under the literal `/app` URL path. The

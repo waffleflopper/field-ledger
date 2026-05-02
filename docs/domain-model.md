@@ -245,12 +245,40 @@ MVP interval options:
 
 Rules:
 
+- A requirement belongs to exactly one item and one account.
+- Requirement creation happens from item detail and emits
+  `requirement.created`.
+- Requirement names, notes, interval type, and custom interval value can be
+  edited from item detail.
+- Requirement edits emit `requirement.updated` with changed-field metadata.
+- Paused/read-only accounts can view requirements but cannot create or edit
+  requirements.
+- Active requirements are listed on item detail by next due date.
 - Due dates calculate from last completed date.
+- Editing an interval recalculates next due from the latest completion date, or
+  from the requirement creation date when no completion history exists.
 - Completion creates permanent history.
+- Item detail shows the three most recent completions inline and provides an
+  expanded history view for the latest completion records without becoming a
+  full audit browser.
+- Editing requirement metadata must not rewrite completion history.
 - Completion date defaults to today, allows past dates, blocks future dates.
 - Completion can include optional notes.
+- Completing a requirement emits `requirement.completed` and updates the next
+  due date from the entered completion date.
 - Next due date can be manually adjusted and audited.
-- Duplicate requirement names on the same item warn but are allowed.
+- Manual next due adjustment changes only the next due date. It does not change
+  the interval type, interval value, or completion history.
+- Individual requirements can be paused and resumed. A paused requirement stays
+  visible on item detail but is excluded from active requirement work and cannot
+  be completed until resumed.
+- Resuming a requirement returns it to active behavior unless its item or hand
+  receipt is archived.
+- Requirement next due adjustment, pause, and resume emit
+  `requirement.next_due_adjusted`, `requirement.paused`, and
+  `requirement.resumed`.
+- Duplicate requirement names on the same item warn but are allowed during
+  creation and edit.
 
 Dashboard windows:
 
@@ -258,6 +286,10 @@ Dashboard windows:
 - due soon: today through 14 days
 - upcoming: 15 through 30 days
 - beyond 30 days: hidden from dashboard by default
+
+Dashboard requirement sections appear before secondary dashboard context. Each
+window keeps its own empty state so users can distinguish "no work in this
+window" from "no requirement work exists."
 
 ## Activity and Audit
 

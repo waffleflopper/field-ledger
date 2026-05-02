@@ -9,6 +9,9 @@ This plan implements item-level recurring requirements, completion history, and 
 - **Scope**: requirements belong to items only.
 - **No cyclic inventory modeling**: commander/PBO cyclic inventory is out of scope.
 - **Scheduling**: interval-based from last completed date.
+- **Interval edits**: when a requirement interval changes, recalculate the next
+  due date from the latest completion date. If the requirement has no completion
+  history yet, use the requirement creation date as the recalculation base.
 - **Completion**: creates permanent history.
 - **Operational dates**: date-only.
 - **Dashboard windows**: overdue, due soon through 14 days, upcoming 15-30 days.
@@ -26,11 +29,12 @@ Implement item-level requirement creation/editing with preset and custom interva
 
 ### Acceptance Criteria
 
-- [ ] Requirements belong to one item.
-- [ ] Supported intervals include weekly, monthly, quarterly, semiannual, annual, custom days, and custom months.
-- [ ] Duplicate requirement names on the same item warn but can be confirmed.
-- [ ] Requirement creation/editing emits audit events.
-- [ ] Read-only/paused accounts cannot create or edit requirements.
+- [x] Requirements belong to one item.
+- [x] Supported intervals include weekly, monthly, quarterly, semiannual, annual, custom days, and custom months.
+- [x] Duplicate requirement names on the same item warn but can be confirmed.
+- [x] Requirement creation/editing emits audit events.
+- [x] Read-only/paused accounts cannot create or edit requirements.
+- [x] Requirement notes can be edited without rewriting completion history.
 
 ---
 
@@ -44,13 +48,13 @@ Implement completion behavior, completion history, next-due calculation, optiona
 
 ### Acceptance Criteria
 
-- [ ] Completion defaults to today.
-- [ ] Past completion dates are allowed.
-- [ ] Future completion dates are blocked.
-- [ ] Next due date calculates from the entered completion date.
-- [ ] Completion creates a permanent history record.
-- [ ] Completion can include optional notes.
-- [ ] Completion emits an audit event.
+- [x] Completion defaults to today.
+- [x] Past completion dates are allowed.
+- [x] Future completion dates are blocked.
+- [x] Next due date calculates from the entered completion date.
+- [x] Completion creates a permanent history record.
+- [x] Completion can include optional notes.
+- [x] Completion emits an audit event.
 
 ---
 
@@ -64,11 +68,11 @@ Allow manual next due date adjustment and requirement pause/resume behavior.
 
 ### Acceptance Criteria
 
-- [ ] User can manually edit next due date.
-- [ ] Manual adjustment does not change the interval.
-- [ ] Next completion recalculates from completion date.
-- [ ] Requirement can be paused/resumed.
-- [ ] Adjustments and pause/resume emit audit events.
+- [x] User can manually edit next due date.
+- [x] Manual adjustment does not change the interval.
+- [x] Next completion recalculates from completion date.
+- [x] Requirement can be paused/resumed.
+- [x] Adjustments and pause/resume emit audit events.
 
 ---
 
@@ -82,12 +86,12 @@ Implement dashboard requirement sections using the MVP priority order and due wi
 
 ### Acceptance Criteria
 
-- [ ] Dashboard shows overdue requirements first.
-- [ ] Dashboard shows due soon through 14 days.
-- [ ] Dashboard shows upcoming 15-30 days.
-- [ ] Requirements beyond 30 days are hidden by default.
-- [ ] Archived hand receipt/item requirements are suppressed.
-- [ ] Paused/read-only account state does not present reminders as active operational work.
+- [x] Dashboard shows overdue requirements first.
+- [x] Dashboard shows due soon through 14 days.
+- [x] Dashboard shows upcoming 15-30 days.
+- [x] Requirements beyond 30 days are hidden by default.
+- [x] Archived hand receipt/item requirements are suppressed.
+- [x] Paused/read-only account state does not present reminders as active operational work.
 
 ---
 
@@ -101,9 +105,19 @@ Add item-detail requirement list, create/edit actions, completion action, and co
 
 ### Acceptance Criteria
 
-- [ ] Item detail shows active requirements.
-- [ ] User can mark a requirement complete from item detail.
-- [ ] User can view at least recent completion history.
-- [ ] Mobile layout remains usable.
-- [ ] Desktop layout uses available space without stretching mobile UI.
+- [x] Item detail shows active requirements.
+- [x] User can mark a requirement complete from item detail.
+- [x] User can view at least recent completion history.
+- [x] Mobile layout remains usable.
+- [x] Desktop layout uses available space without stretching mobile UI.
 
+## Phase 5 Completion Notes
+
+- Item detail keeps the compact three-record completion preview and adds a
+  "View all completions" dialog for the latest expanded history records.
+- Requirement activity labels are readable through the audit formatter, and the
+  audit router accepts requirement target-scoped activity reads.
+- Dashboard sections keep the priority order and show per-window empty states
+  when one window has no active requirement work.
+- Read-only and archived-item requirement states preserve review access without
+  inviting blocked create, edit, completion, pause, or resume actions.
