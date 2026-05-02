@@ -14,6 +14,8 @@ const ownerTwoHandReceiptId = "2579d0ac-9085-4d9c-b975-336bd550d490";
 const ownerOneDocumentId = "b3f7d90a-7b7a-4f90-9e7a-b05fe5470599";
 const ownerTwoDocumentId = "fca2646a-8ac8-48c6-a06b-8e1f8f9236ca";
 const ownerOneInsertAllowedDocumentId = "94e067e4-c154-4a66-aa61-dd2f8dcb3568";
+const mismatchedHandReceiptDocumentId = "8a4769b9-d1cb-4902-984c-529d4d3f5587";
+const mismatchedStoragePathDocumentId = "b32fbff4-d285-47d6-b2a3-b5ad8d0cfda9";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -84,7 +86,7 @@ describe("documents RLS", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId}, ${ownerOneInsertAllowedDocumentId})`;
+    await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId}, ${ownerOneInsertAllowedDocumentId}, ${mismatchedHandReceiptDocumentId}, ${mismatchedStoragePathDocumentId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
@@ -155,6 +157,58 @@ describe("documents RLS", () => {
             'application/pdf',
             100,
             ${`${ownerTwoAccountId}/blocked`}
+          )`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("prevents an owner from linking a document to another account's hand receipt", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into documents (
+            id,
+            account_id,
+            hand_receipt_id,
+            filename,
+            mime_type,
+            size_bytes,
+            storage_path
+          ) values (
+            ${mismatchedHandReceiptDocumentId},
+            ${ownerOneAccountId},
+            ${ownerTwoHandReceiptId},
+            'mismatched-receipt.pdf',
+            'application/pdf',
+            100,
+            ${`${ownerOneAccountId}/${mismatchedHandReceiptDocumentId}`}
+          )`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("prevents an owner from inserting a document with a mismatched storage path", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into documents (
+            id,
+            account_id,
+            hand_receipt_id,
+            filename,
+            mime_type,
+            size_bytes,
+            storage_path
+          ) values (
+            ${mismatchedStoragePathDocumentId},
+            ${ownerOneAccountId},
+            ${ownerOneHandReceiptId},
+            'mismatched-path.pdf',
+            'application/pdf',
+            100,
+            ${`${ownerTwoAccountId}/${mismatchedStoragePathDocumentId}`}
           )`,
       ),
     ).rejects.toThrow();

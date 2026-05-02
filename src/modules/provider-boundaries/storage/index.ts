@@ -14,6 +14,7 @@ export type StoragePort = {
     options?: CreateSignedUploadUrlOptions,
   ): Promise<SignedUploadUrl>;
   createSignedDownloadUrl(path: string, expiresIn?: number): Promise<string>;
+  objectExists(path: string): Promise<boolean>;
 };
 
 export function createUnavailableStoragePort(): StoragePort {
@@ -22,6 +23,9 @@ export function createUnavailableStoragePort(): StoragePort {
       throw new Error("A file storage provider is required.");
     },
     async createSignedDownloadUrl() {
+      throw new Error("A file storage provider is required.");
+    },
+    async objectExists() {
       throw new Error("A file storage provider is required.");
     },
   };

@@ -30,12 +30,29 @@ export function DocumentList({ handReceiptId }: { handReceiptId: string }) {
   const documentsQuery = trpc.documents.list.useQuery({ handReceiptId });
 
   async function openDownload(documentId: string) {
-    const result = await utilities.client.documents.getById.query({
-      id: documentId,
-    });
+    const downloadWindow = window.open("about:blank", "_blank");
 
-    if (result.downloadUrl) {
-      window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+    if (downloadWindow) {
+      downloadWindow.opener = null;
+    }
+
+    try {
+      const result = await utilities.client.documents.getById.query({
+        id: documentId,
+      });
+
+      if (result.downloadUrl) {
+        if (downloadWindow) {
+          downloadWindow.location.href = result.downloadUrl;
+        } else {
+          window.location.assign(result.downloadUrl);
+        }
+      } else {
+        downloadWindow?.close();
+      }
+    } catch (error) {
+      downloadWindow?.close();
+      throw error;
     }
   }
 

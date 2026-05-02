@@ -210,8 +210,9 @@ The storage path is app-generated as `{account_id}/{document_id}` so filenames
 remain display metadata and cannot collide inside the private documents bucket.
 Creating a document is a two-step workflow: the app first creates a private
 signed upload URL, then persists metadata and emits `document.uploaded` only
-after the browser file upload succeeds. The audit event uses lightweight
-metadata only and must not store document contents.
+after the browser file upload succeeds and the server verifies the storage
+object exists at the expected path. The audit event uses lightweight metadata
+only and must not store document contents.
 
 Documents are preserved by default. Closing a 2062 or archiving an item/hand
 receipt does not delete files.

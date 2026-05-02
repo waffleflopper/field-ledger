@@ -8,8 +8,18 @@ export class MockStoragePort implements StoragePort {
   uploadCalls: Array<{ path: string; options?: CreateSignedUploadUrlOptions }> =
     [];
   downloadCalls: Array<{ path: string; expiresIn?: number }> = [];
+  existsCalls: Array<{ path: string }> = [];
+  existingPaths: Set<string>;
   failUploads = false;
   failDownloads = false;
+
+  constructor({
+    existingPaths = [],
+  }: {
+    existingPaths?: string[];
+  } = {}) {
+    this.existingPaths = new Set(existingPaths);
+  }
 
   async createSignedUploadUrl(
     path: string,
@@ -38,5 +48,10 @@ export class MockStoragePort implements StoragePort {
     }
 
     return `https://storage.test/download/${path}`;
+  }
+
+  async objectExists(path: string) {
+    this.existsCalls.push({ path });
+    return this.existingPaths.has(path);
   }
 }

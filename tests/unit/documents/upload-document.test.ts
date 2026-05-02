@@ -106,6 +106,9 @@ describe("completeDocumentUpload", () => {
       documentRepository,
       handReceiptRepository,
       auditRepository,
+      storagePort: new MockStoragePort({
+        existingPaths: ["account-1/document-1"],
+      }),
       now: new Date("2026-05-02T12:00:00.000Z"),
     });
 
@@ -127,6 +130,37 @@ describe("completeDocumentUpload", () => {
         targetId: "document-1",
       },
     ]);
+  });
+
+  it("rejects completion when the uploaded object cannot be verified", async () => {
+    const account = createAccount();
+    const documentRepository = new InMemoryDocumentRepository();
+    const auditRepository = new InMemoryAuditRepository();
+    const handReceiptRepository = new InMemoryHandReceiptRepository([
+      createHandReceipt(),
+    ]);
+
+    await expect(
+      completeDocumentUpload({
+        account,
+        actorId: account.userId,
+        input: {
+          documentId: "document-1",
+          filename: "signed-2062.pdf",
+          mimeType: "application/pdf",
+          sizeBytes: 1234,
+          handReceiptId: "hand-receipt-1",
+        },
+        documentRepository,
+        handReceiptRepository,
+        auditRepository,
+        storagePort: new MockStoragePort(),
+        now: new Date("2026-05-02T12:00:00.000Z"),
+      }),
+    ).rejects.toThrow("Uploaded document file was not found.");
+
+    expect(documentRepository.documents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("rejects unsupported MIME types", async () => {

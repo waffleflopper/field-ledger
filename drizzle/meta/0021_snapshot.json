@@ -771,7 +771,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "documents_storage_path_matches_account_and_id": {
+          "name": "documents_storage_path_matches_account_and_id",
+          "value": "\"documents\".\"storage_path\" = \"documents\".\"account_id\"::text || '/' || \"documents\".\"id\"::text"
+        }
+      },
       "isRLSEnabled": true
     },
     "public.hand_receipts": {

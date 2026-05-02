@@ -16,6 +16,7 @@ const ownerOneHandReceiptId = "de3d2d42-5cf8-4c0d-955f-46f81ece789a";
 const ownerTwoHandReceiptId = "948d1cfd-f171-41d4-82a0-e478a94d9614";
 const ownerOneDocumentId = "8c798729-b56e-484b-97bd-3b2689daf9f4";
 const ownerTwoDocumentId = "14675277-bd0e-4e60-9bf3-c833230df018";
+const mismatchedHandReceiptDocumentId = "71865d0d-89a7-48c9-a101-1350823acf26";
 
 const sql = postgres(databaseUrl, { max: 1 });
 const db = createDrizzleClient(databaseUrl);
@@ -75,7 +76,7 @@ describe("document repository RLS boundary", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId})`;
+    await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId}, ${mismatchedHandReceiptDocumentId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
@@ -111,6 +112,25 @@ describe("document repository RLS boundary", () => {
         mimeType: "application/pdf",
         sizeBytes: 100,
         storagePath: `${ownerTwoAccountId}/blocked`,
+        uploadedAt: new Date("2026-05-02T12:00:00.000Z"),
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("cannot create a document linked to another account's hand receipt", async () => {
+    const repository = createDrizzleDocumentRepository(db, {
+      authSubject: ownerOneId,
+    });
+
+    await expect(
+      repository.create({
+        id: mismatchedHandReceiptDocumentId,
+        accountId: ownerOneAccountId,
+        handReceiptId: ownerTwoHandReceiptId,
+        filename: "mismatched-receipt.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        storagePath: `${ownerOneAccountId}/${mismatchedHandReceiptDocumentId}`,
         uploadedAt: new Date("2026-05-02T12:00:00.000Z"),
       }),
     ).rejects.toThrow();

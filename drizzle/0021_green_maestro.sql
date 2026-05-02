@@ -10,6 +10,7 @@ CREATE TABLE "documents" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_storage_path_matches_account_and_id" CHECK ("storage_path" = "account_id"::text || '/' || "id"::text);--> statement-breakpoint
 ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "documents_account_id_created_at_idx" ON "documents" USING btree ("account_id","created_at" DESC NULLS LAST);--> statement-breakpoint

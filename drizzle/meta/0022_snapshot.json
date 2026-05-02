@@ -83,7 +83,9 @@
         "accounts_auth_user_id_unique": {
           "name": "accounts_auth_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["auth_user_id"]
+          "columns": [
+            "auth_user_id"
+          ]
         }
       },
       "policies": {},
@@ -185,8 +187,12 @@
           "name": "audit_events_account_id_accounts_id_fk",
           "tableFrom": "audit_events",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -305,8 +311,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -395,8 +405,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -406,7 +420,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -471,7 +487,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -612,8 +630,12 @@
           "name": "contacts_account_id_accounts_id_fk",
           "tableFrom": "contacts",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -763,17 +785,27 @@
           "name": "documents_account_id_accounts_id_fk",
           "tableFrom": "documents",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "documents_hand_receipt_id_hand_receipts_id_fk": {
-          "name": "documents_hand_receipt_id_hand_receipts_id_fk",
+        "documents_hand_receipt_account_fk": {
+          "name": "documents_hand_receipt_account_fk",
           "tableFrom": "documents",
           "tableTo": "hand_receipts",
-          "columnsFrom": ["hand_receipt_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "hand_receipt_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "id",
+            "account_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -781,7 +813,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "documents_storage_path_matches_account_and_id": {
+          "name": "documents_storage_path_matches_account_and_id",
+          "value": "\"documents\".\"storage_path\" = \"documents\".\"account_id\"::text || '/' || \"documents\".\"id\"::text"
+        }
+      },
       "isRLSEnabled": true
     },
     "public.hand_receipts": {
@@ -900,14 +937,27 @@
           "name": "hand_receipts_account_id_accounts_id_fk",
           "tableFrom": "hand_receipts",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "hand_receipts_id_account_id_key": {
+          "name": "hand_receipts_id_account_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "account_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": true
@@ -1145,8 +1195,12 @@
           "name": "items_account_id_accounts_id_fk",
           "tableFrom": "items",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1154,8 +1208,12 @@
           "name": "items_hand_receipt_id_hand_receipts_id_fk",
           "tableFrom": "items",
           "tableTo": "hand_receipts",
-          "columnsFrom": ["hand_receipt_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "hand_receipt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1163,8 +1221,12 @@
           "name": "items_signed_to_contact_id_contacts_id_fk",
           "tableFrom": "items",
           "tableTo": "contacts",
-          "columnsFrom": ["signed_to_contact_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "signed_to_contact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1172,8 +1234,12 @@
           "name": "items_location_id_locations_id_fk",
           "tableFrom": "items",
           "tableTo": "locations",
-          "columnsFrom": ["location_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1250,8 +1316,12 @@
           "name": "locations_account_id_accounts_id_fk",
           "tableFrom": "locations",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1354,8 +1424,12 @@
           "name": "requirement_completions_account_id_accounts_id_fk",
           "tableFrom": "requirement_completions",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1363,8 +1437,14 @@
           "name": "requirement_completions_requirement_account_fk",
           "tableFrom": "requirement_completions",
           "tableTo": "requirements",
-          "columnsFrom": ["requirement_id", "account_id"],
-          "columnsTo": ["id", "account_id"],
+          "columnsFrom": [
+            "requirement_id",
+            "account_id"
+          ],
+          "columnsTo": [
+            "id",
+            "account_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1513,8 +1593,12 @@
           "name": "requirements_account_id_accounts_id_fk",
           "tableFrom": "requirements",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1522,8 +1606,12 @@
           "name": "requirements_item_id_items_id_fk",
           "tableFrom": "requirements",
           "tableTo": "items",
-          "columnsFrom": ["item_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1533,7 +1621,10 @@
         "requirements_id_account_id_key": {
           "name": "requirements_id_account_id_key",
           "nullsNotDistinct": false,
-          "columns": ["id", "account_id"]
+          "columns": [
+            "id",
+            "account_id"
+          ]
         }
       },
       "policies": {},
@@ -1576,17 +1667,27 @@
     "public.access_state": {
       "name": "access_state",
       "schema": "public",
-      "values": ["trialing", "active", "paused_read_only"]
+      "values": [
+        "trialing",
+        "active",
+        "paused_read_only"
+      ]
     },
     "public.hand_receipt_status": {
       "name": "hand_receipt_status",
       "schema": "public",
-      "values": ["active", "archived"]
+      "values": [
+        "active",
+        "archived"
+      ]
     },
     "public.item_status": {
       "name": "item_status",
       "schema": "public",
-      "values": ["active", "archived"]
+      "values": [
+        "active",
+        "archived"
+      ]
     },
     "public.requirement_interval_type": {
       "name": "requirement_interval_type",
@@ -1604,12 +1705,17 @@
     "public.requirement_status": {
       "name": "requirement_status",
       "schema": "public",
-      "values": ["active"]
+      "values": [
+        "active"
+      ]
     },
     "public.subscription_tier": {
       "name": "subscription_tier",
       "schema": "public",
-      "values": ["base", "pro"]
+      "values": [
+        "base",
+        "pro"
+      ]
     }
   },
   "schemas": {

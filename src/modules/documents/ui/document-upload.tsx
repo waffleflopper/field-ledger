@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { FileUp, Loader2, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,23 @@ import {
 } from "@/modules/documents";
 import { trpc } from "@/trpc/react";
 
+type PendingDocumentUpload = {
+  id: string;
+  handReceiptId: string;
+  filename: string;
+  mimeType: AcceptedDocumentMimeType;
+  sizeBytes: number;
+};
+
 type UploadState =
   | { status: "idle" }
   | { status: "uploading"; filename: string }
   | { status: "success"; filename: string }
-  | { status: "error"; message: string };
+  | {
+      status: "error";
+      message: string;
+      pendingDocument?: PendingDocumentUpload;
+    };
 
 export function DocumentUpload({
   handReceiptId,
@@ -25,11 +37,43 @@ export function DocumentUpload({
   disabled: boolean;
   onUploadComplete?: () => void;
 }) {
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UploadState>({ status: "idle" });
   const initiateUpload = trpc.documents.initiateUpload.useMutation();
   const completeUpload = trpc.documents.completeUpload.useMutation();
   const acceptedTypes = ACCEPTED_DOCUMENT_MIME_TYPES.join(",");
+
+  async function completePendingUpload(
+    pendingDocument: PendingDocumentUpload,
+    successFilename = pendingDocument.filename,
+  ) {
+    try {
+      setState({ status: "uploading", filename: pendingDocument.filename });
+      await completeUpload.mutateAsync({
+        documentId: pendingDocument.id,
+        filename: pendingDocument.filename,
+        handReceiptId: pendingDocument.handReceiptId,
+        mimeType: pendingDocument.mimeType,
+        sizeBytes: pendingDocument.sizeBytes,
+      });
+
+      setState({ status: "success", filename: successFilename });
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+      onUploadComplete?.();
+    } catch (error) {
+      setState({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The upload could not be completed.",
+        pendingDocument,
+      });
+    }
+  }
 
   async function uploadFile(file: File) {
     if (
@@ -66,16 +110,16 @@ export function DocumentUpload({
         throw new Error("The file could not be stored. Try again.");
       }
 
-      await completeUpload.mutateAsync({
-        documentId: upload.pendingDocument.id,
-        filename: upload.pendingDocument.filename,
-        handReceiptId: upload.pendingDocument.handReceiptId,
-        mimeType: upload.pendingDocument.mimeType as AcceptedDocumentMimeType,
-        sizeBytes: upload.pendingDocument.sizeBytes,
-      });
-
-      setState({ status: "success", filename: file.name });
-      onUploadComplete?.();
+      await completePendingUpload(
+        {
+          id: upload.pendingDocument.id,
+          filename: upload.pendingDocument.filename,
+          handReceiptId: upload.pendingDocument.handReceiptId,
+          mimeType: upload.pendingDocument.mimeType as AcceptedDocumentMimeType,
+          sizeBytes: upload.pendingDocument.sizeBytes,
+        },
+        file.name,
+      );
     } catch (error) {
       setState({
         status: "error",
@@ -84,10 +128,6 @@ export function DocumentUpload({
             ? error.message
             : "The upload could not be started.",
       });
-    } finally {
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
     }
   }
 
@@ -107,7 +147,11 @@ export function DocumentUpload({
       </div>
 
       <div className="space-y-3">
+        <label className="sr-only" htmlFor={inputId}>
+          Upload 2062 document
+        </label>
         <input
+          id={inputId}
           ref={inputRef}
           accept={acceptedTypes}
           className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
@@ -145,13 +189,23 @@ export function DocumentUpload({
           >
             <p className="font-medium">{state.message}</p>
             <Button
-              onClick={() => setState({ status: "idle" })}
+              onClick={() => {
+                if (state.pendingDocument) {
+                  void completePendingUpload(state.pendingDocument);
+                  return;
+                }
+
+                if (inputRef.current) {
+                  inputRef.current.value = "";
+                }
+                setState({ status: "idle" });
+              }}
               size="sm"
               type="button"
               variant="outline"
             >
               <RotateCcw aria-hidden="true" className="size-4" />
-              Retry
+              {state.pendingDocument ? "Retry save" : "Retry"}
             </Button>
           </div>
         ) : null}

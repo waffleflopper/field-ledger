@@ -55,7 +55,8 @@ function toTRPCError(error: unknown): never {
     message === "Document filename is required." ||
     message === "Document file size must be greater than zero." ||
     message === "Document file size must be 20 MiB or smaller." ||
-    message === "Hand receipt must be active to upload documents."
+    message === "Hand receipt must be active to upload documents." ||
+    message === "Uploaded document file was not found."
   ) {
     throw new TRPCError({ code: "BAD_REQUEST", message });
   }
@@ -111,6 +112,7 @@ export const documentsRouter = createTRPCRouter({
           documentRepository: repositories.documentRepository,
           handReceiptRepository: repositories.handReceiptRepository,
           auditRepository: repositories.auditRepository,
+          storagePort: ctx.storagePort,
         }),
       ),
     ),

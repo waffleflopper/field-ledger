@@ -25,7 +25,13 @@ export function createSupabaseStorageAdapter(): StoragePort {
   });
 
   return {
-    async createSignedUploadUrl(path) {
+    async createSignedUploadUrl(path, options) {
+      if (options?.expiresIn !== undefined) {
+        throw new Error(
+          "Supabase signed upload URLs do not support configurable expiration.",
+        );
+      }
+
       const { data, error } = await client.storage
         .from(DOCUMENTS_BUCKET)
         .createSignedUploadUrl(path, {
@@ -53,6 +59,28 @@ export function createSupabaseStorageAdapter(): StoragePort {
 
       return data.signedUrl;
     },
+    async objectExists(path) {
+      const separatorIndex = path.lastIndexOf("/");
+
+      if (separatorIndex < 0) {
+        return false;
+      }
+
+      const folder = path.slice(0, separatorIndex);
+      const filename = path.slice(separatorIndex + 1);
+      const { data, error } = await client.storage
+        .from(DOCUMENTS_BUCKET)
+        .list(folder, {
+          limit: 100,
+          search: filename,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data.some((object) => object.name === filename);
+    },
   };
 }
 
@@ -66,6 +94,9 @@ export function createStoragePortFromEnvironment(): StoragePort {
         throw new Error("A file storage provider is required.");
       },
       async createSignedDownloadUrl() {
+        throw new Error("A file storage provider is required.");
+      },
+      async objectExists() {
         throw new Error("A file storage provider is required.");
       },
     };

@@ -13,10 +13,10 @@ export class InMemoryDocumentRepository implements DocumentRepository {
 
   async create(document: NewDocumentRecord) {
     const createdDocument = {
+      ...document,
       id: document.id ?? `document-${this.documents.length + 1}`,
       createdAt: document.createdAt ?? new Date(),
       updatedAt: document.updatedAt ?? new Date(),
-      ...document,
     };
 
     this.documents.push(createdDocument);

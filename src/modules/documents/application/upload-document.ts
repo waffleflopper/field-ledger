@@ -33,6 +33,7 @@ type CompleteDocumentUploadArgs = {
   documentRepository: DocumentRepository;
   handReceiptRepository: HandReceiptRepository;
   auditRepository: AuditRepository;
+  storagePort: StoragePort;
   now?: Date;
 };
 
@@ -135,6 +136,7 @@ export async function completeDocumentUpload({
   documentRepository,
   handReceiptRepository,
   auditRepository,
+  storagePort,
   now = new Date(),
 }: CompleteDocumentUploadArgs) {
   await validateDocumentUpload({
@@ -146,6 +148,12 @@ export async function completeDocumentUpload({
 
   const filename = cleanFilename(input.filename);
   const storagePath = `${account.id}/${input.documentId}`;
+  const uploadedObjectExists = await storagePort.objectExists(storagePath);
+
+  if (!uploadedObjectExists) {
+    throw new Error("Uploaded document file was not found.");
+  }
+
   const document = await documentRepository.create({
     id: input.documentId,
     accountId: account.id,

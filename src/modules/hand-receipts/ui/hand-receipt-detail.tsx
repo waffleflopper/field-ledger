@@ -508,6 +508,10 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                 void Promise.all([
                   utilities.documents.list.invalidate({ handReceiptId }),
                   utilities.audit.listRecentActivity.invalidate(),
+                  utilities.audit.listTargetActivity.invalidate({
+                    targetType: "hand_receipt",
+                    targetId: handReceiptId,
+                  }),
                 ]);
               }}
             />

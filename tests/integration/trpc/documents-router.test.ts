@@ -96,7 +96,8 @@ function createCaller({
 describe("documentsRouter", () => {
   it("initiates an upload without persisting metadata until completion", async () => {
     const documentRepository = new InMemoryDocumentRepository();
-    const caller = createCaller({ documentRepository });
+    const storagePort = new MockStoragePort();
+    const caller = createCaller({ documentRepository, storagePort });
 
     const result = await caller.documents.initiateUpload({
       filename: "signed-2062.pdf",
@@ -116,6 +117,7 @@ describe("documentsRouter", () => {
       }),
     ).resolves.toEqual([]);
 
+    storagePort.existingPaths.add(result.storagePath);
     const completed = await caller.documents.completeUpload({
       documentId: result.pendingDocument.id,
       filename: result.pendingDocument.filename,

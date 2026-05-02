@@ -221,6 +221,7 @@ export const handReceipts = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("hand_receipts_id_account_id_key").on(table.id, table.accountId),
     index("hand_receipts_account_id_status_created_at_idx").on(
       table.accountId,
       table.status,
@@ -341,9 +342,7 @@ export const documents = pgTable(
     accountId: uuid("account_id")
       .notNull()
       .references(() => accounts.id),
-    handReceiptId: uuid("hand_receipt_id")
-      .notNull()
-      .references(() => handReceipts.id),
+    handReceiptId: uuid("hand_receipt_id").notNull(),
     filename: text("filename").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
@@ -359,6 +358,11 @@ export const documents = pgTable(
       .defaultNow(),
   },
   (table) => [
+    foreignKey({
+      columns: [table.handReceiptId, table.accountId],
+      foreignColumns: [handReceipts.id, handReceipts.accountId],
+      name: "documents_hand_receipt_account_fk",
+    }),
     index("documents_account_id_created_at_idx").on(
       table.accountId,
       table.createdAt.desc(),
@@ -370,6 +374,10 @@ export const documents = pgTable(
     uniqueIndex("documents_account_id_storage_path_unique_idx").on(
       table.accountId,
       table.storagePath,
+    ),
+    check(
+      "documents_storage_path_matches_account_and_id",
+      sql`${table.storagePath} = ${table.accountId}::text || '/' || ${table.id}::text`,
     ),
   ],
 ).enableRLS();
