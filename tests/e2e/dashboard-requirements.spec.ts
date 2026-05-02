@@ -13,10 +13,11 @@ async function signInLocalUser(page: Page) {
   ).toBeEnabled();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/app\/hand-receipts$/);
-  await page
-    .getByRole("dialog", { name: "Property accountability only" })
-    .getByRole("button", { name: "I understand" })
-    .click();
+  const boundaryDialog = page.getByRole("dialog", {
+    name: "Property accountability only",
+  });
+  await boundaryDialog.getByRole("button", { name: "I understand" }).click();
+  await expect(boundaryDialog).toBeHidden();
 }
 
 async function createRequirement(

@@ -42,7 +42,7 @@ function DashboardRequirementRowView({
     row.urgency === "overdue"
       ? "Overdue"
       : row.urgency === "due_soon"
-        ? "Due soon"
+        ? "Due Soon"
         : "Upcoming";
 
   return (
@@ -83,27 +83,34 @@ function DashboardRequirementRowView({
 function DashboardRequirementsSection({
   rows,
   title,
+  windowLabel,
 }: {
   rows: DashboardRequirementRow[];
   title: string;
+  windowLabel: string;
 }) {
-  if (rows.length === 0) {
-    return null;
-  }
-
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
+        <div>
+          <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
+          <p className="text-xs text-muted-foreground">{windowLabel}</p>
+        </div>
         <span className="rounded-[3px] border bg-secondary px-2 py-0.5 font-mono text-[0.6875rem] text-muted-foreground">
           {rows.length}
         </span>
       </div>
-      <ul className="space-y-2">
-        {rows.map((row) => (
-          <DashboardRequirementRowView key={row.requirementId} row={row} />
-        ))}
-      </ul>
+      {rows.length > 0 ? (
+        <ul className="space-y-2">
+          {rows.map((row) => (
+            <DashboardRequirementRowView key={row.requirementId} row={row} />
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-md border border-dashed bg-secondary/50 px-3 py-3 text-sm text-muted-foreground">
+          No active requirement work in this window.
+        </p>
+      )}
     </section>
   );
 }
@@ -153,11 +160,20 @@ export function DashboardRequirements(props: DashboardRequirementsProps) {
         <DashboardReadOnlyNotice />
       ) : hasRequirements ? (
         <div className="grid gap-4 xl:grid-cols-3">
-          <DashboardRequirementsSection rows={props.overdue} title="Overdue" />
-          <DashboardRequirementsSection rows={props.dueSoon} title="Due Soon" />
+          <DashboardRequirementsSection
+            rows={props.overdue}
+            title="Overdue"
+            windowLabel="Before today"
+          />
+          <DashboardRequirementsSection
+            rows={props.dueSoon}
+            title="Due Soon"
+            windowLabel="Today through 14 days"
+          />
           <DashboardRequirementsSection
             rows={props.upcoming}
             title="Upcoming"
+            windowLabel="15 through 30 days"
           />
         </div>
       ) : (

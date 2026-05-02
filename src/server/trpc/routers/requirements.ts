@@ -305,7 +305,7 @@ export const requirementsRouter = createTRPCRouter({
         accountId: ctx.account.id,
         requirementId: input.requirementId,
         repository: ctx.requirementCompletionRepository,
-        limit: 10,
+        limit: 25,
       }),
     ),
 });

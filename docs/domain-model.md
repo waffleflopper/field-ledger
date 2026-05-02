@@ -258,6 +258,9 @@ Rules:
 - Editing an interval recalculates next due from the latest completion date, or
   from the requirement creation date when no completion history exists.
 - Completion creates permanent history.
+- Item detail shows the three most recent completions inline and provides an
+  expanded history view for the latest completion records without becoming a
+  full audit browser.
 - Editing requirement metadata must not rewrite completion history.
 - Completion date defaults to today, allows past dates, blocks future dates.
 - Completion can include optional notes.
@@ -283,6 +286,10 @@ Dashboard windows:
 - due soon: today through 14 days
 - upcoming: 15 through 30 days
 - beyond 30 days: hidden from dashboard by default
+
+Dashboard requirement sections appear before secondary dashboard context. Each
+window keeps its own empty state so users can distinguish "no work in this
+window" from "no requirement work exists."
 
 ## Activity and Audit
 

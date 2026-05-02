@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   toLocalDateOnly,
   type RequirementIntervalType,
+  type RequirementCompletionRecord,
   type RequirementRecord,
 } from "@/modules/requirements";
 import { trpc } from "@/trpc/react";
@@ -104,14 +105,21 @@ function dueTone(nextDueDate: string) {
   if (daysUntilDue < 0) {
     return {
       label: "Overdue",
-      className: "border-destructive/40 text-destructive",
+      className: "border-destructive/40 bg-destructive/10 text-destructive",
     };
   }
 
   if (daysUntilDue <= 14) {
     return {
-      label: "Due soon",
-      className: "border-amber-700/40 text-amber-800",
+      label: "Due Soon",
+      className: "border-amber-700/40 bg-amber-700/10 text-amber-900",
+    };
+  }
+
+  if (daysUntilDue <= 30) {
+    return {
+      label: "Upcoming",
+      className: "border-border text-muted-foreground",
     };
   }
 
@@ -160,9 +168,9 @@ export function RequirementsList({
               No active requirements
             </p>
             <p className="text-sm leading-6 text-muted-foreground">
-              Add the first recurring obligation for this item when there is a
-              maintenance, inspection, calibration, or replacement cadence to
-              track.
+              {isReadOnly || !isItemActive
+                ? "No active requirement work is tied to this item."
+                : "Add the first recurring obligation for this item when there is a maintenance, inspection, calibration, or replacement cadence to track."}
             </p>
           </div>
         </div>
@@ -171,7 +179,7 @@ export function RequirementsList({
   }
 
   return (
-    <div className="divide-y divide-border rounded-lg border bg-background">
+    <div className="space-y-3">
       {requirements.map((requirement) => {
         const isPaused = requirement.pausedAt !== null;
         const tone = isPaused
@@ -183,61 +191,65 @@ export function RequirementsList({
 
         return (
           <article
-            className={`grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${
+            className={`rounded-lg border bg-card p-4 ${
               isPaused ? "bg-secondary/45 text-muted-foreground" : ""
             }`}
             key={requirement.id}
           >
-            <div className="min-w-0 space-y-1">
-              <h3 className="truncate text-sm font-semibold tracking-normal">
-                {requirement.name}
-              </h3>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>{formatInterval(requirement)}</span>
-                <span aria-hidden="true">/</span>
-                <span className="font-mono">
-                  Due {formatDateOnly(requirement.nextDueDate)}
-                </span>
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+              <div className="min-w-0 space-y-2">
+                <h3 className="truncate text-sm font-semibold tracking-normal">
+                  {requirement.name}
+                </h3>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>{formatInterval(requirement)}</span>
+                  <span aria-hidden="true">/</span>
+                  <span className="font-mono">
+                    Due {formatDateOnly(requirement.nextDueDate)}
+                  </span>
+                </div>
+                {requirement.notes ? (
+                  <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+                    {requirement.notes}
+                  </p>
+                ) : null}
               </div>
-              {requirement.notes ? (
-                <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
-                  {requirement.notes}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <span
-                  className={`inline-flex h-6 items-center rounded-md border px-2 font-mono text-[0.68rem] uppercase ${tone.className}`}
-                >
-                  {tone.label}
-                </span>
-                <span className="inline-flex h-6 items-center rounded-md border px-2 font-mono text-[0.68rem] uppercase text-muted-foreground">
-                  {requirement.status}
-                </span>
-                <CompleteRequirementDialog
-                  isDisabled={isReadOnly || !isItemActive || isPaused}
-                  itemId={itemId}
-                  requirement={requirement}
-                />
-                <AdjustRequirementNextDueDialog
-                  isDisabled={isReadOnly || !isItemActive || isPaused}
-                  itemId={itemId}
-                  requirement={requirement}
-                />
-                <RequirementPauseResumeButton
-                  isDisabled={isReadOnly || !isItemActive}
-                  itemId={itemId}
-                  requirement={requirement}
-                />
-                <EditRequirementDialog
-                  isDisabled={isReadOnly || !isItemActive}
-                  itemId={itemId}
-                  requirement={requirement}
-                />
+              <div className="min-w-0 space-y-2 md:text-right">
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  <span
+                    className={`inline-flex h-6 items-center rounded-sm border px-1.5 font-mono text-[0.68rem] uppercase ${tone.className}`}
+                  >
+                    {tone.label}
+                  </span>
+                  <span className="inline-flex h-6 items-center rounded-sm border bg-secondary px-1.5 font-mono text-[0.68rem] uppercase text-muted-foreground">
+                    {requirement.status}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  <CompleteRequirementDialog
+                    isDisabled={isReadOnly || !isItemActive || isPaused}
+                    itemId={itemId}
+                    requirement={requirement}
+                  />
+                  <AdjustRequirementNextDueDialog
+                    isDisabled={isReadOnly || !isItemActive || isPaused}
+                    itemId={itemId}
+                    requirement={requirement}
+                  />
+                  <RequirementPauseResumeButton
+                    isDisabled={isReadOnly || !isItemActive}
+                    itemId={itemId}
+                    requirement={requirement}
+                  />
+                  <EditRequirementDialog
+                    isDisabled={isReadOnly || !isItemActive}
+                    itemId={itemId}
+                    requirement={requirement}
+                  />
+                </div>
               </div>
             </div>
-            <div className="sm:col-span-2">
+            <div className="mt-3">
               <RequirementCompletionHistory requirementId={requirement.id} />
             </div>
           </article>
@@ -303,7 +315,7 @@ function AdjustRequirementNextDueDialog({
           setError(null);
           setIsOpen(true);
         }}
-        size="icon-sm"
+        size="icon-lg"
         title="Adjust next due"
         type="button"
         variant="outline"
@@ -421,7 +433,7 @@ function RequirementPauseResumeButton({
             pauseMutation.mutate({ requirementId: requirement.id });
           }
         }}
-        size="sm"
+        size="lg"
         type="button"
         variant="outline"
       >
@@ -529,7 +541,7 @@ function EditRequirementDialog({
           resetForm();
           setIsOpen(true);
         }}
-        size="icon-sm"
+        size="icon-lg"
         title="Edit requirement"
         type="button"
         variant="outline"
@@ -689,6 +701,18 @@ export function RequirementsPanel({
           itemId={itemId}
         />
       </div>
+      {isReadOnly ? (
+        <p className="mb-4 rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
+          Requirement records remain visible while this account is read-only.
+          Create, edit, pause, and completion actions are unavailable until
+          access is restored.
+        </p>
+      ) : !isItemActive ? (
+        <p className="mb-4 rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
+          This item is archived. Requirement history remains visible, but active
+          requirement changes are unavailable for archived items.
+        </p>
+      ) : null}
       <RequirementsList
         isItemActive={isItemActive}
         isReadOnly={isReadOnly}
@@ -772,7 +796,7 @@ function CompleteRequirementDialog({
           setError(null);
           setIsOpen(true);
         }}
-        size="sm"
+        size="lg"
         type="button"
         variant="outline"
       >
@@ -859,6 +883,8 @@ function RequirementCompletionHistory({
     requirementId,
   });
   const history = historyQuery.data ?? [];
+  const recentHistory = history.slice(0, 3);
+  const hasExpandedHistory = history.length > recentHistory.length;
 
   if (historyQuery.isLoading) {
     return <div className="mt-1 h-8 rounded-md border bg-secondary/70" />;
@@ -875,12 +901,17 @@ function RequirementCompletionHistory({
 
   return (
     <div className="mt-1 rounded-md border bg-secondary/50 px-3 py-2">
-      <div className="mb-1 flex items-center gap-2 font-mono text-[0.68rem] uppercase text-muted-foreground">
-        <History aria-hidden="true" className="size-3.5" />
-        Recent completions
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 font-mono text-[0.68rem] uppercase text-muted-foreground">
+          <History aria-hidden="true" className="size-3.5" />
+          Recent completions
+        </div>
+        {hasExpandedHistory ? (
+          <RequirementCompletionHistoryDialog history={history} />
+        ) : null}
       </div>
       <div className="space-y-1">
-        {history.slice(0, 3).map((completion) => (
+        {recentHistory.map((completion) => (
           <div
             className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-[7.5rem_minmax(0,1fr)]"
             key={completion.id}
@@ -895,5 +926,53 @@ function RequirementCompletionHistory({
         ))}
       </div>
     </div>
+  );
+}
+
+function RequirementCompletionHistoryDialog({
+  history,
+}: {
+  history: RequirementCompletionRecord[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        className="h-7 px-2 text-xs"
+        onClick={() => setIsOpen(true)}
+        type="button"
+        variant="outline"
+      >
+        <History aria-hidden="true" className="size-3.5" />
+        View all completions
+      </Button>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-h-[min(34rem,calc(100vh-2rem))] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Requirement completions</DialogTitle>
+            <DialogDescription>
+              Showing the latest {history.length} completion records available
+              for this requirement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {history.map((completion) => (
+              <div
+                className="rounded-md border bg-secondary/50 px-3 py-2"
+                key={completion.id}
+              >
+                <div className="font-mono text-xs text-foreground">
+                  {formatDateOnly(completion.completedOn)}
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {completion.notes || "No notes recorded"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

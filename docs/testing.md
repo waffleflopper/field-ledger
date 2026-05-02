@@ -28,6 +28,16 @@ Current scaffold proof:
 - `tests/unit/accounts/ensure-account.test.ts`
 - `tests/unit/app-foundation/get-scaffold-health.test.ts`
 
+Requirement proof:
+
+- `tests/unit/requirements/requirement-due-date.test.ts` covers recurring due
+  date calculation.
+- `tests/unit/requirements/requirement-completion.test.ts` covers completion
+  behavior, past completion dates, future-date blocking, next-due recalculation,
+  and audit emission.
+- `tests/unit/requirements/requirement-lifecycle.test.ts` covers manual next
+  due adjustment plus pause/resume behavior.
+
 ## Integration Tests
 
 Use integration-style tests for module workflows and typed application paths:
@@ -54,6 +64,13 @@ Current scaffold proof:
 
 - `tests/integration/trpc/foundation-router.test.ts`
 - `tests/integration/auth/protected-procedure.test.ts`
+
+Requirement proof:
+
+- `tests/integration/trpc/requirements-router.test.ts` covers the typed
+  requirement workflow, including completion history.
+- `tests/integration/trpc/audit-router.test.ts` covers readable requirement
+  activity labels and requirement target-scoped activity reads.
 
 ## RLS Tests
 
@@ -107,6 +124,12 @@ Current scaffold proof:
 
 - `tests/e2e/scaffold.spec.ts`
 - `tests/e2e/auth.spec.ts`
+
+Requirement proof:
+
+- `tests/e2e/dashboard-requirements.spec.ts` covers dashboard overdue, due
+  soon, and upcoming sections plus mobile priority ordering and desktop
+  overflow.
 
 Auth-related browser tests should verify the app-owned auth/session boundary
 and Better Auth flow, not route or UI calls to provider internals.
