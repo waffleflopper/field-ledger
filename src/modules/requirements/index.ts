@@ -1,3 +1,4 @@
+export { adjustRequirementNextDue } from "@/modules/requirements/application/adjust-requirement-next-due";
 export { completeRequirement } from "@/modules/requirements/application/complete-requirement";
 export {
   calculateNextDueDate,
@@ -7,6 +8,8 @@ export {
 } from "@/modules/requirements/application/date-only";
 export { createRequirement } from "@/modules/requirements/application/create-requirement";
 export { updateRequirement } from "@/modules/requirements/application/update-requirement";
+export { pauseRequirement } from "@/modules/requirements/application/pause-requirement";
+export { resumeRequirement } from "@/modules/requirements/application/resume-requirement";
 export { listRequirementCompletions } from "@/modules/requirements/application/list-requirement-completions";
 export { listRequirements } from "@/modules/requirements/application/list-requirements";
 export {

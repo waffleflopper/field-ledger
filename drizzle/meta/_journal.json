@@ -134,6 +134,13 @@
       "when": 1777681901917,
       "tag": "0018_charming_squadron_supreme",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777691572323,
+      "tag": "0019_glorious_randall_flagg",
+      "breakpoints": true
     }
   ]
 }

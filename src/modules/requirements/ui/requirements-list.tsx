@@ -5,7 +5,9 @@ import {
   CalendarCheck,
   CalendarClock,
   History,
+  Pause,
   Pencil,
+  RotateCcw,
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
@@ -171,11 +173,19 @@ export function RequirementsList({
   return (
     <div className="divide-y divide-border rounded-lg border bg-background">
       {requirements.map((requirement) => {
-        const tone = dueTone(requirement.nextDueDate);
+        const isPaused = requirement.pausedAt !== null;
+        const tone = isPaused
+          ? {
+              label: "Paused",
+              className: "border-border bg-secondary text-muted-foreground",
+            }
+          : dueTone(requirement.nextDueDate);
 
         return (
           <article
-            className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            className={`grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${
+              isPaused ? "bg-secondary/45 text-muted-foreground" : ""
+            }`}
             key={requirement.id}
           >
             <div className="min-w-0 space-y-1">
@@ -206,6 +216,16 @@ export function RequirementsList({
                   {requirement.status}
                 </span>
                 <CompleteRequirementDialog
+                  isDisabled={isReadOnly || !isItemActive || isPaused}
+                  itemId={itemId}
+                  requirement={requirement}
+                />
+                <AdjustRequirementNextDueDialog
+                  isDisabled={isReadOnly || !isItemActive || isPaused}
+                  itemId={itemId}
+                  requirement={requirement}
+                />
+                <RequirementPauseResumeButton
                   isDisabled={isReadOnly || !isItemActive}
                   itemId={itemId}
                   requirement={requirement}
@@ -223,6 +243,198 @@ export function RequirementsList({
           </article>
         );
       })}
+    </div>
+  );
+}
+
+function AdjustRequirementNextDueDialog({
+  requirement,
+  itemId,
+  isDisabled,
+}: {
+  requirement: RequirementRecord;
+  itemId: string;
+  isDisabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [nextDueDate, setNextDueDate] = useState(requirement.nextDueDate);
+  const [error, setError] = useState<string | null>(null);
+  const utilities = trpc.useUtils();
+  const adjustMutation = trpc.requirements.adjustNextDue.useMutation({
+    onSuccess: async () => {
+      setIsOpen(false);
+      setError(null);
+      await Promise.all([
+        utilities.requirements.list.invalidate({ itemId }),
+        utilities.audit.listRecentActivity.invalidate(),
+        utilities.audit.listTargetActivity.invalidate({
+          targetType: "item",
+          targetId: itemId,
+        }),
+      ]);
+    },
+    onError: (mutationError) => {
+      setError(mutationError.message);
+    },
+  });
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDueDate)) {
+      setError("Use YYYY-MM-DD.");
+      return;
+    }
+
+    adjustMutation.mutate({
+      requirementId: requirement.id,
+      nextDueDate,
+    });
+  }
+
+  return (
+    <>
+      <Button
+        aria-label={`Adjust next due date for ${requirement.name}`}
+        disabled={isDisabled}
+        onClick={() => {
+          setNextDueDate(requirement.nextDueDate);
+          setError(null);
+          setIsOpen(true);
+        }}
+        size="icon-sm"
+        title="Adjust next due"
+        type="button"
+        variant="outline"
+      >
+        <CalendarClock aria-hidden="true" className="size-4" />
+      </Button>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adjust next due</DialogTitle>
+            <DialogDescription>
+              Set a one-time next due date. The interval stays unchanged.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor={`next-due-adjust-${requirement.id}`}>
+                  Next due date
+                </Label>
+                <Input
+                  disabled={adjustMutation.isPending}
+                  id={`next-due-adjust-${requirement.id}`}
+                  onChange={(event) => setNextDueDate(event.target.value)}
+                  type="date"
+                  value={nextDueDate}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Interval</Label>
+                <div className="flex h-8 items-center rounded-lg border bg-secondary px-2.5 text-sm text-muted-foreground">
+                  {formatInterval(requirement)}
+                </div>
+              </div>
+            </div>
+
+            {error ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                disabled={adjustMutation.isPending}
+                onClick={() => setIsOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button disabled={adjustMutation.isPending} type="submit">
+                {adjustMutation.isPending ? "Saving" : "Save due date"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function RequirementPauseResumeButton({
+  requirement,
+  itemId,
+  isDisabled,
+}: {
+  requirement: RequirementRecord;
+  itemId: string;
+  isDisabled: boolean;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const utilities = trpc.useUtils();
+  const invalidateRequirementSurfaces = async () => {
+    await Promise.all([
+      utilities.requirements.list.invalidate({ itemId }),
+      utilities.audit.listRecentActivity.invalidate(),
+      utilities.audit.listTargetActivity.invalidate({
+        targetType: "item",
+        targetId: itemId,
+      }),
+    ]);
+  };
+  const pauseMutation = trpc.requirements.pause.useMutation({
+    onSuccess: async () => {
+      setError(null);
+      await invalidateRequirementSurfaces();
+    },
+    onError: (mutationError) => {
+      setError(mutationError.message);
+    },
+  });
+  const resumeMutation = trpc.requirements.resume.useMutation({
+    onSuccess: async () => {
+      setError(null);
+      await invalidateRequirementSurfaces();
+    },
+    onError: (mutationError) => {
+      setError(mutationError.message);
+    },
+  });
+  const isPaused = requirement.pausedAt !== null;
+  const isPending = pauseMutation.isPending || resumeMutation.isPending;
+
+  return (
+    <div className="flex flex-col items-start gap-1 sm:items-end">
+      <Button
+        disabled={isDisabled || isPending}
+        onClick={() => {
+          setError(null);
+          if (isPaused) {
+            resumeMutation.mutate({ requirementId: requirement.id });
+          } else {
+            pauseMutation.mutate({ requirementId: requirement.id });
+          }
+        }}
+        size="sm"
+        type="button"
+        variant="outline"
+      >
+        {isPaused ? (
+          <RotateCcw aria-hidden="true" className="size-4" />
+        ) : (
+          <Pause aria-hidden="true" className="size-4" />
+        )}
+        {isPaused ? "Resume" : "Pause"}
+      </Button>
+      {error ? (
+        <p className="max-w-56 text-xs font-medium text-destructive">{error}</p>
+      ) : null}
     </div>
   );
 }

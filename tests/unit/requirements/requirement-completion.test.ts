@@ -31,6 +31,7 @@ function createRequirementRepository() {
       intervalValue: null,
       nextDueDate: "2026-05-15",
       status: "active",
+      pausedAt: null,
       createdAt: new Date("2026-04-30T12:00:00.000Z"),
       updatedAt: new Date("2026-04-30T12:00:00.000Z"),
     },

@@ -31,6 +31,7 @@ function toRequirementRecord(row: RequirementRow): RequirementRecord {
     intervalValue: row.intervalValue,
     nextDueDate: row.nextDueDate,
     status: row.status as RequirementStatus,
+    pausedAt: row.pausedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -136,6 +137,28 @@ function createRequirementRepository(
           .update(requirements)
           .set({
             nextDueDate: input.nextDueDate,
+            updatedAt: input.updatedAt,
+          })
+          .where(
+            and(
+              eq(requirements.accountId, accountId),
+              eq(requirements.id, requirementId),
+            ),
+          )
+          .returning(),
+      );
+
+      return updated ? toRequirementRecord(updated) : null;
+    },
+    async updateLifecycle(accountId, requirementId, input) {
+      const [updated] = await run((transaction) =>
+        transaction
+          .update(requirements)
+          .set({
+            ...("nextDueDate" in input
+              ? { nextDueDate: input.nextDueDate }
+              : {}),
+            ...("pausedAt" in input ? { pausedAt: input.pausedAt } : {}),
             updatedAt: input.updatedAt,
           })
           .where(

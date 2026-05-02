@@ -13,6 +13,12 @@ export type RequirementUpdateInput = {
   updatedAt: Date;
 };
 
+export type RequirementLifecycleUpdateInput = {
+  nextDueDate?: string;
+  pausedAt?: Date | null;
+  updatedAt: Date;
+};
+
 export interface RequirementRepository {
   create(requirement: NewRequirementRecord): Promise<RequirementRecord>;
   findById(
@@ -35,6 +41,11 @@ export interface RequirementRepository {
     requirementId: string,
     input: { nextDueDate: string; updatedAt: Date },
   ): Promise<RequirementRecord | null>;
+  updateLifecycle(
+    accountId: string,
+    requirementId: string,
+    input: RequirementLifecycleUpdateInput,
+  ): Promise<RequirementRecord | null>;
 }
 
 export function createUnavailableRequirementRepository(): RequirementRepository {
@@ -55,6 +66,9 @@ export function createUnavailableRequirementRepository(): RequirementRepository 
       throw new Error("An authenticated database session is required.");
     },
     async updateNextDueDate() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async updateLifecycle() {
       throw new Error("An authenticated database session is required.");
     },
   };

@@ -63,6 +63,10 @@ export async function completeRequirement({
     return null;
   }
 
+  if (requirement.pausedAt) {
+    throw new Error("Requirement is paused.");
+  }
+
   const nextDueDate = calculateNextDueDate(completedOn, {
     intervalType: requirement.intervalType,
     intervalValue: requirement.intervalValue,

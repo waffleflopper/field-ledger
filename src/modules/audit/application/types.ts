@@ -17,6 +17,9 @@ export type KnownAuditAction =
   | "location.created"
   | "requirement.completed"
   | "requirement.created"
+  | "requirement.next_due_adjusted"
+  | "requirement.paused"
+  | "requirement.resumed"
   | "requirement.updated";
 
 export type AuditAction = KnownAuditAction | (string & {});

@@ -348,6 +348,7 @@ export const requirements = pgTable(
     intervalValue: integer("interval_value"),
     nextDueDate: date("next_due_date").notNull(),
     status: requirementStatusEnum("status").notNull().default("active"),
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -33,16 +33,18 @@ export type RequirementRecord = {
   intervalValue: number | null;
   nextDueDate: string;
   status: RequirementStatus;
+  pausedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export type NewRequirementRecord = Omit<
   RequirementRecord,
-  "id" | "notes" | "createdAt" | "updatedAt"
+  "id" | "notes" | "pausedAt" | "createdAt" | "updatedAt"
 > & {
   id?: string;
   notes?: string | null;
+  pausedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 };

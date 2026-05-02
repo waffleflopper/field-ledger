@@ -68,12 +68,31 @@ function createItemRepository() {
   ]);
 }
 
+function createHandReceiptRepository() {
+  return new InMemoryHandReceiptRepository([
+    {
+      id: "hand-receipt-1",
+      accountId: "account-1",
+      name: "Primary receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "active",
+      createdAt: new Date("2026-04-30T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+    },
+  ]);
+}
+
 function createCaller({
   account = createAccount(),
   accountRepository = new InMemoryAccountRepository([account]),
   auditRepository = new InMemoryAuditRepository(),
   contactRepository = new InMemoryContactRepository(),
-  handReceiptRepository = new InMemoryHandReceiptRepository(),
+  handReceiptRepository = createHandReceiptRepository(),
   itemRepository = createItemRepository(),
   locationRepository = new InMemoryLocationRepository(),
   requirementCompletionRepository = new InMemoryRequirementCompletionRepository(),
@@ -225,6 +244,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-15",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -265,6 +285,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-15",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -278,6 +299,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-08",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -305,6 +327,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-15",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -360,6 +383,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-15",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-05-01T12:00:00.000Z"),
         updatedAt: new Date("2026-05-01T12:00:00.000Z"),
       },
@@ -416,6 +440,7 @@ describe("requirementsRouter", () => {
         intervalValue: null,
         nextDueDate: "2026-05-15",
         status: "active",
+        pausedAt: null,
         createdAt: new Date("2026-04-30T12:00:00.000Z"),
         updatedAt: new Date("2026-04-30T12:00:00.000Z"),
       },
@@ -451,5 +476,128 @@ describe("requirementsRouter", () => {
         action: "requirement.updated",
       },
     ]);
+  });
+
+  it("adjusts, pauses, and resumes a requirement through the typed API", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementRepository = new InMemoryRequirementRepository([
+      {
+        id: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+        accountId: "account-1",
+        itemId: itemOneId,
+        name: "Monthly function check",
+        notes: null,
+        intervalType: "monthly",
+        intervalValue: null,
+        nextDueDate: "2026-05-15",
+        status: "active",
+        pausedAt: null,
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      auditRepository,
+      requirementRepository,
+    });
+
+    await expect(
+      caller.requirements.adjustNextDue({
+        requirementId: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+        nextDueDate: "2026-06-20",
+      }),
+    ).resolves.toMatchObject({
+      id: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+      nextDueDate: "2026-06-20",
+      intervalType: "monthly",
+      intervalValue: null,
+    });
+
+    await expect(
+      caller.requirements.pause({
+        requirementId: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+      }),
+    ).resolves.toMatchObject({
+      id: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+      pausedAt: expect.any(Date),
+    });
+
+    await expect(
+      caller.requirements.resume({
+        requirementId: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+      }),
+    ).resolves.toMatchObject({
+      id: "3f38b7ea-ec76-4f93-b9ef-aa5309a83458",
+      pausedAt: null,
+    });
+
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "requirement.next_due_adjusted",
+      "requirement.paused",
+      "requirement.resumed",
+    ]);
+  });
+
+  it("maps requirement lifecycle conflicts and read-only blocking to typed errors", async () => {
+    const pausedRequirement = {
+      id: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+      accountId: "account-1",
+      itemId: itemOneId,
+      name: "Monthly function check",
+      notes: null,
+      intervalType: "monthly" as const,
+      intervalValue: null,
+      nextDueDate: "2026-05-15",
+      status: "active" as const,
+      pausedAt: new Date("2026-05-01T12:00:00.000Z"),
+      createdAt: new Date("2026-05-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+    };
+
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+        requirementRepository: new InMemoryRequirementRepository([
+          pausedRequirement,
+        ]),
+      }).requirements.resume({
+        requirementId: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+
+    await expect(
+      createCaller({
+        requirementRepository: new InMemoryRequirementRepository([
+          pausedRequirement,
+        ]),
+      }).requirements.pause({
+        requirementId: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Requirement is already paused.",
+    });
+
+    await expect(
+      createCaller({
+        requirementRepository: new InMemoryRequirementRepository([
+          {
+            ...pausedRequirement,
+            pausedAt: null,
+          },
+        ]),
+      }).requirements.resume({
+        requirementId: "1f9de16d-fec7-462f-95b4-9a53a93fc636",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Requirement is not paused.",
+    });
   });
 });

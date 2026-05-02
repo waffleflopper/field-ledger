@@ -125,6 +125,9 @@ async function main() {
       async updateNextDueDate() {
         throw new Error("Foundation check should not update requirements.");
       },
+      async updateLifecycle() {
+        throw new Error("Foundation check should not update requirements.");
+      },
     },
     requirementCompletionRepository: {
       async create() {

@@ -264,6 +264,16 @@ Rules:
 - Completing a requirement emits `requirement.completed` and updates the next
   due date from the entered completion date.
 - Next due date can be manually adjusted and audited.
+- Manual next due adjustment changes only the next due date. It does not change
+  the interval type, interval value, or completion history.
+- Individual requirements can be paused and resumed. A paused requirement stays
+  visible on item detail but is excluded from active requirement work and cannot
+  be completed until resumed.
+- Resuming a requirement returns it to active behavior unless its item or hand
+  receipt is archived.
+- Requirement next due adjustment, pause, and resume emit
+  `requirement.next_due_adjusted`, `requirement.paused`, and
+  `requirement.resumed`.
 - Duplicate requirement names on the same item warn but are allowed during
   creation and edit.
 

@@ -2,10 +2,13 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  adjustRequirementNextDue,
   completeRequirement,
   createRequirement,
   listRequirementCompletions,
   listRequirements,
+  pauseRequirement,
+  resumeRequirement,
   updateRequirement,
 } from "@/modules/requirements";
 import type {
@@ -76,6 +79,13 @@ const updateRequirementInput = z.object({
   intervalValue: z.number().int().positive().optional().nullable(),
 });
 
+const adjustRequirementNextDueInput = z.object({
+  requirementId: z.uuid(),
+  nextDueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Next due date must use YYYY-MM-DD format."),
+});
+
 function toTRPCError(
   error: unknown,
   context: { accountId: string; operation: string; userId: string },
@@ -98,6 +108,11 @@ function toTRPCError(
     case "Requirement was not found.":
       throw new TRPCError({ code: "NOT_FOUND", message });
     case "Item is not active.":
+    case "Requirement is already paused.":
+    case "Requirement is not paused.":
+    case "Requirement is paused.":
+    case "Cannot resume requirement on archived item.":
+    case "Cannot resume requirement on archived hand receipt.":
       throw new TRPCError({ code: "CONFLICT", message });
     default:
       console.error("Unexpected requirements tRPC error.", {
@@ -216,6 +231,47 @@ export const requirementsRouter = createTRPCRouter({
           },
           auditRepository: repositories.auditRepository,
           completionRepository: repositories.requirementCompletionRepository,
+          requirementRepository: repositories.requirementRepository,
+        }),
+      ),
+    ),
+  adjustNextDue: protectedProcedure
+    .input(adjustRequirementNextDueInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "requirements.adjustNextDue", (repositories) =>
+        adjustRequirementNextDue({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input,
+          auditRepository: repositories.auditRepository,
+          requirementRepository: repositories.requirementRepository,
+        }),
+      ),
+    ),
+  pause: protectedProcedure
+    .input(requirementIdInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "requirements.pause", (repositories) =>
+        pauseRequirement({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input,
+          auditRepository: repositories.auditRepository,
+          requirementRepository: repositories.requirementRepository,
+        }),
+      ),
+    ),
+  resume: protectedProcedure
+    .input(requirementIdInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "requirements.resume", (repositories) =>
+        resumeRequirement({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input,
+          auditRepository: repositories.auditRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          itemRepository: repositories.itemRepository,
           requirementRepository: repositories.requirementRepository,
         }),
       ),
