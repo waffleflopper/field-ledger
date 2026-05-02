@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -11,6 +12,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -357,6 +359,7 @@ export const requirements = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("requirements_id_account_id_key").on(table.id, table.accountId),
     index("requirements_account_id_item_id_status_idx").on(
       table.accountId,
       table.itemId,
@@ -365,6 +368,14 @@ export const requirements = pgTable(
     index("requirements_account_id_next_due_idx").on(
       table.accountId,
       table.nextDueDate,
+    ),
+    check(
+      "requirements_interval_value_chk",
+      sql`(
+        (${table.intervalType} in ('custom_days', 'custom_months') and ${table.intervalValue} is not null and ${table.intervalValue} > 0)
+        or
+        (${table.intervalType} in ('weekly', 'monthly', 'quarterly', 'semiannual', 'annual') and ${table.intervalValue} is null)
+      )`,
     ),
   ],
 ).enableRLS();
@@ -376,9 +387,7 @@ export const requirementCompletions = pgTable(
     accountId: uuid("account_id")
       .notNull()
       .references(() => accounts.id),
-    requirementId: uuid("requirement_id")
-      .notNull()
-      .references(() => requirements.id),
+    requirementId: uuid("requirement_id").notNull(),
     completedOn: date("completed_on").notNull(),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -386,6 +395,11 @@ export const requirementCompletions = pgTable(
       .defaultNow(),
   },
   (table) => [
+    foreignKey({
+      columns: [table.requirementId, table.accountId],
+      foreignColumns: [requirements.id, requirements.accountId],
+      name: "requirement_completions_requirement_account_fk",
+    }),
     index("requirement_completions_requirement_completed_idx").on(
       table.requirementId,
       table.completedOn.desc(),

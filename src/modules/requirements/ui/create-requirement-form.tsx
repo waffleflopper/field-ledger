@@ -187,7 +187,10 @@ export function CreateRequirementForm({
               <Input
                 id="requirement-name"
                 maxLength={200}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setPendingDuplicateConfirmation(false);
+                }}
                 value={name}
                 {...passwordManagerIgnoreProps}
               />

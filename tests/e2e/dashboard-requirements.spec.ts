@@ -52,12 +52,7 @@ function dateOnlyFromOffset(daysFromToday: number) {
   ].join("-");
 }
 
-test("dashboard shows requirement work in priority order on mobile", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await signInLocalUser(page);
-
+async function createDashboardRequirementFixture(page: Page) {
   await page.getByRole("button", { name: "New hand receipt" }).click();
   await page.getByLabel("Name").fill("Dashboard receipt");
   await page.getByRole("button", { name: "Create" }).click();
@@ -87,6 +82,14 @@ test("dashboard shows requirement work in priority order on mobile", async ({
     name: "Beyond window PMCS",
     nextDueDate: dateOnlyFromOffset(40),
   });
+}
+
+test("dashboard shows requirement work in priority order on mobile", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+  await createDashboardRequirementFixture(page);
 
   await page.goto("/app/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
@@ -126,6 +129,7 @@ test("dashboard requirements use desktop width without horizontal overflow", asy
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await signInLocalUser(page);
+  await createDashboardRequirementFixture(page);
 
   await page.goto("/app/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();

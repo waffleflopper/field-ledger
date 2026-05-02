@@ -32,6 +32,20 @@ const db = createDrizzleClient(databaseUrl);
 
 describe("requirement repository RLS boundary", () => {
   beforeAll(async () => {
+    await sql`delete from requirement_completions where account_id in (
+      select id from accounts where auth_user_id in (${ownerOneId}, ${ownerTwoId})
+    )`;
+    await sql`delete from requirements where account_id in (
+      select id from accounts where auth_user_id in (${ownerOneId}, ${ownerTwoId})
+    )`;
+    await sql`delete from items where account_id in (
+      select id from accounts where auth_user_id in (${ownerOneId}, ${ownerTwoId})
+    )`;
+    await sql`delete from hand_receipts where account_id in (
+      select id from accounts where auth_user_id in (${ownerOneId}, ${ownerTwoId})
+    )`;
+    await sql`delete from accounts where auth_user_id in (${ownerOneId}, ${ownerTwoId})`;
+
     await sql`insert into accounts ${sql([
       {
         id: ownerOneAccountId,

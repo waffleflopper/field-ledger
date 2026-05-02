@@ -1249,15 +1249,17 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "requirement_completions_requirement_id_requirements_id_fk": {
-          "name": "requirement_completions_requirement_id_requirements_id_fk",
+        "requirement_completions_requirement_account_fk": {
+          "name": "requirement_completions_requirement_account_fk",
           "tableFrom": "requirement_completions",
           "tableTo": "requirements",
           "columnsFrom": [
-            "requirement_id"
+            "requirement_id",
+            "account_id"
           ],
           "columnsTo": [
-            "id"
+            "id",
+            "account_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -1404,9 +1406,23 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "requirements_id_account_id_key": {
+          "name": "requirements_id_account_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "account_id"
+          ]
+        }
+      },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "requirements_interval_value_chk": {
+          "name": "requirements_interval_value_chk",
+          "value": "(\n        (\"requirements\".\"interval_type\" in ('custom_days', 'custom_months') and \"requirements\".\"interval_value\" is not null and \"requirements\".\"interval_value\" > 0)\n        or\n        (\"requirements\".\"interval_type\" in ('weekly', 'monthly', 'quarterly', 'semiannual', 'annual') and \"requirements\".\"interval_value\" is null)\n      )"
+        }
+      },
       "isRLSEnabled": true
     },
     "app_internal.scaffold_migration_checks": {

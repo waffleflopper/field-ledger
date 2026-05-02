@@ -143,6 +143,23 @@ function DashboardReadOnlyNotice() {
 }
 
 export function DashboardRequirements(props: DashboardRequirementsProps) {
+  const sections = [
+    {
+      rows: props.overdue,
+      title: "Overdue",
+      windowLabel: "Before today",
+    },
+    {
+      rows: props.dueSoon,
+      title: "Due Soon",
+      windowLabel: "Today through 14 days",
+    },
+    {
+      rows: props.upcoming,
+      title: "Upcoming",
+      windowLabel: "15 through 30 days",
+    },
+  ].filter((section) => section.rows.length > 0);
   const hasRequirements =
     props.overdue.length + props.dueSoon.length + props.upcoming.length > 0;
 
@@ -160,21 +177,14 @@ export function DashboardRequirements(props: DashboardRequirementsProps) {
         <DashboardReadOnlyNotice />
       ) : hasRequirements ? (
         <div className="grid gap-4 xl:grid-cols-3">
-          <DashboardRequirementsSection
-            rows={props.overdue}
-            title="Overdue"
-            windowLabel="Before today"
-          />
-          <DashboardRequirementsSection
-            rows={props.dueSoon}
-            title="Due Soon"
-            windowLabel="Today through 14 days"
-          />
-          <DashboardRequirementsSection
-            rows={props.upcoming}
-            title="Upcoming"
-            windowLabel="15 through 30 days"
-          />
+          {sections.map((section) => (
+            <DashboardRequirementsSection
+              key={section.title}
+              rows={section.rows}
+              title={section.title}
+              windowLabel={section.windowLabel}
+            />
+          ))}
         </div>
       ) : (
         <DashboardRequirementsEmpty />

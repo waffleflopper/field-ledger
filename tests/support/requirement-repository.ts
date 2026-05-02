@@ -19,10 +19,10 @@ export class InMemoryRequirementRepository implements RequirementRepository {
 
   async create(requirement: NewRequirementRecord) {
     const createdRequirement: RequirementRecord = {
+      ...requirement,
       id: requirement.id ?? `requirement-${this.requirements.length + 1}`,
       createdAt: requirement.createdAt ?? new Date(),
       updatedAt: requirement.updatedAt ?? new Date(),
-      ...requirement,
       notes: requirement.notes ?? null,
       pausedAt: requirement.pausedAt ?? null,
     };

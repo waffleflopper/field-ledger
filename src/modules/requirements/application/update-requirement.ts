@@ -136,12 +136,13 @@ export async function updateRequirement({
     });
   }
 
-  const duplicate = await requirementRepository.findByName(
-    account.id,
-    existing.itemId,
-    name,
+  const duplicateWarning = (
+    await requirementRepository.findByItemId(account.id, existing.itemId)
+  ).some(
+    (requirement) =>
+      requirement.id !== existing.id &&
+      requirement.name.trim().toLowerCase() === name.toLowerCase(),
   );
-  const duplicateWarning = duplicate !== null && duplicate.id !== existing.id;
   const changedFields: string[] = [];
 
   if (existing.name !== name) {
@@ -167,7 +168,7 @@ export async function updateRequirement({
   if (changedFields.length === 0) {
     return {
       requirement: existing,
-      duplicateWarning: false,
+      duplicateWarning,
     };
   }
 
@@ -194,6 +195,7 @@ export async function updateRequirement({
     },
     metadata: {
       itemId: existing.itemId,
+      name,
       requirementName: name,
       changedFields,
       previousInterval: {

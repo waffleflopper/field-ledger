@@ -793,6 +793,7 @@ function CompleteRequirementDialog({
         disabled={isDisabled}
         onClick={() => {
           setCompletedOn(todayDateOnly());
+          setNotes("");
           setError(null);
           setIsOpen(true);
         }}
@@ -888,6 +889,14 @@ function RequirementCompletionHistory({
 
   if (historyQuery.isLoading) {
     return <div className="mt-1 h-8 rounded-md border bg-secondary/70" />;
+  }
+
+  if (historyQuery.error) {
+    return (
+      <p className="mt-1 text-xs font-medium text-destructive">
+        {historyQuery.error.message}
+      </p>
+    );
   }
 
   if (history.length === 0) {

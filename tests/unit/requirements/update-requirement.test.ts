@@ -92,6 +92,8 @@ describe("updateRequirement", () => {
         targetId: "requirement-1",
         metadata: {
           itemId: "item-1",
+          name: "Quarterly function check",
+          requirementName: "Quarterly function check",
           changedFields: ["name", "notes", "intervalType", "nextDueDate"],
           previousInterval: {
             intervalType: "monthly",
@@ -169,6 +171,44 @@ describe("updateRequirement", () => {
       duplicateWarning: false,
     });
     expect(input.auditRepository.events).toHaveLength(0);
+  });
+
+  it("preserves duplicate warnings when unchanged input still conflicts with another requirement", async () => {
+    const requirementRepository = createRequirementRepository();
+
+    requirementRepository.requirements.push({
+      id: "requirement-2",
+      accountId: "account-1",
+      itemId: "item-1",
+      name: "Monthly function check",
+      notes: null,
+      intervalType: "annual",
+      intervalValue: null,
+      nextDueDate: "2027-01-01",
+      status: "active",
+      pausedAt: null,
+      createdAt: new Date("2026-04-30T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+    });
+
+    await expect(
+      updateRequirement({
+        ...createBaseInput(),
+        input: {
+          requirementId: "requirement-1",
+          name: "Monthly function check",
+          notes: "Old notes",
+          intervalType: "monthly",
+          intervalValue: null,
+        },
+        requirementRepository,
+      }),
+    ).resolves.toMatchObject({
+      requirement: {
+        id: "requirement-1",
+      },
+      duplicateWarning: true,
+    });
   });
 
   it("validates custom intervals and blocks read-only account edits", async () => {

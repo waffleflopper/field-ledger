@@ -9,7 +9,7 @@ CREATE TABLE "requirement_completions" (
 --> statement-breakpoint
 ALTER TABLE "requirement_completions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "requirement_completions" ADD CONSTRAINT "requirement_completions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "requirement_completions" ADD CONSTRAINT "requirement_completions_requirement_id_requirements_id_fk" FOREIGN KEY ("requirement_id") REFERENCES "public"."requirements"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "requirement_completions" ADD CONSTRAINT "requirement_completions_requirement_account_fk" FOREIGN KEY ("requirement_id","account_id") REFERENCES "public"."requirements"("id","account_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "requirement_completions_requirement_completed_idx" ON "requirement_completions" USING btree ("requirement_id","completed_on" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requirement_completions_account_id_created_at_idx" ON "requirement_completions" USING btree ("account_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 GRANT SELECT, INSERT ON TABLE "requirement_completions" TO authenticated;--> statement-breakpoint

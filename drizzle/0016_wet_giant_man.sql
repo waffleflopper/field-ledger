@@ -16,6 +16,19 @@ CREATE TABLE "requirements" (
 ALTER TABLE "requirements" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "requirements" ADD CONSTRAINT "requirements_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "requirements" ADD CONSTRAINT "requirements_item_id_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "requirements" ADD CONSTRAINT "requirements_id_account_id_key" UNIQUE("id","account_id");--> statement-breakpoint
+ALTER TABLE "requirements" ADD CONSTRAINT "requirements_interval_value_chk" CHECK (
+	(
+		"interval_type" IN ('custom_days', 'custom_months')
+		AND "interval_value" IS NOT NULL
+		AND "interval_value" > 0
+	)
+	OR
+	(
+		"interval_type" IN ('weekly', 'monthly', 'quarterly', 'semiannual', 'annual')
+		AND "interval_value" IS NULL
+	)
+);--> statement-breakpoint
 CREATE INDEX "requirements_account_id_item_id_status_idx" ON "requirements" USING btree ("account_id","item_id","status");
 --> statement-breakpoint
 GRANT SELECT, INSERT ON TABLE "requirements" TO authenticated;--> statement-breakpoint
