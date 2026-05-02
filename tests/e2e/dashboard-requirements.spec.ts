@@ -29,9 +29,15 @@ async function createRequirement(
 
   await dialog.getByLabel("Name").fill(input.name);
   await dialog.getByLabel("Interval").selectOption("monthly");
-  await dialog.getByLabel("Next due date").fill(input.nextDueDate);
   await dialog.getByRole("button", { name: "Add requirement" }).click();
   await expect(page.getByRole("heading", { name: input.name })).toBeVisible();
+  await page
+    .getByRole("button", { name: `Adjust next due date for ${input.name}` })
+    .click();
+  const adjustDialog = page.getByRole("dialog", { name: "Adjust next due" });
+  await adjustDialog.getByLabel("Next due date").fill(input.nextDueDate);
+  await adjustDialog.getByRole("button", { name: "Save due date" }).click();
+  await expect(adjustDialog).toBeHidden();
 }
 
 function dateOnlyFromOffset(daysFromToday: number) {

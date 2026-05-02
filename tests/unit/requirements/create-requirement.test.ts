@@ -51,7 +51,6 @@ function createBaseInput() {
       itemId: "item-1",
       name: "Monthly function check",
       intervalType: "monthly",
-      nextDueDate: "2026-05-15",
     },
     itemRepository: createItemRepository(),
     requirementRepository: new InMemoryRequirementRepository(),
@@ -76,7 +75,7 @@ describe("createRequirement", () => {
         notes: null,
         intervalType: "monthly",
         intervalValue: null,
-        nextDueDate: "2026-05-15",
+        nextDueDate: "2026-06-01",
         status: "active",
       },
     });
@@ -89,7 +88,8 @@ describe("createRequirement", () => {
           itemId: "item-1",
           name: "Monthly function check",
           intervalType: "monthly",
-          nextDueDate: "2026-05-15",
+          createdOn: "2026-05-01",
+          nextDueDate: "2026-06-01",
         },
       },
     ]);
@@ -104,7 +104,6 @@ describe("createRequirement", () => {
           name: "Battery swap",
           intervalType: "custom_days",
           intervalValue: 45,
-          nextDueDate: "2026-06-15",
         },
       }),
     ).resolves.toMatchObject({
@@ -112,11 +111,12 @@ describe("createRequirement", () => {
         name: "Battery swap",
         intervalType: "custom_days",
         intervalValue: 45,
+        nextDueDate: "2026-06-15",
       },
     });
   });
 
-  it("validates names, intervals, custom values, and date-only due dates", async () => {
+  it("validates names, intervals, and custom values", async () => {
     await expect(
       createRequirement({
         ...createBaseInput(),
@@ -124,7 +124,6 @@ describe("createRequirement", () => {
           itemId: "item-1",
           name: "   ",
           intervalType: "monthly",
-          nextDueDate: "2026-05-15",
         },
       }),
     ).rejects.toThrow("Requirement name is required.");
@@ -136,7 +135,6 @@ describe("createRequirement", () => {
           itemId: "item-1",
           name: "Function check",
           intervalType: "third_tuesday",
-          nextDueDate: "2026-05-15",
         },
       }),
     ).rejects.toThrow("Requirement interval is not supported.");
@@ -148,7 +146,6 @@ describe("createRequirement", () => {
           itemId: "item-1",
           name: "Function check",
           intervalType: "custom_months",
-          nextDueDate: "2026-05-15",
         },
       }),
     ).rejects.toThrow(
@@ -163,34 +160,9 @@ describe("createRequirement", () => {
           name: "Function check",
           intervalType: "annual",
           intervalValue: 1,
-          nextDueDate: "2026-05-15",
         },
       }),
     ).rejects.toThrow("Preset requirement intervals cannot include a value.");
-
-    await expect(
-      createRequirement({
-        ...createBaseInput(),
-        input: {
-          itemId: "item-1",
-          name: "Function check",
-          intervalType: "annual",
-          nextDueDate: "05/15/2026",
-        },
-      }),
-    ).rejects.toThrow("Next due date must use YYYY-MM-DD format.");
-
-    await expect(
-      createRequirement({
-        ...createBaseInput(),
-        input: {
-          itemId: "item-1",
-          name: "Function check",
-          intervalType: "annual",
-          nextDueDate: "2026-02-31",
-        },
-      }),
-    ).rejects.toThrow("Next due date must use YYYY-MM-DD format.");
   });
 
   it("returns a duplicate warning until the duplicate name is confirmed", async () => {

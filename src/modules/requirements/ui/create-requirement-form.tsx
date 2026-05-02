@@ -25,9 +25,7 @@ type CreateRequirementFormProps = {
   onSuccess?: () => void;
 };
 
-type FormErrors = Partial<
-  Record<"name" | "intervalValue" | "nextDueDate" | "form", string>
->;
+type FormErrors = Partial<Record<"name" | "intervalValue" | "form", string>>;
 
 const passwordManagerIgnoreProps = {
   autoComplete: "off",
@@ -64,7 +62,6 @@ export function CreateRequirementForm({
   const [intervalType, setIntervalType] =
     useState<RequirementIntervalType>("monthly");
   const [intervalValue, setIntervalValue] = useState("");
-  const [nextDueDate, setNextDueDate] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [pendingDuplicateConfirmation, setPendingDuplicateConfirmation] =
     useState(false);
@@ -100,7 +97,6 @@ export function CreateRequirementForm({
     setName("");
     setIntervalType("monthly");
     setIntervalValue("");
-    setNextDueDate("");
     setErrors({});
     setPendingDuplicateConfirmation(false);
   }
@@ -110,10 +106,6 @@ export function CreateRequirementForm({
 
     if (!name.trim()) {
       nextErrors.name = "Name is required.";
-    }
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDueDate)) {
-      nextErrors.nextDueDate = "Use YYYY-MM-DD.";
     }
 
     if (isCustomInterval(intervalType)) {
@@ -143,7 +135,6 @@ export function CreateRequirementForm({
       intervalValue: isCustomInterval(intervalType)
         ? Number(intervalValue)
         : null,
-      nextDueDate,
       ...(confirmDuplicate ? { confirmDuplicate } : {}),
     });
   }
@@ -174,7 +165,8 @@ export function CreateRequirementForm({
         <DialogHeader>
           <DialogTitle>Add requirement</DialogTitle>
           <DialogDescription>
-            Attach a recurring item obligation with a date-only next due date.
+            Attach a recurring item obligation. The first due date is calculated
+            from today and the selected interval.
           </DialogDescription>
         </DialogHeader>
 
@@ -249,22 +241,6 @@ export function CreateRequirementForm({
                 {errors.intervalValue}
               </p>
             ) : null}
-
-            <div className="space-y-2">
-              <Label htmlFor="requirement-next-due">Next due date</Label>
-              <Input
-                id="requirement-next-due"
-                onChange={(event) => setNextDueDate(event.target.value)}
-                type="date"
-                value={nextDueDate}
-                {...passwordManagerIgnoreProps}
-              />
-              {errors.nextDueDate ? (
-                <p className="text-sm font-medium text-destructive">
-                  {errors.nextDueDate}
-                </p>
-              ) : null}
-            </div>
 
             {pendingDuplicateConfirmation ? (
               <div className="flex items-start gap-2 rounded-lg border border-amber-700/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">

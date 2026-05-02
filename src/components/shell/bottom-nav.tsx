@@ -94,14 +94,10 @@ export function BottomNav() {
               <span>More</span>
             </button>
           </SheetTrigger>
-          <SheetContent
-            aria-describedby="mobile-more-navigation-description"
-            className="rounded-t-lg px-4 pb-6"
-            side="bottom"
-          >
+          <SheetContent className="rounded-t-lg px-4 pb-6" side="bottom">
             <SheetHeader className="px-0">
               <SheetTitle>More</SheetTitle>
-              <SheetDescription id="mobile-more-navigation-description">
+              <SheetDescription>
                 Additional Field Ledger surfaces.
               </SheetDescription>
             </SheetHeader>

@@ -56,7 +56,6 @@ export function OnboardingNotice({
   return (
     <Dialog open>
       <DialogContent
-        aria-describedby="field-ledger-onboarding-description"
         className="gap-5 sm:p-6"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
@@ -67,7 +66,7 @@ export function OnboardingNotice({
             <ShieldCheck aria-hidden="true" className="size-5" />
           </div>
           <DialogTitle>Property accountability only</DialogTitle>
-          <DialogDescription id="field-ledger-onboarding-description">
+          <DialogDescription>
             Field Ledger helps you manage personal hand receipts, assigned
             property, active 2062s, and item requirements. It is not an official
             Army system of record.

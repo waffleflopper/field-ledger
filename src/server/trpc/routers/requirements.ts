@@ -32,9 +32,6 @@ const createRequirementInput = z.object({
     "custom_months",
   ]),
   intervalValue: z.number().int().positive().optional().nullable(),
-  nextDueDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Next due date must use YYYY-MM-DD format."),
   confirmDuplicate: z.boolean().optional(),
 });
 
@@ -196,7 +193,6 @@ export const requirementsRouter = createTRPCRouter({
             name: input.name,
             intervalType: input.intervalType,
             intervalValue: input.intervalValue ?? null,
-            nextDueDate: input.nextDueDate,
             ...(input.confirmDuplicate !== undefined
               ? { confirmDuplicate: input.confirmDuplicate }
               : {}),

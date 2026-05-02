@@ -253,7 +253,6 @@ describe("requirementsRouter", () => {
       itemId: itemOneId,
       name: "Monthly function check",
       intervalType: "monthly",
-      nextDueDate: "2026-05-15",
     });
 
     expect(result).toMatchObject({
@@ -262,7 +261,7 @@ describe("requirementsRouter", () => {
         name: "Monthly function check",
         notes: null,
         intervalType: "monthly",
-        nextDueDate: "2026-05-15",
+        nextDueDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       },
     });
     await expect(
@@ -280,7 +279,6 @@ describe("requirementsRouter", () => {
         itemId: itemOneId,
         name: "",
         intervalType: "monthly",
-        nextDueDate: "2026-05-15",
       }),
     ).rejects.toBeInstanceOf(TRPCError);
 
@@ -289,23 +287,10 @@ describe("requirementsRouter", () => {
         itemId: itemOneId,
         name: "Odd cadence",
         intervalType: "custom_days",
-        nextDueDate: "2026-05-15",
       }),
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: "Custom requirement intervals need a positive whole number.",
-    });
-
-    await expect(
-      createCaller().requirements.create({
-        itemId: itemOneId,
-        name: "Impossible date",
-        intervalType: "annual",
-        nextDueDate: "2026-02-31",
-      }),
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-      message: "Next due date must use YYYY-MM-DD format.",
     });
   });
 
@@ -317,13 +302,11 @@ describe("requirementsRouter", () => {
       itemId: itemOneId,
       name: "Monthly function check",
       intervalType: "monthly",
-      nextDueDate: "2026-05-15",
     });
     const warning = await caller.requirements.create({
       itemId: itemOneId,
       name: "Monthly function check",
       intervalType: "monthly",
-      nextDueDate: "2026-06-15",
     });
 
     expect(warning).toMatchObject({
@@ -341,12 +324,11 @@ describe("requirementsRouter", () => {
         itemId: itemOneId,
         name: "Monthly function check",
         intervalType: "monthly",
-        nextDueDate: "2026-06-15",
         confirmDuplicate: true,
       }),
     ).resolves.toMatchObject({
       requirement: {
-        nextDueDate: "2026-06-15",
+        nextDueDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       },
     });
   });
@@ -384,7 +366,6 @@ describe("requirementsRouter", () => {
         itemId: itemOneId,
         name: "Blocked requirement",
         intervalType: "annual",
-        nextDueDate: "2027-01-01",
       }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",

@@ -99,7 +99,6 @@ test("users can create and see an item requirement from item detail", async ({
   });
   await createRequirementDialog.getByLabel("Name").fill("Monthly PMCS");
   await createRequirementDialog.getByLabel("Interval").selectOption("monthly");
-  await createRequirementDialog.getByLabel("Next due date").fill("2026-06-15");
   await createRequirementDialog
     .getByRole("button", { name: "Add requirement" })
     .click();
@@ -108,7 +107,6 @@ test("users can create and see an item requirement from item detail", async ({
     page.getByRole("heading", { name: "Monthly PMCS" }),
   ).toBeVisible();
   await expect(page.getByText("Monthly", { exact: true })).toBeVisible();
-  await expect(page.getByText("Due Jun 15, 2026")).toBeVisible();
 
   await page.getByRole("button", { name: "Complete" }).click();
   const completionDialog = page.getByRole("dialog", {

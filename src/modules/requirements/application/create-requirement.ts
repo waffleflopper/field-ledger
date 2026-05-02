@@ -5,6 +5,7 @@ import {
   deriveAccountCapabilities,
 } from "@/modules/billing";
 import type { ItemRepository } from "@/modules/items";
+import { calculateNextDueDate, toLocalDateOnly } from "./date-only";
 import type { RequirementRepository } from "./requirement-repository";
 import {
   isPresetRequirementIntervalType,
@@ -22,7 +23,6 @@ type CreateRequirementInput = {
     notes?: string | null;
     intervalType: string;
     intervalValue?: number | null;
-    nextDueDate: string;
     confirmDuplicate?: boolean;
   };
   itemRepository: Pick<ItemRepository, "findById">;
@@ -31,31 +31,6 @@ type CreateRequirementInput = {
   now?: Date;
   createRequirementId?: () => string;
 };
-
-const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-
-function isValidDateOnly(value: string) {
-  if (!dateOnlyPattern.test(value)) {
-    return false;
-  }
-
-  const parts = value.split("-").map(Number);
-  const year = parts[0];
-  const month = parts[1];
-  const day = parts[2];
-
-  if (year === undefined || month === undefined || day === undefined) {
-    return false;
-  }
-
-  const date = new Date(Date.UTC(year, month - 1, day));
-
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
-}
 
 function validateIntervalValue(
   intervalType: RequirementIntervalType,
@@ -104,10 +79,6 @@ export async function createRequirement({
     input.intervalValue,
   );
 
-  if (!isValidDateOnly(input.nextDueDate)) {
-    throw new Error("Next due date must use YYYY-MM-DD format.");
-  }
-
   const capabilities = deriveAccountCapabilities(account, now);
 
   if (!canCreateRequirement(capabilities)) {
@@ -140,6 +111,11 @@ export async function createRequirement({
   }
 
   const requirementId = createRequirementId();
+  const createdOn = toLocalDateOnly(now);
+  const nextDueDate = calculateNextDueDate(createdOn, {
+    intervalType: input.intervalType,
+    intervalValue,
+  });
   const requirement = await requirementRepository.create({
     id: requirementId,
     accountId: account.id,
@@ -148,7 +124,7 @@ export async function createRequirement({
     notes,
     intervalType: input.intervalType,
     intervalValue,
-    nextDueDate: input.nextDueDate,
+    nextDueDate,
     status: "active",
     createdAt: now,
     updatedAt: now,
@@ -168,7 +144,8 @@ export async function createRequirement({
       notes,
       intervalType: input.intervalType,
       intervalValue,
-      nextDueDate: input.nextDueDate,
+      createdOn,
+      nextDueDate,
     },
     occurredAt: now,
     repository: auditRepository,
