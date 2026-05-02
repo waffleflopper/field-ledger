@@ -343,6 +343,7 @@ export const requirements = pgTable(
       .notNull()
       .references(() => items.id),
     name: text("name").notNull(),
+    notes: text("notes"),
     intervalType: requirementIntervalTypeEnum("interval_type").notNull(),
     intervalValue: integer("interval_value"),
     nextDueDate: date("next_due_date").notNull(),

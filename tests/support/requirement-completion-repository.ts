@@ -39,4 +39,10 @@ export class InMemoryRequirementCompletionRepository implements RequirementCompl
         return right.createdAt.getTime() - left.createdAt.getTime();
       });
   }
+
+  async findLatestByRequirementId(accountId: string, requirementId: string) {
+    return (
+      (await this.listByRequirementId(accountId, requirementId))[0] ?? null
+    );
+  }
 }

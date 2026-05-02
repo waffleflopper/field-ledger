@@ -35,6 +35,10 @@ export function canCreateRequirement(capabilities: AccountCapabilities) {
   return !capabilities.isReadOnly;
 }
 
+export function canEditRequirement(capabilities: AccountCapabilities) {
+  return !capabilities.isReadOnly;
+}
+
 export function canRestoreHandReceipt(
   capabilities: AccountCapabilities,
   currentActiveHandReceiptCount: number,

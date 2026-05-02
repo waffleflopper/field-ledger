@@ -119,6 +119,9 @@ async function main() {
       async findByName() {
         return null;
       },
+      async update() {
+        throw new Error("Foundation check should not update requirements.");
+      },
       async updateNextDueDate() {
         throw new Error("Foundation check should not update requirements.");
       },
@@ -131,6 +134,9 @@ async function main() {
       },
       async listByRequirementId() {
         return [];
+      },
+      async findLatestByRequirementId() {
+        return null;
       },
     },
     unitOfWork: {

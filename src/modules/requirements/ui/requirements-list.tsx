@@ -5,6 +5,8 @@ import {
   CalendarCheck,
   CalendarClock,
   History,
+  Pencil,
+  ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
 
@@ -22,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   toLocalDateOnly,
+  type RequirementIntervalType,
   type RequirementRecord,
 } from "@/modules/requirements";
 import { trpc } from "@/trpc/react";
@@ -42,6 +45,19 @@ const intervalLabels: Record<RequirementRecord["intervalType"], string> = {
   semiannual: "Semiannual",
   weekly: "Weekly",
 };
+
+const intervalOptions: {
+  value: RequirementIntervalType;
+  label: string;
+}[] = [
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "semiannual", label: "Semiannual" },
+  { value: "annual", label: "Annual" },
+  { value: "custom_days", label: "Custom days" },
+  { value: "custom_months", label: "Custom months" },
+];
 
 function parseDateOnly(value: string) {
   return new Date(`${value}T00:00:00`);
@@ -65,6 +81,10 @@ function formatInterval(requirement: RequirementRecord) {
   }
 
   return intervalLabels[requirement.intervalType];
+}
+
+function isCustomInterval(intervalType: RequirementIntervalType) {
+  return intervalType === "custom_days" || intervalType === "custom_months";
 }
 
 function todayDateOnly() {
@@ -169,6 +189,11 @@ export function RequirementsList({
                   Due {formatDateOnly(requirement.nextDueDate)}
                 </span>
               </div>
+              {requirement.notes ? (
+                <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+                  {requirement.notes}
+                </p>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -185,6 +210,11 @@ export function RequirementsList({
                   itemId={itemId}
                   requirement={requirement}
                 />
+                <EditRequirementDialog
+                  isDisabled={isReadOnly || !isItemActive}
+                  itemId={itemId}
+                  requirement={requirement}
+                />
               </div>
             </div>
             <div className="sm:col-span-2">
@@ -194,6 +224,229 @@ export function RequirementsList({
         );
       })}
     </div>
+  );
+}
+
+function EditRequirementDialog({
+  requirement,
+  itemId,
+  isDisabled,
+}: {
+  requirement: RequirementRecord;
+  itemId: string;
+  isDisabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState(requirement.name);
+  const [notes, setNotes] = useState(requirement.notes ?? "");
+  const [intervalType, setIntervalType] = useState<RequirementIntervalType>(
+    requirement.intervalType,
+  );
+  const [intervalValue, setIntervalValue] = useState(
+    requirement.intervalValue?.toString() ?? "",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const utilities = trpc.useUtils();
+  const updateMutation = trpc.requirements.update.useMutation({
+    onSuccess: async (result) => {
+      setError(null);
+      setDuplicateWarning(result.duplicateWarning);
+      await Promise.all([
+        utilities.requirements.list.invalidate({ itemId }),
+        utilities.requirements.listCompletionHistory.invalidate({
+          requirementId: requirement.id,
+        }),
+        utilities.audit.listRecentActivity.invalidate(),
+        utilities.audit.listTargetActivity.invalidate({
+          targetType: "item",
+          targetId: itemId,
+        }),
+      ]);
+
+      if (!result.duplicateWarning) {
+        setIsOpen(false);
+      }
+    },
+    onError: (mutationError) => {
+      setDuplicateWarning(false);
+      setError(mutationError.message);
+    },
+  });
+
+  function resetForm() {
+    setName(requirement.name);
+    setNotes(requirement.notes ?? "");
+    setIntervalType(requirement.intervalType);
+    setIntervalValue(requirement.intervalValue?.toString() ?? "");
+    setError(null);
+    setDuplicateWarning(false);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setDuplicateWarning(false);
+
+    let parsedIntervalValue: number | null = null;
+
+    if (isCustomInterval(intervalType)) {
+      parsedIntervalValue = Number(intervalValue);
+
+      if (!Number.isInteger(parsedIntervalValue) || parsedIntervalValue < 1) {
+        setError("Use a positive whole number for custom intervals.");
+        return;
+      }
+    }
+
+    updateMutation.mutate({
+      requirementId: requirement.id,
+      name,
+      notes,
+      intervalType,
+      intervalValue: parsedIntervalValue,
+    });
+  }
+
+  return (
+    <>
+      <Button
+        aria-label={`Edit ${requirement.name}`}
+        disabled={isDisabled}
+        onClick={() => {
+          resetForm();
+          setIsOpen(true);
+        }}
+        size="icon-sm"
+        title="Edit requirement"
+        type="button"
+        variant="outline"
+      >
+        <Pencil aria-hidden="true" className="size-4" />
+      </Button>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(nextOpen) => {
+          setIsOpen(nextOpen);
+
+          if (!nextOpen) {
+            resetForm();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit requirement</DialogTitle>
+            <DialogDescription>
+              Change the name, notes, or interval. Completion history stays
+              preserved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor={`requirement-edit-name-${requirement.id}`}>
+                Name
+              </Label>
+              <Input
+                disabled={updateMutation.isPending}
+                id={`requirement-edit-name-${requirement.id}`}
+                maxLength={200}
+                onChange={(event) => setName(event.target.value)}
+                value={name}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`requirement-edit-notes-${requirement.id}`}>
+                Notes
+              </Label>
+              <Textarea
+                disabled={updateMutation.isPending}
+                id={`requirement-edit-notes-${requirement.id}`}
+                maxLength={500}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Optional"
+                value={notes}
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+              <div className="space-y-2">
+                <Label htmlFor={`requirement-edit-interval-${requirement.id}`}>
+                  Interval
+                </Label>
+                <select
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={updateMutation.isPending}
+                  id={`requirement-edit-interval-${requirement.id}`}
+                  onChange={(event) => {
+                    setIntervalType(
+                      event.target.value as RequirementIntervalType,
+                    );
+                    setIntervalValue("");
+                  }}
+                  value={intervalType}
+                >
+                  {intervalOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {isCustomInterval(intervalType) ? (
+                <div className="space-y-2">
+                  <Label htmlFor={`requirement-edit-value-${requirement.id}`}>
+                    Every
+                  </Label>
+                  <Input
+                    disabled={updateMutation.isPending}
+                    id={`requirement-edit-value-${requirement.id}`}
+                    min={1}
+                    onChange={(event) => setIntervalValue(event.target.value)}
+                    type="number"
+                    value={intervalValue}
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            {duplicateWarning ? (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-700/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">
+                <ShieldAlert aria-hidden="true" className="mt-0.5 size-4" />
+                <p>
+                  Saved. Another requirement on this item has the same name.
+                </p>
+              </div>
+            ) : null}
+
+            {error ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                disabled={updateMutation.isPending}
+                onClick={() => setIsOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                {duplicateWarning ? "Close" : "Cancel"}
+              </Button>
+              {duplicateWarning ? null : (
+                <Button disabled={updateMutation.isPending} type="submit">
+                  {updateMutation.isPending ? "Saving" : "Save changes"}
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

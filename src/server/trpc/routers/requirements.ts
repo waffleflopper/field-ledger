@@ -6,6 +6,7 @@ import {
   createRequirement,
   listRequirementCompletions,
   listRequirements,
+  updateRequirement,
 } from "@/modules/requirements";
 import type {
   AppUnitOfWork,
@@ -54,6 +55,27 @@ const completeRequirementInput = z.object({
     .transform((value) => value ?? null),
 });
 
+const updateRequirementInput = z.object({
+  requirementId: z.uuid(),
+  name: z.string().trim().min(1, "Requirement name is required.").max(200),
+  notes: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform((value) => value ?? null),
+  intervalType: z.enum([
+    "weekly",
+    "monthly",
+    "quarterly",
+    "semiannual",
+    "annual",
+    "custom_days",
+    "custom_months",
+  ]),
+  intervalValue: z.number().int().positive().optional().nullable(),
+});
+
 function toTRPCError(
   error: unknown,
   context: { accountId: string; operation: string; userId: string },
@@ -73,6 +95,7 @@ function toTRPCError(
     case "Completion date cannot be in the future.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
     case "Item was not found.":
+    case "Requirement was not found.":
       throw new TRPCError({ code: "NOT_FOUND", message });
     case "Item is not active.":
       throw new TRPCError({ code: "CONFLICT", message });
@@ -177,6 +200,26 @@ export const requirementsRouter = createTRPCRouter({
 
       return result;
     }),
+  update: protectedProcedure
+    .input(updateRequirementInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "requirements.update", (repositories) =>
+        updateRequirement({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input: {
+            requirementId: input.requirementId,
+            name: input.name,
+            notes: input.notes,
+            intervalType: input.intervalType,
+            intervalValue: input.intervalValue ?? null,
+          },
+          auditRepository: repositories.auditRepository,
+          completionRepository: repositories.requirementCompletionRepository,
+          requirementRepository: repositories.requirementRepository,
+        }),
+      ),
+    ),
   listCompletionHistory: protectedProcedure
     .input(requirementIdInput)
     .query(({ ctx, input }) =>

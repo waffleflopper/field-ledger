@@ -9,6 +9,9 @@ This plan implements item-level recurring requirements, completion history, and 
 - **Scope**: requirements belong to items only.
 - **No cyclic inventory modeling**: commander/PBO cyclic inventory is out of scope.
 - **Scheduling**: interval-based from last completed date.
+- **Interval edits**: when a requirement interval changes, recalculate the next
+  due date from the latest completion date. If the requirement has no completion
+  history yet, use the requirement creation date as the recalculation base.
 - **Completion**: creates permanent history.
 - **Operational dates**: date-only.
 - **Dashboard windows**: overdue, due soon through 14 days, upcoming 15-30 days.
@@ -31,6 +34,7 @@ Implement item-level requirement creation/editing with preset and custom interva
 - [ ] Duplicate requirement names on the same item warn but can be confirmed.
 - [ ] Requirement creation/editing emits audit events.
 - [ ] Read-only/paused accounts cannot create or edit requirements.
+- [ ] Requirement notes can be edited without rewriting completion history.
 
 ---
 
@@ -106,4 +110,3 @@ Add item-detail requirement list, create/edit actions, completion action, and co
 - [ ] User can view at least recent completion history.
 - [ ] Mobile layout remains usable.
 - [ ] Desktop layout uses available space without stretching mobile UI.
-

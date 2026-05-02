@@ -28,6 +28,7 @@ export type RequirementRecord = {
   accountId: string;
   itemId: string;
   name: string;
+  notes: string | null;
   intervalType: RequirementIntervalType;
   intervalValue: number | null;
   nextDueDate: string;
@@ -38,9 +39,10 @@ export type RequirementRecord = {
 
 export type NewRequirementRecord = Omit<
   RequirementRecord,
-  "id" | "createdAt" | "updatedAt"
+  "id" | "notes" | "createdAt" | "updatedAt"
 > & {
   id?: string;
+  notes?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -74,6 +76,11 @@ export type CreateRequirementResult =
         existingRequirement: RequirementRecord;
       };
     };
+
+export type UpdateRequirementResult = {
+  requirement: RequirementRecord;
+  duplicateWarning: boolean;
+};
 
 export function isRequirementIntervalType(
   value: string,

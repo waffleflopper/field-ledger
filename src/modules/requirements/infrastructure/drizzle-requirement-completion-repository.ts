@@ -69,6 +69,26 @@ function createRequirementCompletionRepository(
 
       return rows.map(toRequirementCompletionRecord);
     },
+    async findLatestByRequirementId(accountId, requirementId) {
+      const [row] = await run((transaction) =>
+        transaction
+          .select()
+          .from(requirementCompletions)
+          .where(
+            and(
+              eq(requirementCompletions.accountId, accountId),
+              eq(requirementCompletions.requirementId, requirementId),
+            ),
+          )
+          .orderBy(
+            desc(requirementCompletions.completedOn),
+            desc(requirementCompletions.createdAt),
+          )
+          .limit(1),
+      );
+
+      return row ? toRequirementCompletionRecord(row) : null;
+    },
   };
 }
 

@@ -17,6 +17,7 @@ export class InMemoryRequirementRepository implements RequirementRepository {
       createdAt: requirement.createdAt ?? new Date(),
       updatedAt: requirement.updatedAt ?? new Date(),
       ...requirement,
+      notes: requirement.notes ?? null,
     };
 
     this.requirements.push(createdRequirement);
@@ -80,6 +81,42 @@ export class InMemoryRequirementRepository implements RequirementRepository {
       ...existing,
       nextDueDate: input.nextDueDate,
       updatedAt: input.updatedAt,
+    };
+
+    this.requirements[index] = updated;
+    return updated;
+  }
+
+  async update(
+    accountId: string,
+    requirementId: string,
+    input: {
+      name: string;
+      notes: string | null;
+      intervalType: RequirementRecord["intervalType"];
+      intervalValue: number | null;
+      nextDueDate: string;
+      updatedAt: Date;
+    },
+  ) {
+    const index = this.requirements.findIndex(
+      (requirement) =>
+        requirement.accountId === accountId && requirement.id === requirementId,
+    );
+
+    if (index === -1) {
+      return null;
+    }
+
+    const existing = this.requirements[index];
+
+    if (!existing) {
+      return null;
+    }
+
+    const updated = {
+      ...existing,
+      ...input,
     };
 
     this.requirements[index] = updated;

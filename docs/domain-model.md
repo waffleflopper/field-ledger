@@ -248,16 +248,24 @@ Rules:
 - A requirement belongs to exactly one item and one account.
 - Requirement creation happens from item detail and emits
   `requirement.created`.
-- Paused/read-only accounts can view requirements but cannot create new ones.
+- Requirement names, notes, interval type, and custom interval value can be
+  edited from item detail.
+- Requirement edits emit `requirement.updated` with changed-field metadata.
+- Paused/read-only accounts can view requirements but cannot create or edit
+  requirements.
 - Active requirements are listed on item detail by next due date.
 - Due dates calculate from last completed date.
+- Editing an interval recalculates next due from the latest completion date, or
+  from the requirement creation date when no completion history exists.
 - Completion creates permanent history.
+- Editing requirement metadata must not rewrite completion history.
 - Completion date defaults to today, allows past dates, blocks future dates.
 - Completion can include optional notes.
 - Completing a requirement emits `requirement.completed` and updates the next
   due date from the entered completion date.
 - Next due date can be manually adjusted and audited.
-- Duplicate requirement names on the same item warn but are allowed.
+- Duplicate requirement names on the same item warn but are allowed during
+  creation and edit.
 
 Dashboard windows:
 

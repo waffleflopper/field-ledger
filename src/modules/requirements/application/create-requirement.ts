@@ -19,6 +19,7 @@ type CreateRequirementInput = {
   input: {
     itemId: string;
     name: string;
+    notes?: string | null;
     intervalType: string;
     intervalValue?: number | null;
     nextDueDate: string;
@@ -88,6 +89,7 @@ export async function createRequirement({
   createRequirementId = () => globalThis.crypto.randomUUID(),
 }: CreateRequirementInput): Promise<CreateRequirementResult> {
   const name = input.name.trim();
+  const notes = input.notes?.trim() || null;
 
   if (!name) {
     throw new Error("Requirement name is required.");
@@ -143,6 +145,7 @@ export async function createRequirement({
     accountId: account.id,
     itemId: input.itemId,
     name,
+    notes,
     intervalType: input.intervalType,
     intervalValue,
     nextDueDate: input.nextDueDate,
@@ -162,6 +165,7 @@ export async function createRequirement({
     metadata: {
       itemId: input.itemId,
       name,
+      notes,
       intervalType: input.intervalType,
       intervalValue,
       nextDueDate: input.nextDueDate,

@@ -16,6 +16,7 @@ const ownerOneHandReceiptId = "e6d25f50-7f37-4f6d-a571-75347643ebf2";
 const ownerTwoHandReceiptId = "b8640095-728f-4d90-a412-82746c208758";
 const ownerOneItemId = "196e3b1c-3d2f-4971-8ea3-40126255e608";
 const ownerTwoItemId = "8c2b0ce5-975f-448d-b744-37bdaecb50e3";
+const ownerOneRequirementId = "857a2392-2243-4011-864d-e225e6100e18";
 const ownerTwoRequirementId = "7405e518-c619-4313-ba83-24bd70cff8c8";
 
 const sql = postgres(databaseUrl, { max: 1 });
@@ -72,6 +73,14 @@ describe("requirement repository RLS boundary", () => {
 
     await sql`insert into requirements ${sql([
       {
+        id: ownerOneRequirementId,
+        account_id: ownerOneAccountId,
+        item_id: ownerOneItemId,
+        name: "Owner one existing check",
+        interval_type: "monthly",
+        next_due_date: "2026-06-01",
+      },
+      {
         id: ownerTwoRequirementId,
         account_id: ownerTwoAccountId,
         item_id: ownerTwoItemId,
@@ -107,7 +116,9 @@ describe("requirement repository RLS boundary", () => {
 
     await expect(
       repository.findByItemId(ownerOneAccountId, ownerOneItemId),
-    ).resolves.toMatchObject([{ id: created.id }]);
+    ).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: created.id })]),
+    );
     await expect(
       repository.findByItemId(ownerTwoAccountId, ownerTwoItemId),
     ).resolves.toEqual([]);
@@ -129,5 +140,38 @@ describe("requirement repository RLS boundary", () => {
         status: "active",
       }),
     ).rejects.toThrow();
+  });
+
+  it("updates only requirements allowed by the authenticated session", async () => {
+    const repository = createDrizzleRequirementRepository(db, {
+      authSubject: ownerOneId,
+    });
+    const updatedAt = new Date("2026-05-02T12:00:00.000Z");
+
+    await expect(
+      repository.update(ownerOneAccountId, ownerOneRequirementId, {
+        name: "Owner one updated check",
+        notes: "Updated through owner one session.",
+        intervalType: "quarterly",
+        intervalValue: null,
+        nextDueDate: "2026-08-01",
+        updatedAt,
+      }),
+    ).resolves.toMatchObject({
+      id: ownerOneRequirementId,
+      name: "Owner one updated check",
+      notes: "Updated through owner one session.",
+      nextDueDate: "2026-08-01",
+    });
+    await expect(
+      repository.update(ownerTwoAccountId, ownerTwoRequirementId, {
+        name: "Cross-account update",
+        notes: null,
+        intervalType: "annual",
+        intervalValue: null,
+        nextDueDate: "2027-01-01",
+        updatedAt,
+      }),
+    ).resolves.toBeNull();
   });
 });

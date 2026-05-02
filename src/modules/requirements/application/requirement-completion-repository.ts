@@ -12,6 +12,10 @@ export interface RequirementCompletionRepository {
     requirementId: string,
     options?: { limit?: number },
   ): Promise<RequirementCompletionRecord[]>;
+  findLatestByRequirementId(
+    accountId: string,
+    requirementId: string,
+  ): Promise<RequirementCompletionRecord | null>;
 }
 
 export function createUnavailableRequirementCompletionRepository(): RequirementCompletionRepository {
@@ -20,6 +24,9 @@ export function createUnavailableRequirementCompletionRepository(): RequirementC
       throw new Error("An authenticated database session is required.");
     },
     async listByRequirementId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findLatestByRequirementId() {
       throw new Error("An authenticated database session is required.");
     },
   };

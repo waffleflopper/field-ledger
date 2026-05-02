@@ -16,7 +16,8 @@ export type KnownAuditAction =
   | "item.updated"
   | "location.created"
   | "requirement.completed"
-  | "requirement.created";
+  | "requirement.created"
+  | "requirement.updated";
 
 export type AuditAction = KnownAuditAction | (string & {});
 

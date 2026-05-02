@@ -127,6 +127,13 @@
       "when": 1777676139360,
       "tag": "0017_chief_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777681901917,
+      "tag": "0018_charming_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

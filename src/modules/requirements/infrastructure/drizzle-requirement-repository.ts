@@ -26,6 +26,7 @@ function toRequirementRecord(row: RequirementRow): RequirementRecord {
     accountId: row.accountId,
     itemId: row.itemId,
     name: row.name,
+    notes: row.notes,
     intervalType: row.intervalType as RequirementIntervalType,
     intervalValue: row.intervalValue,
     nextDueDate: row.nextDueDate,
@@ -105,6 +106,29 @@ function createRequirementRepository(
       );
 
       return row ? toRequirementRecord(row) : null;
+    },
+    async update(accountId, requirementId, input) {
+      const [updated] = await run((transaction) =>
+        transaction
+          .update(requirements)
+          .set({
+            name: input.name,
+            notes: input.notes,
+            intervalType: input.intervalType,
+            intervalValue: input.intervalValue,
+            nextDueDate: input.nextDueDate,
+            updatedAt: input.updatedAt,
+          })
+          .where(
+            and(
+              eq(requirements.accountId, accountId),
+              eq(requirements.id, requirementId),
+            ),
+          )
+          .returning(),
+      );
+
+      return updated ? toRequirementRecord(updated) : null;
     },
     async updateNextDueDate(accountId, requirementId, input) {
       const [updated] = await run((transaction) =>

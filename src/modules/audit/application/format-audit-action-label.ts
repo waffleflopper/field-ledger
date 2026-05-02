@@ -18,6 +18,7 @@ const auditActionLabels: Record<KnownAuditAction, string> = {
   "location.created": "Location created",
   "requirement.completed": "Requirement completed",
   "requirement.created": "Requirement created",
+  "requirement.updated": "Requirement updated",
   "system.initialized": "System initialized",
 };
 

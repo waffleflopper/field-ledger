@@ -26,6 +26,7 @@ function createRequirementRepository() {
       accountId: "account-1",
       itemId: "item-1",
       name: "Monthly function check",
+      notes: null,
       intervalType: "monthly",
       intervalValue: null,
       nextDueDate: "2026-05-15",

@@ -122,6 +122,7 @@ describe("requirementsRouter", () => {
       requirement: {
         itemId: itemOneId,
         name: "Monthly function check",
+        notes: null,
         intervalType: "monthly",
         nextDueDate: "2026-05-15",
       },
@@ -219,6 +220,7 @@ describe("requirementsRouter", () => {
         accountId: "account-1",
         itemId: itemOneId,
         name: "Monthly function check",
+        notes: null,
         intervalType: "monthly",
         intervalValue: null,
         nextDueDate: "2026-05-15",
@@ -258,6 +260,7 @@ describe("requirementsRouter", () => {
         accountId: "account-1",
         itemId: itemOneId,
         name: "Monthly function check",
+        notes: null,
         intervalType: "monthly",
         intervalValue: null,
         nextDueDate: "2026-05-15",
@@ -270,6 +273,7 @@ describe("requirementsRouter", () => {
         accountId: "account-1",
         itemId: itemTwoId,
         name: "Compass check",
+        notes: null,
         intervalType: "weekly",
         intervalValue: null,
         nextDueDate: "2026-05-08",
@@ -296,6 +300,7 @@ describe("requirementsRouter", () => {
         accountId: "account-1",
         itemId: itemOneId,
         name: "Monthly function check",
+        notes: null,
         intervalType: "monthly",
         intervalValue: null,
         nextDueDate: "2026-05-15",
@@ -350,6 +355,7 @@ describe("requirementsRouter", () => {
         accountId: "account-1",
         itemId: itemOneId,
         name: "Monthly function check",
+        notes: null,
         intervalType: "monthly",
         intervalValue: null,
         nextDueDate: "2026-05-15",
@@ -384,5 +390,66 @@ describe("requirementsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
+  });
+
+  it("updates requirement metadata through the typed API", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const requirementCompletionRepository =
+      new InMemoryRequirementCompletionRepository([
+        {
+          id: "completion-1",
+          accountId: "account-1",
+          requirementId: "8f545ead-2f8c-4391-91b4-60713df39b09",
+          completedOn: "2026-05-01",
+          notes: "Completed before edit.",
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const requirementRepository = new InMemoryRequirementRepository([
+      {
+        id: "8f545ead-2f8c-4391-91b4-60713df39b09",
+        accountId: "account-1",
+        itemId: itemOneId,
+        name: "Monthly function check",
+        notes: "Old notes",
+        intervalType: "monthly",
+        intervalValue: null,
+        nextDueDate: "2026-05-15",
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      auditRepository,
+      requirementCompletionRepository,
+      requirementRepository,
+    });
+
+    await expect(
+      caller.requirements.update({
+        requirementId: "8f545ead-2f8c-4391-91b4-60713df39b09",
+        name: "Quarterly function check",
+        notes: "Updated after layout change.",
+        intervalType: "quarterly",
+      }),
+    ).resolves.toMatchObject({
+      requirement: {
+        name: "Quarterly function check",
+        notes: "Updated after layout change.",
+        nextDueDate: "2026-08-01",
+      },
+      duplicateWarning: false,
+    });
+    await expect(
+      caller.requirements.listCompletionHistory({
+        requirementId: "8f545ead-2f8c-4391-91b4-60713df39b09",
+      }),
+    ).resolves.toHaveLength(1);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "requirement.updated",
+      },
+    ]);
   });
 });

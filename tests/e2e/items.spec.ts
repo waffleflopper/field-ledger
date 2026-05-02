@@ -124,6 +124,25 @@ test("users can create and see an item requirement from item detail", async ({
   await expect(page.getByText("Recent completions")).toBeVisible();
   await expect(page.getByText("Jan 15, 2026")).toBeVisible();
   await expect(page.getByText("PMCS annotated in binder.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit Monthly PMCS" }).click();
+  const editRequirementDialog = page.getByRole("dialog", {
+    name: "Edit requirement",
+  });
+  await editRequirementDialog.getByLabel("Name").fill("Quarterly radio PMCS");
+  await editRequirementDialog.getByLabel("Notes").fill("Check antenna kit.");
+  await editRequirementDialog.getByLabel("Interval").selectOption("quarterly");
+  await editRequirementDialog
+    .getByRole("button", { name: "Save changes" })
+    .click();
+
+  await expect(
+    page.getByRole("heading", { name: "Quarterly radio PMCS" }),
+  ).toBeVisible();
+  await expect(page.getByText("Check antenna kit.")).toBeVisible();
+  await expect(page.getByText("Quarterly", { exact: true })).toBeVisible();
+  await expect(page.getByText("Due Apr 15, 2026")).toBeVisible();
+  await expect(page.getByText("Jan 15, 2026")).toBeVisible();
 });
 
 test("archived item records appear only when deliberately included", async ({

@@ -6,6 +6,7 @@ export {
   toLocalDateOnly,
 } from "@/modules/requirements/application/date-only";
 export { createRequirement } from "@/modules/requirements/application/create-requirement";
+export { updateRequirement } from "@/modules/requirements/application/update-requirement";
 export { listRequirementCompletions } from "@/modules/requirements/application/list-requirement-completions";
 export { listRequirements } from "@/modules/requirements/application/list-requirements";
 export {
@@ -29,4 +30,5 @@ export {
   type RequirementIntervalType,
   type RequirementRecord,
   type RequirementStatus,
+  type UpdateRequirementResult,
 } from "@/modules/requirements/application/types";
