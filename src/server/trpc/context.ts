@@ -14,6 +14,11 @@ import {
 } from "@/modules/contacts";
 import { createDrizzleContactRepository } from "@/modules/contacts/infrastructure/drizzle-contact-repository";
 import {
+  createUnavailableDocumentRepository,
+  type DocumentRepository,
+} from "@/modules/documents";
+import { createDrizzleDocumentRepository } from "@/modules/documents/infrastructure/drizzle-document-repository";
+import {
   createUnavailableHandReceiptRepository,
   type HandReceiptRepository,
 } from "@/modules/hand-receipts";
@@ -44,6 +49,11 @@ import {
   type AppUnitOfWork,
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
+import {
+  createStoragePortFromEnvironment,
+  createUnavailableStoragePort,
+  type StoragePort,
+} from "@/modules/provider-boundaries/storage";
 
 export async function createTRPCContext(): Promise<{
   session: AppSession | null;
@@ -51,12 +61,14 @@ export async function createTRPCContext(): Promise<{
   accountRepository: ReturnType<typeof createDrizzleAccountRepository>;
   auditRepository: AuditRepository;
   contactRepository: ContactRepository;
+  documentRepository?: DocumentRepository;
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   locationRepository: LocationRepository;
   requirementCompletionRepository?: RequirementCompletionRepository;
   requirementRepository: RequirementRepository;
   unitOfWork: AppUnitOfWork;
+  storagePort?: StoragePort;
 }> {
   const db = getDrizzleClient();
   const accountRepository = createDrizzleAccountRepository(db);
@@ -69,6 +81,7 @@ export async function createTRPCContext(): Promise<{
       accountRepository,
       auditRepository: createUnavailableAuditRepository(),
       contactRepository: createUnavailableContactRepository(),
+      documentRepository: createUnavailableDocumentRepository(),
       handReceiptRepository: createUnavailableHandReceiptRepository(),
       itemRepository: createUnavailableItemRepository(),
       locationRepository: createUnavailableLocationRepository(),
@@ -76,6 +89,7 @@ export async function createTRPCContext(): Promise<{
         createUnavailableRequirementCompletionRepository(),
       requirementRepository: createUnavailableRequirementRepository(),
       unitOfWork: createUnavailableAppUnitOfWork(),
+      storagePort: createUnavailableStoragePort(),
     };
   }
 
@@ -92,6 +106,9 @@ export async function createTRPCContext(): Promise<{
       authSubject: session.userId,
     }),
     contactRepository: createDrizzleContactRepository(db, {
+      authSubject: session.userId,
+    }),
+    documentRepository: createDrizzleDocumentRepository(db, {
       authSubject: session.userId,
     }),
     handReceiptRepository: createDrizzleHandReceiptRepository(db, {
@@ -113,6 +130,7 @@ export async function createTRPCContext(): Promise<{
     unitOfWork: createDrizzleAppUnitOfWork(db, {
       authSubject: session.userId,
     }),
+    storagePort: createStoragePortFromEnvironment(),
   };
 }
 

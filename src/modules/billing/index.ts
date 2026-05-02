@@ -5,6 +5,7 @@ export {
   canEditRequirement,
   canMoveItem,
   canRestoreHandReceipt,
+  canUploadDocument,
   getActiveHandReceiptLimit,
   isAccountReadOnly,
 } from "@/modules/billing/application/capabilities";

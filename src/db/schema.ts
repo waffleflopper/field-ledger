@@ -221,6 +221,7 @@ export const handReceipts = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("hand_receipts_id_account_id_key").on(table.id, table.accountId),
     index("hand_receipts_account_id_status_created_at_idx").on(
       table.accountId,
       table.status,
@@ -330,6 +331,53 @@ export const items = pgTable(
     index("items_account_id_location_id_idx").on(
       table.accountId,
       table.locationId,
+    ),
+  ],
+).enableRLS();
+
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    handReceiptId: uuid("hand_receipt_id").notNull(),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storagePath: text("storage_path").notNull(),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.handReceiptId, table.accountId],
+      foreignColumns: [handReceipts.id, handReceipts.accountId],
+      name: "documents_hand_receipt_account_fk",
+    }),
+    index("documents_account_id_created_at_idx").on(
+      table.accountId,
+      table.createdAt.desc(),
+    ),
+    index("documents_account_id_hand_receipt_id_idx").on(
+      table.accountId,
+      table.handReceiptId,
+    ),
+    uniqueIndex("documents_account_id_storage_path_unique_idx").on(
+      table.accountId,
+      table.storagePath,
+    ),
+    check(
+      "documents_storage_path_matches_account_and_id",
+      sql`${table.storagePath} = ${table.accountId}::text || '/' || ${table.id}::text`,
     ),
   ],
 ).enableRLS();

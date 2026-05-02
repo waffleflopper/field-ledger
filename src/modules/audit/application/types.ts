@@ -2,6 +2,7 @@ export type KnownAuditAction =
   | "system.initialized"
   | "account.onboarding_completed"
   | "contact.created"
+  | "document.uploaded"
   | "hand_receipt.created"
   | "hand_receipt.updated"
   | "hand_receipt.archived"
