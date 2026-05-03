@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
-import { createAssignment } from "@/modules/assignments-2062";
+import {
+  Active2062CoverageConflictError,
+  createAssignment,
+} from "@/modules/assignments-2062";
 import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
 import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
@@ -171,7 +174,39 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("Item already has active 2062 coverage.");
+    ).rejects.toBeInstanceOf(Active2062CoverageConflictError);
+  });
+
+  it("fails if manual signed-to conversion cannot be cleared", async () => {
+    const repositories = createRepositories();
+    const item = repositories.itemRepository.items[0];
+
+    if (!item) {
+      throw new Error("Missing test item.");
+    }
+
+    repositories.itemRepository.items[0] = {
+      ...item,
+      signedToContactId: "contact-1",
+      signedToContactName: "SPC Rivera",
+    };
+    repositories.itemRepository.update = async () => null;
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "item-1",
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+        createAssignmentId: () => "assignment-1",
+        createAssignmentItemLinkId: () => "link-1",
+      }),
+    ).rejects.toThrow("Item signed-to state was not cleared.");
   });
 
   it("creates a lightweight contact inline when no existing contact is selected", async () => {

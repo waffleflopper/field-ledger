@@ -95,6 +95,24 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
       return null;
     }
 
+    if (status === "active") {
+      const existingActive = this.links.find(
+        (candidate) =>
+          candidate.id !== linkId &&
+          candidate.accountId === accountId &&
+          candidate.itemId === existing.itemId &&
+          candidate.status === "active",
+      );
+
+      if (existingActive) {
+        const error = new Error("Active assignment item link already exists.");
+        Object.assign(error, {
+          constraint: "assignment_item_links_one_active_item_idx",
+        });
+        throw error;
+      }
+    }
+
     const updated: AssignmentItemLinkRecord = {
       ...existing,
       status,

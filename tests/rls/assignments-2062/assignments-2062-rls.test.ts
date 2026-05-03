@@ -191,43 +191,39 @@ describe("assignments-2062 RLS", () => {
   });
 
   it("allows an owner to insert their own assignment and item link", async () => {
-    await expect(
-      asAuthenticatedOwner(
-        ownerOneId,
-        async (transaction) =>
-          transaction`insert into assignments (
-            id,
-            account_id,
-            hand_receipt_id,
-            contact_id,
-            document_id
-          ) values (
-            ${ownerOneInsertAssignmentId},
-            ${ownerOneAccountId},
-            ${ownerOneHandReceiptId},
-            ${ownerOneContactId},
-            ${ownerOneDocumentId}
-          )`,
-      ),
-    ).resolves.not.toThrow();
+    await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`insert into assignments (
+          id,
+          account_id,
+          hand_receipt_id,
+          contact_id,
+          document_id
+        ) values (
+          ${ownerOneInsertAssignmentId},
+          ${ownerOneAccountId},
+          ${ownerOneHandReceiptId},
+          ${ownerOneContactId},
+          ${ownerOneDocumentId}
+        )`,
+    );
 
-    await expect(
-      asAuthenticatedOwner(
-        ownerOneId,
-        async (transaction) =>
-          transaction`insert into assignment_item_links (
-            id,
-            account_id,
-            assignment_id,
-            item_id
-          ) values (
-            ${ownerOneInsertLinkId},
-            ${ownerOneAccountId},
-            ${ownerOneInsertAssignmentId},
-            ${ownerOneInsertItemId}
-          )`,
-      ),
-    ).resolves.not.toThrow();
+    await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`insert into assignment_item_links (
+          id,
+          account_id,
+          assignment_id,
+          item_id
+        ) values (
+          ${ownerOneInsertLinkId},
+          ${ownerOneAccountId},
+          ${ownerOneInsertAssignmentId},
+          ${ownerOneInsertItemId}
+        )`,
+    );
   });
 
   it("prevents an owner from inserting assignment rows for another account", async () => {
@@ -292,5 +288,15 @@ describe("assignments-2062 RLS", () => {
 
     expect(assignment?.status).toBe("active");
     expect(link?.status).toBe("active");
+  });
+
+  it("prevents assignment item links from storing inconsistent closed state", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`update assignment_item_links set closed_at = now() where id = ${ownerOneLinkId}`,
+      ),
+    ).rejects.toThrow();
   });
 });

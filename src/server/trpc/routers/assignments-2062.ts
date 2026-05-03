@@ -27,7 +27,10 @@ const createAssignmentInput = z
     path: ["contactId"],
   });
 
-function toTRPCError(error: unknown): never {
+function toTRPCError(
+  error: unknown,
+  context: { accountId: string; operation: string; userId: string },
+): never {
   const message =
     error instanceof Error ? error.message : "Unable to create 2062.";
 
@@ -55,14 +58,25 @@ function toTRPCError(error: unknown): never {
     throw new TRPCError({ code: "BAD_REQUEST", message });
   }
 
+  console.error("Unexpected assignments 2062 tRPC error.", {
+    accountId: context.accountId,
+    operation: context.operation,
+    userId: context.userId,
+    error,
+  });
   throw new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
-    message,
+    message: "Unable to create 2062.",
   });
 }
 
 async function runInUnitOfWork<T>(
-  ctx: { unitOfWork: AppUnitOfWork },
+  ctx: {
+    account: { id: string };
+    session: { userId: string };
+    unitOfWork: AppUnitOfWork;
+  },
+  operationName: string,
   operation: (repositories: AppUnitOfWorkRepositories) => Promise<T>,
 ): Promise<T> {
   try {
@@ -72,7 +86,11 @@ async function runInUnitOfWork<T>(
       throw error;
     }
 
-    toTRPCError(error);
+    toTRPCError(error, {
+      accountId: ctx.account.id,
+      operation: operationName,
+      userId: ctx.session.userId,
+    });
   }
 }
 
@@ -80,7 +98,7 @@ export const assignments2062Router = createTRPCRouter({
   create: protectedProcedure
     .input(createAssignmentInput)
     .mutation(({ ctx, input }) =>
-      runInUnitOfWork(ctx, (repositories) =>
+      runInUnitOfWork(ctx, "assignments2062.create", (repositories) =>
         createAssignment({
           account: ctx.account,
           actorId: ctx.session.userId,

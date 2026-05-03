@@ -192,14 +192,6 @@ function DetailSummary({
                   <ArrowRightLeft aria-hidden="true" className="size-4" />
                   Move
                 </Button>
-                {!item.active2062Coverage ? (
-                  <Button asChild size="sm" type="button" variant="outline">
-                    <Link href={`/app/items/${item.id}/upload-2062`}>
-                      <FileText aria-hidden="true" className="size-4" />
-                      Upload 2062
-                    </Link>
-                  </Button>
-                ) : null}
                 <Button
                   aria-label="Archive item"
                   onClick={onArchive}
@@ -629,10 +621,10 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
               : "Signed-to changes are unavailable for archived items."
           }
           isPending={signedToMutationPending}
-          onAssignExisting={(contactId) =>
+          onAssignExisting={(contact) =>
             assignSignedToMutation.mutate({
               id: item.id,
-              contactId,
+              contactId: contact.id,
             })
           }
           onAssignNew={(contactDisplayName) =>

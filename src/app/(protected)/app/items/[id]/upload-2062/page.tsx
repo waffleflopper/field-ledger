@@ -6,6 +6,27 @@ import { Upload2062Form } from "@/modules/assignments-2062/ui/upload-2062-form";
 import { getItem } from "@/modules/items";
 import { createTRPCContext } from "@/server/trpc/context";
 
+function ItemUnavailable() {
+  return (
+    <section className="space-y-4">
+      <Button asChild variant="outline">
+        <Link href="/app/items">
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Items
+        </Link>
+      </Button>
+      <div className="rounded-lg border bg-card p-4">
+        <h1 className="text-xl font-semibold tracking-normal">
+          Item not found
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          This item is unavailable or outside the current account.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export default async function Upload2062Page({
   params,
 }: {
@@ -25,27 +46,14 @@ export default async function Upload2062Page({
   });
 
   if (!item) {
-    return (
-      <section className="space-y-4">
-        <Button asChild variant="outline">
-          <Link href="/app/items">
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Items
-          </Link>
-        </Button>
-        <div className="rounded-lg border bg-card p-4">
-          <h1 className="text-xl font-semibold tracking-normal">
-            Item not found
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            This item is unavailable or outside the current account.
-          </p>
-        </div>
-      </section>
-    );
+    return <ItemUnavailable />;
   }
 
   const isReadOnly = ctx.account.accessState === "paused_read_only";
+
+  if (item.status !== "active" || item.active2062Coverage) {
+    return <ItemUnavailable />;
+  }
 
   return (
     <section className="space-y-5">

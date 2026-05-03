@@ -3,13 +3,14 @@ version = 1
 name = "field-ledger"
 
 [setup]
-script = ""
+script = '''
+pnpm install --frozen-lockfile
+'''
 
 [[actions]]
 name = "Run"
 icon = "run"
 command = '''
-pnpm install
 pnpm run dev
 '''
 
@@ -18,5 +19,5 @@ name = "Main & Pull"
 icon = "tool"
 command = '''
 git checkout main
-git pull
+git pull --ff-only
 '''

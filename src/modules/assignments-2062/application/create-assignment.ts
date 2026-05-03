@@ -140,10 +140,14 @@ export async function createAssignment({
   }
 
   if (convertedFromManualSignedTo) {
-    await itemRepository.update(account.id, item.id, {
+    const updatedItem = await itemRepository.update(account.id, item.id, {
       signedToContactId: null,
       updatedAt: now,
     });
+
+    if (!updatedItem) {
+      throw new Error("Item signed-to state was not cleared.");
+    }
   }
 
   await recordAuditEvent({

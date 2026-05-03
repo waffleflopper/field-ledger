@@ -482,6 +482,14 @@ export const assignmentItemLinks = pgTable(
       table.itemId,
       table.status,
     ),
+    check(
+      "assignment_item_links_status_closed_at_chk",
+      sql`(
+        (${table.status} = 'active' and ${table.closedAt} is null)
+        or
+        (${table.status} = 'closed' and ${table.closedAt} is not null)
+      )`,
+    ),
   ],
 ).enableRLS();
 

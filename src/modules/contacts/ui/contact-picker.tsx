@@ -11,7 +11,7 @@ type ContactPickerProps = {
   disabled?: boolean;
   disabledReason?: string | null;
   currentContactName?: string | null;
-  onAssignExisting: (contactId: string) => void;
+  onAssignExisting: (contact: { id: string; displayName: string }) => void;
   onAssignNew: (displayName: string) => void;
   onClear: () => void;
   isPending?: boolean;
@@ -115,7 +115,10 @@ export function ContactPicker({
                 disabled={isPending}
                 key={contact.id}
                 onClick={() => {
-                  onAssignExisting(contact.id);
+                  onAssignExisting({
+                    id: contact.id,
+                    displayName: contact.displayName,
+                  });
                   setQuery("");
                 }}
                 type="button"

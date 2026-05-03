@@ -43,6 +43,9 @@ export class InMemoryAssignmentRepository implements AssignmentRepository {
       .filter(
         (assignment) =>
           options.status === undefined || assignment.status === options.status,
+      )
+      .sort(
+        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
       );
   }
 

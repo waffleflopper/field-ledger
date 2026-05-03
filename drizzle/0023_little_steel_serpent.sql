@@ -7,7 +7,8 @@ CREATE TABLE "assignment_item_links" (
 	"status" "assignment_status" DEFAULT 'active' NOT NULL,
 	"closed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "assignment_item_links_status_closed_at_chk" CHECK (("status" = 'active' AND "closed_at" IS NULL) OR ("status" = 'closed' AND "closed_at" IS NOT NULL))
 );
 --> statement-breakpoint
 ALTER TABLE "assignment_item_links" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

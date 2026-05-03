@@ -23,6 +23,9 @@ export function Upload2062Form({
   const [selectedContactId, setSelectedContactId] = useState(
     item.signedToContactId ?? "",
   );
+  const [selectedContactDisplayName, setSelectedContactDisplayName] = useState(
+    item.signedToContactName ?? "",
+  );
   const [newContactDisplayName, setNewContactDisplayName] = useState("");
   const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,9 +53,9 @@ export function Upload2062Form({
     }
 
     return selectedContactId
-      ? (item.signedToContactName ?? "Selected contact")
+      ? selectedContactDisplayName || "Selected contact"
       : null;
-  }, [item.signedToContactName, newContactDisplayName, selectedContactId]);
+  }, [newContactDisplayName, selectedContactDisplayName, selectedContactId]);
   const documents = documentsQuery.data ?? [];
   const canSubmit =
     item.status === "active" &&
@@ -133,16 +136,19 @@ export function Upload2062Form({
                 : "2062 creation is unavailable for archived items."
             }
             isPending={createAssignment.isPending}
-            onAssignExisting={(contactId) => {
-              setSelectedContactId(contactId);
+            onAssignExisting={(contact) => {
+              setSelectedContactId(contact.id);
+              setSelectedContactDisplayName(contact.displayName);
               setNewContactDisplayName("");
             }}
             onAssignNew={(displayName) => {
               setSelectedContactId("");
+              setSelectedContactDisplayName("");
               setNewContactDisplayName(displayName);
             }}
             onClear={() => {
               setSelectedContactId("");
+              setSelectedContactDisplayName("");
               setNewContactDisplayName("");
             }}
           />

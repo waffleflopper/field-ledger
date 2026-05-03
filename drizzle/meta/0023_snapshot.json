@@ -282,7 +282,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "assignment_item_links_status_closed_at_chk": {
+          "name": "assignment_item_links_status_closed_at_chk",
+          "value": "(\n        (\"assignment_item_links\".\"status\" = 'active' and \"assignment_item_links\".\"closed_at\" is null)\n        or\n        (\"assignment_item_links\".\"status\" = 'closed' and \"assignment_item_links\".\"closed_at\" is not null)\n      )"
+        }
+      },
       "isRLSEnabled": true
     },
     "public.assignments": {
