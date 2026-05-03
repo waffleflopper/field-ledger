@@ -109,6 +109,7 @@ function createCaller(account = createAccount()) {
   return {
     assignmentItemLinkRepository,
     assignmentRepository,
+    contactRepository,
     auditRepository,
     caller: appRouter.createCaller({
       session: { userId: account.userId, email: "owner@example.com" },
@@ -164,6 +165,63 @@ describe("assignments2062Router", () => {
         documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
       }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("creates a new lightweight contact inline", async () => {
+    const { caller, contactRepository } = createCaller();
+
+    const result = await caller.assignments2062.create({
+      itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      contactDisplayName: "SGT Morgan",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+
+    expect(result.assignment.contactName).toBe("SGT Morgan");
+    expect(contactRepository.contacts).toContainEqual(
+      expect.objectContaining({
+        accountId: "account-1",
+        displayName: "SGT Morgan",
+      }),
+    );
+  });
+
+  it("validates that a contact selection is present", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.create({
+        itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("maps missing records to NOT_FOUND", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.create({
+        itemId: "99999999-9999-4999-9999-999999999999",
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await expect(
+      caller.assignments2062.create({
+        itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        contactId: "99999999-9999-4999-9999-999999999999",
+        documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    await expect(
+      caller.assignments2062.create({
+        itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "99999999-9999-4999-9999-999999999999",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("maps read-only accounts to FORBIDDEN", async () => {

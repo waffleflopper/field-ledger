@@ -145,10 +145,8 @@ Rules:
 - Search results show hand receipt context and the strongest available
   identifier matches so users can confirm the correct property record before
   opening detail.
-- Item with active 2062 cannot move to another hand receipt until the active
-  2062 link is closed. Until formal 2062 assignment enforcement lands, item
-  movement keeps a dedicated application-service hook for this future block but
-  does not implement assignments, documents, active links, or enforcement.
+- Item with active 2062 coverage cannot move to another hand receipt until the
+  active 2062 link is closed.
 - When item requirements exist, archived items should suppress day-to-day
   requirement reminders while remaining available for historical review.
 - Future 2062 work should define whether archived items with active 2062

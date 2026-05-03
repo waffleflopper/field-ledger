@@ -24,6 +24,7 @@ const ownerOneLinkId = "092b4804-6c02-4968-a78a-4667a298e37c";
 const ownerTwoLinkId = "8310d384-4e92-4e12-ac71-e25353fa36b5";
 const ownerOneInsertAssignmentId = "15d0422a-9912-45cf-927e-6a49df7a7105";
 const ownerOneInsertLinkId = "5f483d29-f0c3-4867-bd2e-47b67e16fb5b";
+const ownerTwoBlockedLinkId = "1c5e5430-2e21-45b2-bbd9-b58113b7c4b8";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -247,5 +248,49 @@ describe("assignments-2062 RLS", () => {
           )`,
       ),
     ).rejects.toThrow();
+  });
+
+  it("prevents an owner from inserting item links for another account", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into assignment_item_links (
+            id,
+            account_id,
+            assignment_id,
+            item_id
+          ) values (
+            ${ownerTwoBlockedLinkId},
+            ${ownerTwoAccountId},
+            ${ownerTwoAssignmentId},
+            ${ownerTwoItemId}
+          )`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("prevents an owner from updating another account's assignments and links", async () => {
+    const assignmentRows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update assignments set status = 'closed' where id = ${ownerTwoAssignmentId} returning id`,
+    );
+    const linkRows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`update assignment_item_links set status = 'closed' where id = ${ownerTwoLinkId} returning id`,
+    );
+
+    expect(assignmentRows).toEqual([]);
+    expect(linkRows).toEqual([]);
+
+    const [assignment] =
+      await sql`select status from assignments where id = ${ownerTwoAssignmentId}`;
+    const [link] =
+      await sql`select status from assignment_item_links where id = ${ownerTwoLinkId}`;
+
+    expect(assignment?.status).toBe("active");
+    expect(link?.status).toBe("active");
   });
 });

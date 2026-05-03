@@ -174,6 +174,93 @@ describe("createAssignment", () => {
     ).rejects.toThrow("Item already has active 2062 coverage.");
   });
 
+  it("creates a lightweight contact inline when no existing contact is selected", async () => {
+    const repositories = createRepositories();
+
+    const result = await createAssignment({
+      account: createAccount(),
+      actorId: "owner-1",
+      input: {
+        itemId: "item-1",
+        contactDisplayName: "SGT Morgan",
+        documentId: "document-1",
+      },
+      ...repositories,
+      now,
+      createAssignmentId: () => "assignment-1",
+      createAssignmentItemLinkId: () => "link-1",
+    });
+
+    expect(result.assignment.contactName).toBe("SGT Morgan");
+    expect(repositories.contactRepository.contacts).toContainEqual(
+      expect.objectContaining({
+        accountId: "account-1",
+        displayName: "SGT Morgan",
+      }),
+    );
+    expect(
+      repositories.auditRepository.events.map((event) => event.action),
+    ).toEqual([
+      "contact.created",
+      "assignment.created",
+      "assignment_item_link.created",
+    ]);
+  });
+
+  it("blocks creation when the item does not exist", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "missing-item",
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Item was not found.");
+  });
+
+  it("blocks creation when the contact does not exist", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "item-1",
+          contactId: "missing-contact",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Contact was not found.");
+  });
+
+  it("blocks creation when the document does not exist", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "item-1",
+          contactId: "contact-1",
+          documentId: "missing-document",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Document was not found.");
+  });
+
   it("blocks read-only accounts before creating assignment records", async () => {
     const repositories = createRepositories();
 
