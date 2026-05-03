@@ -3,6 +3,8 @@ import type {
   AppUnitOfWorkRepositories,
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { InMemoryAccountRepository } from "./account-repository";
+import { InMemoryAssignmentItemLinkRepository } from "./assignment-item-link-repository";
+import { InMemoryAssignmentRepository } from "./assignment-repository";
 import { InMemoryAuditRepository } from "./audit-repository";
 import { InMemoryContactRepository } from "./contact-repository";
 import { InMemoryDocumentRepository } from "./document-repository";
@@ -17,6 +19,11 @@ export function createInMemoryAppUnitOfWork(
 ): AppUnitOfWork {
   const handReceiptRepository =
     repositories.handReceiptRepository ?? new InMemoryHandReceiptRepository();
+  const assignmentItemLinkRepository =
+    repositories.assignmentItemLinkRepository ??
+    new InMemoryAssignmentItemLinkRepository();
+  const assignmentRepository =
+    repositories.assignmentRepository ?? new InMemoryAssignmentRepository();
   const auditRepository =
     repositories.auditRepository ?? new InMemoryAuditRepository();
   const contactRepository =
@@ -40,6 +47,23 @@ export function createInMemoryAppUnitOfWork(
       const inMemoryHandReceiptRepository =
         handReceiptRepository instanceof InMemoryHandReceiptRepository
           ? handReceiptRepository
+          : null;
+      const inMemoryAssignmentItemLinkRepository =
+        assignmentItemLinkRepository instanceof
+        InMemoryAssignmentItemLinkRepository
+          ? assignmentItemLinkRepository
+          : null;
+      const assignmentItemLinkSnapshot =
+        inMemoryAssignmentItemLinkRepository !== null
+          ? [...inMemoryAssignmentItemLinkRepository.links]
+          : null;
+      const inMemoryAssignmentRepository =
+        assignmentRepository instanceof InMemoryAssignmentRepository
+          ? assignmentRepository
+          : null;
+      const assignmentSnapshot =
+        inMemoryAssignmentRepository !== null
+          ? [...inMemoryAssignmentRepository.assignments]
           : null;
       const inMemoryAuditRepository =
         auditRepository instanceof InMemoryAuditRepository
@@ -114,6 +138,8 @@ export function createInMemoryAppUnitOfWork(
       try {
         return await operation({
           accountRepository,
+          assignmentItemLinkRepository,
+          assignmentRepository,
           auditRepository,
           contactRepository,
           documentRepository,
@@ -126,6 +152,18 @@ export function createInMemoryAppUnitOfWork(
       } catch (error) {
         if (inMemoryHandReceiptRepository && handReceiptSnapshot) {
           inMemoryHandReceiptRepository.handReceipts = handReceiptSnapshot;
+        }
+
+        if (
+          inMemoryAssignmentItemLinkRepository &&
+          assignmentItemLinkSnapshot
+        ) {
+          inMemoryAssignmentItemLinkRepository.links =
+            assignmentItemLinkSnapshot;
+        }
+
+        if (inMemoryAssignmentRepository && assignmentSnapshot) {
+          inMemoryAssignmentRepository.assignments = assignmentSnapshot;
         }
 
         if (inMemoryAuditRepository && auditSnapshot) {

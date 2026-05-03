@@ -4,6 +4,14 @@ import {
 } from "@/modules/accounts/application/ensure-account";
 import { createDrizzleAccountRepository } from "@/modules/accounts/infrastructure/drizzle-account-repository";
 import {
+  createUnavailableAssignmentItemLinkRepository,
+  createUnavailableAssignmentRepository,
+  type AssignmentItemLinkRepository,
+  type AssignmentRepository,
+} from "@/modules/assignments-2062";
+import { createDrizzleAssignmentItemLinkRepository } from "@/modules/assignments-2062/infrastructure/drizzle-assignment-item-link-repository";
+import { createDrizzleAssignmentRepository } from "@/modules/assignments-2062/infrastructure/drizzle-assignment-repository";
+import {
   createUnavailableAuditRepository,
   type AuditRepository,
 } from "@/modules/audit";
@@ -59,6 +67,8 @@ export async function createTRPCContext(): Promise<{
   session: AppSession | null;
   account: AccountRecord | null;
   accountRepository: ReturnType<typeof createDrizzleAccountRepository>;
+  assignmentItemLinkRepository?: AssignmentItemLinkRepository;
+  assignmentRepository?: AssignmentRepository;
   auditRepository: AuditRepository;
   contactRepository: ContactRepository;
   documentRepository?: DocumentRepository;
@@ -79,6 +89,9 @@ export async function createTRPCContext(): Promise<{
       session: null,
       account: null,
       accountRepository,
+      assignmentItemLinkRepository:
+        createUnavailableAssignmentItemLinkRepository(),
+      assignmentRepository: createUnavailableAssignmentRepository(),
       auditRepository: createUnavailableAuditRepository(),
       contactRepository: createUnavailableContactRepository(),
       documentRepository: createUnavailableDocumentRepository(),
@@ -102,6 +115,15 @@ export async function createTRPCContext(): Promise<{
     session,
     account,
     accountRepository,
+    assignmentItemLinkRepository: createDrizzleAssignmentItemLinkRepository(
+      db,
+      {
+        authSubject: session.userId,
+      },
+    ),
+    assignmentRepository: createDrizzleAssignmentRepository(db, {
+      authSubject: session.userId,
+    }),
     auditRepository: createDrizzleAuditRepository(db, {
       authSubject: session.userId,
     }),

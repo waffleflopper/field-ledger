@@ -47,6 +47,11 @@ export const handReceiptStatusEnum = pgEnum("hand_receipt_status", [
 
 export const itemStatusEnum = pgEnum("item_status", ["active", "archived"]);
 
+export const assignmentStatusEnum = pgEnum("assignment_status", [
+  "active",
+  "closed",
+]);
+
 export const requirementIntervalTypeEnum = pgEnum("requirement_interval_type", [
   "weekly",
   "monthly",
@@ -246,6 +251,7 @@ export const contacts = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("contacts_id_account_id_key").on(table.id, table.accountId),
     index("contacts_account_id_display_name_idx").on(
       table.accountId,
       table.displayName,
@@ -309,6 +315,7 @@ export const items = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("items_id_account_id_key").on(table.id, table.accountId),
     index("items_account_id_status_created_at_idx").on(
       table.accountId,
       table.status,
@@ -358,6 +365,7 @@ export const documents = pgTable(
       .defaultNow(),
   },
   (table) => [
+    unique("documents_id_account_id_key").on(table.id, table.accountId),
     foreignKey({
       columns: [table.handReceiptId, table.accountId],
       foreignColumns: [handReceipts.id, handReceipts.accountId],
@@ -378,6 +386,101 @@ export const documents = pgTable(
     check(
       "documents_storage_path_matches_account_and_id",
       sql`${table.storagePath} = ${table.accountId}::text || '/' || ${table.id}::text`,
+    ),
+  ],
+).enableRLS();
+
+export const assignments = pgTable(
+  "assignments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    handReceiptId: uuid("hand_receipt_id").notNull(),
+    contactId: uuid("contact_id").notNull(),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => documents.id),
+    status: assignmentStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("assignments_id_account_id_key").on(table.id, table.accountId),
+    foreignKey({
+      columns: [table.contactId, table.accountId],
+      foreignColumns: [contacts.id, contacts.accountId],
+      name: "assignments_contact_account_fk",
+    }),
+    foreignKey({
+      columns: [table.handReceiptId, table.accountId],
+      foreignColumns: [handReceipts.id, handReceipts.accountId],
+      name: "assignments_hand_receipt_account_fk",
+    }),
+    foreignKey({
+      columns: [table.documentId, table.accountId],
+      foreignColumns: [documents.id, documents.accountId],
+      name: "assignments_document_account_fk",
+    }),
+    index("assignments_account_id_status_created_at_idx").on(
+      table.accountId,
+      table.status,
+      table.createdAt.desc(),
+    ),
+    index("assignments_hand_receipt_id_status_idx").on(
+      table.handReceiptId,
+      table.status,
+    ),
+  ],
+).enableRLS();
+
+export const assignmentItemLinks = pgTable(
+  "assignment_item_links",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    assignmentId: uuid("assignment_id").notNull(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id),
+    status: assignmentStatusEnum("status").notNull().default("active"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.assignmentId, table.accountId],
+      foreignColumns: [assignments.id, assignments.accountId],
+      name: "assignment_item_links_assignment_account_fk",
+    }),
+    foreignKey({
+      columns: [table.itemId, table.accountId],
+      foreignColumns: [items.id, items.accountId],
+      name: "assignment_item_links_item_account_fk",
+    }),
+    uniqueIndex("assignment_item_links_one_active_item_idx")
+      .on(table.itemId)
+      .where(sql`${table.status} = 'active'`),
+    index("assignment_item_links_assignment_id_status_idx").on(
+      table.assignmentId,
+      table.status,
+    ),
+    index("assignment_item_links_account_id_item_id_status_idx").on(
+      table.accountId,
+      table.itemId,
+      table.status,
     ),
   ],
 ).enableRLS();

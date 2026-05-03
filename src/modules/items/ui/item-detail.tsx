@@ -77,24 +77,69 @@ function MetadataRow({
   );
 }
 
-function FutureSection({
-  icon: Icon,
-  label,
-  text,
+function Active2062Section({
+  isReadOnly,
+  item,
 }: {
-  icon: typeof FileText;
-  label: string;
-  text: string;
+  isReadOnly: boolean;
+  item: ItemRecord;
 }) {
+  const canUpload = item.status === "active" && !item.active2062Coverage;
+
   return (
     <section className="rounded-lg border bg-card p-4">
       <div className="flex items-start gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-          <Icon aria-hidden="true" className="size-4" />
+          <FileText aria-hidden="true" className="size-4" />
         </span>
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-sm font-semibold tracking-normal">{label}</h2>
-          <p className="text-sm leading-6 text-muted-foreground">{text}</p>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold tracking-normal">
+              Active 2062s
+            </h2>
+            {item.active2062Coverage ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {item.active2062Coverage.contactName}
+                  </p>
+                  <span className="rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">
+                    DA Form 2062
+                  </span>
+                </div>
+                <p className="break-words text-sm text-muted-foreground">
+                  {item.active2062Coverage.documentFilename}
+                </p>
+              </div>
+            ) : item.signedToContactName ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Manual signed-to state
+                  </p>
+                  <span className="rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">
+                    Informal
+                  </span>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Manual signed-to state can be converted by uploading a formal
+                  2062.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm leading-6 text-muted-foreground">
+                No formal 2062 coverage is active for this item.
+              </p>
+            )}
+          </div>
+          {canUpload && !isReadOnly ? (
+            <Button asChild size="sm">
+              <Link href={`/app/items/${item.id}/upload-2062`}>
+                <FileText aria-hidden="true" className="size-4" />
+                Upload 2062
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </section>
@@ -147,6 +192,14 @@ function DetailSummary({
                   <ArrowRightLeft aria-hidden="true" className="size-4" />
                   Move
                 </Button>
+                {!item.active2062Coverage ? (
+                  <Button asChild size="sm" type="button" variant="outline">
+                    <Link href={`/app/items/${item.id}/upload-2062`}>
+                      <FileText aria-hidden="true" className="size-4" />
+                      Upload 2062
+                    </Link>
+                  </Button>
+                ) : null}
                 <Button
                   aria-label="Archive item"
                   onClick={onArchive}
@@ -566,33 +619,35 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         />
       )}
 
-      <ContactPicker
-        currentContactName={item.signedToContactName ?? null}
-        disabled={isReadOnly || item.status !== "active"}
-        disabledReason={
-          isReadOnly
-            ? "Signed-to changes are paused while this account is read-only."
-            : "Signed-to changes are unavailable for archived items."
-        }
-        isPending={signedToMutationPending}
-        onAssignExisting={(contactId) =>
-          assignSignedToMutation.mutate({
-            id: item.id,
-            contactId,
-          })
-        }
-        onAssignNew={(contactDisplayName) =>
-          assignSignedToWithNewContactMutation.mutate({
-            id: item.id,
-            contactDisplayName,
-          })
-        }
-        onClear={() =>
-          clearSignedToMutation.mutate({
-            id: item.id,
-          })
-        }
-      />
+      {item.active2062Coverage ? null : (
+        <ContactPicker
+          currentContactName={item.signedToContactName ?? null}
+          disabled={isReadOnly || item.status !== "active"}
+          disabledReason={
+            isReadOnly
+              ? "Signed-to changes are paused while this account is read-only."
+              : "Signed-to changes are unavailable for archived items."
+          }
+          isPending={signedToMutationPending}
+          onAssignExisting={(contactId) =>
+            assignSignedToMutation.mutate({
+              id: item.id,
+              contactId,
+            })
+          }
+          onAssignNew={(contactDisplayName) =>
+            assignSignedToWithNewContactMutation.mutate({
+              id: item.id,
+              contactDisplayName,
+            })
+          }
+          onClear={() =>
+            clearSignedToMutation.mutate({
+              id: item.id,
+            })
+          }
+        />
+      )}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <RequirementsPanel
@@ -600,11 +655,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
           isReadOnly={isReadOnly}
           itemId={item.id}
         />
-        <FutureSection
-          icon={FileText}
-          label="Active 2062s"
-          text="Formal 2062 assignment coverage will appear here when the document workflow lands."
-        />
+        <Active2062Section isReadOnly={isReadOnly} item={item} />
       </div>
 
       <section className="space-y-3">

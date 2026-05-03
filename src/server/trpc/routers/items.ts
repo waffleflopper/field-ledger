@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { hasActive2062Coverage } from "@/modules/assignments-2062";
 import {
   assignSignedTo,
   assignSignedToWithNewContact,
@@ -385,6 +386,13 @@ export const itemsRouter = createTRPCRouter({
           auditRepository: repositories.auditRepository,
           handReceiptRepository: repositories.handReceiptRepository,
           itemRepository: repositories.itemRepository,
+          hasActive2062Coverage: ({ accountId, itemId }) =>
+            hasActive2062Coverage({
+              accountId,
+              itemId,
+              assignmentItemLinkRepository:
+                repositories.assignmentItemLinkRepository,
+            }),
         }),
       );
 
