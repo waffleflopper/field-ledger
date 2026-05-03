@@ -3,6 +3,10 @@ import { TRPCError } from "@trpc/server";
 import superjson from "superjson";
 
 import {
+  createUnavailableAssignmentItemLinkRepository,
+  createUnavailableAssignmentRepository,
+} from "@/modules/assignments-2062";
+import {
   createUnavailableRequirementCompletionRepository,
   createUnavailableRequirementRepository,
 } from "@/modules/requirements";
@@ -29,6 +33,11 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       session: ctx.session,
       account: ctx.account,
       accountRepository: ctx.accountRepository,
+      assignmentItemLinkRepository:
+        ctx.assignmentItemLinkRepository ??
+        createUnavailableAssignmentItemLinkRepository(),
+      assignmentRepository:
+        ctx.assignmentRepository ?? createUnavailableAssignmentRepository(),
       auditRepository: ctx.auditRepository,
       contactRepository: ctx.contactRepository,
       documentRepository:

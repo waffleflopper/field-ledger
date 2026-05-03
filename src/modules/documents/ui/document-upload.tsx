@@ -140,8 +140,8 @@ export function DocumentUpload({
         <div className="min-w-0 space-y-1">
           <h2 className="text-sm font-semibold tracking-normal">Upload 2062</h2>
           <p className="text-sm leading-6 text-muted-foreground">
-            Add a private PDF or image scan now. Assignment selection lands in a
-            later 2062 slice.
+            Add a private PDF or image scan, then select it for the 2062
+            assignment.
           </p>
         </div>
       </div>

@@ -17,6 +17,7 @@ type AssignSignedToInput = {
   contactRepository: ContactRepository;
   itemRepository: ItemRepository;
   auditRepository: AuditRepository;
+  hasActive2062Coverage?: Active2062CoverageLookup;
   now?: Date;
 };
 
@@ -30,6 +31,7 @@ type AssignSignedToWithNewContactInput = {
   auditRepository: AuditRepository;
   now?: Date;
   createContactId?: () => string;
+  hasActive2062Coverage?: Active2062CoverageLookup;
 };
 
 type ClearSignedToInput = {
@@ -41,11 +43,36 @@ type ClearSignedToInput = {
   now?: Date;
 };
 
+type Active2062CoverageLookup = (input: {
+  accountId: string;
+  itemId: string;
+}) => boolean | Promise<boolean>;
+
+function defaultHasActive2062Coverage() {
+  return false;
+}
+
 function assertWritable(account: AccountRecord, now: Date) {
   const capabilities = deriveAccountCapabilities(account, now);
 
   if (capabilities.isReadOnly) {
     throw new Error("This account is read-only.");
+  }
+}
+
+async function assertNoActive2062Coverage({
+  accountId,
+  itemId,
+  hasActive2062Coverage,
+}: {
+  accountId: string;
+  itemId: string;
+  hasActive2062Coverage: Active2062CoverageLookup;
+}) {
+  if (await hasActive2062Coverage({ accountId, itemId })) {
+    throw new Error(
+      "Cannot change manual signed-to state while active 2062 coverage exists.",
+    );
   }
 }
 
@@ -114,6 +141,7 @@ export async function assignSignedTo({
   contactRepository,
   itemRepository,
   auditRepository,
+  hasActive2062Coverage = defaultHasActive2062Coverage,
   now = new Date(),
 }: AssignSignedToInput): Promise<ItemRecord | null> {
   assertWritable(account, now);
@@ -130,6 +158,12 @@ export async function assignSignedTo({
   if (!contact) {
     throw new Error("Contact was not found.");
   }
+
+  await assertNoActive2062Coverage({
+    accountId: account.id,
+    itemId,
+    hasActive2062Coverage,
+  });
 
   return assignItemToContact({
     accountId: account.id,
@@ -152,6 +186,7 @@ export async function assignSignedToWithNewContact({
   auditRepository,
   now = new Date(),
   createContactId,
+  hasActive2062Coverage = defaultHasActive2062Coverage,
 }: AssignSignedToWithNewContactInput): Promise<ItemRecord | null> {
   assertWritable(account, now);
 
@@ -160,6 +195,12 @@ export async function assignSignedToWithNewContact({
   if (!item) {
     return null;
   }
+
+  await assertNoActive2062Coverage({
+    accountId: account.id,
+    itemId,
+    hasActive2062Coverage,
+  });
 
   const contact = await createContact({
     account,

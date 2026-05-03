@@ -143,6 +143,62 @@ test("users can create and see an item requirement from item detail", async ({
   await expect(page.getByText("Jan 15, 2026")).toBeVisible();
 });
 
+test("users can create single-item formal 2062 coverage from item detail", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("2062 upload receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open 2062 upload receipt" }).click();
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createItemDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createItemDialog.getByLabel("Nomenclature").fill("2062 test radio");
+  await createItemDialog.getByLabel("ECN").fill("ECN-2062-UPLOAD");
+  await createItemDialog.getByRole("button", { name: "Create item" }).click();
+  await page.getByRole("link", { name: "Open 2062 test radio" }).click();
+
+  await page.getByLabel("Contact name").fill("SPC Avery");
+  await page.getByRole("button", { name: "Create SPC Avery" }).click();
+  await expect(page.getByText("No 2062")).toBeVisible();
+
+  await page.getByRole("link", { name: "Upload 2062" }).first().click();
+  await expect(page).toHaveURL(/\/app\/items\/[0-9a-f-]+\/upload-2062$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Upload 2062" }),
+  ).toBeVisible();
+  await expect(page.getByText("2062 test radio")).toBeVisible();
+  await expect(page.getByText("SPC Avery")).toBeVisible();
+
+  await page.getByLabel("Upload 2062 document").setInputFiles({
+    name: "signed-2062.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n% Field Ledger e2e fixture\n"),
+  });
+  await expect(
+    page.getByText("signed-2062.pdf is saved as private document evidence."),
+  ).toBeVisible();
+  await page.getByLabel("Select document").selectOption({
+    label: "signed-2062.pdf",
+  });
+  await page.getByRole("button", { name: "Create 2062" }).click();
+
+  await expect(page).toHaveURL(/\/app\/items\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { name: "2062 test radio" }),
+  ).toBeVisible();
+  await expect(page.getByText("DA Form 2062")).toBeVisible();
+  await expect(page.getByText("SPC Avery")).toBeVisible();
+  await expect(page.getByText("signed-2062.pdf")).toBeVisible();
+  await expect(page.getByText("No 2062")).toBeHidden();
+  await expect(page.getByText("Item linked to 2062")).toBeVisible();
+});
+
 test("archived item records appear only when deliberately included", async ({
   page,
 }) => {

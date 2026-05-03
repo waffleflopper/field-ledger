@@ -1,5 +1,11 @@
 import type { AuditRepository } from "@/modules/audit";
 import { createTransactionalDrizzleAuditRepository } from "@/modules/audit/infrastructure/drizzle-audit-repository";
+import type {
+  AssignmentItemLinkRepository,
+  AssignmentRepository,
+} from "@/modules/assignments-2062";
+import { createTransactionalDrizzleAssignmentItemLinkRepository } from "@/modules/assignments-2062/infrastructure/drizzle-assignment-item-link-repository";
+import { createTransactionalDrizzleAssignmentRepository } from "@/modules/assignments-2062/infrastructure/drizzle-assignment-repository";
 import type { ContactRepository } from "@/modules/contacts";
 import { createTransactionalDrizzleContactRepository } from "@/modules/contacts/infrastructure/drizzle-contact-repository";
 import type { DocumentRepository } from "@/modules/documents";
@@ -24,6 +30,8 @@ type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 
 export type AppUnitOfWorkRepositories = {
   accountRepository: AccountRepository;
+  assignmentItemLinkRepository: AssignmentItemLinkRepository;
+  assignmentRepository: AssignmentRepository;
   auditRepository: AuditRepository;
   contactRepository: ContactRepository;
   documentRepository: DocumentRepository;
@@ -58,6 +66,10 @@ export function createDrizzleAppUnitOfWork(
         operation({
           accountRepository:
             createTransactionalDrizzleAccountRepository(transaction),
+          assignmentItemLinkRepository:
+            createTransactionalDrizzleAssignmentItemLinkRepository(transaction),
+          assignmentRepository:
+            createTransactionalDrizzleAssignmentRepository(transaction),
           auditRepository:
             createTransactionalDrizzleAuditRepository(transaction),
           contactRepository:

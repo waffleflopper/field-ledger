@@ -14,6 +14,13 @@ export type ItemRecord = {
   signedToContactName?: string | null;
   locationId?: string | null;
   locationName?: string | null;
+  active2062Coverage?: {
+    assignmentId: string;
+    contactId: string;
+    contactName: string;
+    documentId: string;
+    documentFilename: string;
+  } | null;
   createdAt: Date;
   updatedAt: Date;
 };

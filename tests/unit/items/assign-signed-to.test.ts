@@ -158,6 +158,50 @@ describe("assignSignedTo", () => {
     expect(auditRepository.events).toEqual([]);
   });
 
+  it("blocks manual signed-to assignment while active 2062 coverage exists", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+
+    await expect(
+      assignSignedTo({
+        account: createAccount(),
+        actorId: "owner-1",
+        itemId: "item-1",
+        contactId: "contact-1",
+        itemRepository: createItemRepository(),
+        contactRepository: createContactRepository(),
+        auditRepository,
+        hasActive2062Coverage: ({ accountId, itemId }) =>
+          accountId === "account-1" && itemId === "item-1",
+      }),
+    ).rejects.toThrow(
+      "Cannot change manual signed-to state while active 2062 coverage exists.",
+    );
+    expect(auditRepository.events).toEqual([]);
+  });
+
+  it("does not create an inline contact when active 2062 coverage blocks manual signed-to state", async () => {
+    const contactRepository = new InMemoryContactRepository();
+    const auditRepository = new InMemoryAuditRepository();
+
+    await expect(
+      assignSignedToWithNewContact({
+        account: createAccount(),
+        actorId: "owner-1",
+        itemId: "item-1",
+        contactDisplayName: "CPL Nguyen",
+        itemRepository: createItemRepository(),
+        contactRepository,
+        auditRepository,
+        hasActive2062Coverage: ({ accountId, itemId }) =>
+          accountId === "account-1" && itemId === "item-1",
+      }),
+    ).rejects.toThrow(
+      "Cannot change manual signed-to state while active 2062 coverage exists.",
+    );
+    expect(contactRepository.contacts).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
+  });
+
   it("clears signed-to state and records the change", async () => {
     const account = createAccount();
     const itemRepository = new InMemoryItemRepository([

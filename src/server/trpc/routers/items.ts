@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { hasActive2062Coverage } from "@/modules/assignments-2062";
 import {
   assignSignedTo,
   assignSignedToWithNewContact,
@@ -153,6 +154,8 @@ function toTRPCError(
     case "Cannot move item from an archived hand receipt.":
     case "Cannot move item to an archived hand receipt.":
     case "Cannot move item with active 2062 coverage.":
+    case "Cannot archive item with active 2062 coverage until the active link is closed.":
+    case "Cannot change manual signed-to state while active 2062 coverage exists.":
       throw new TRPCError({
         code: "CONFLICT",
         message,
@@ -336,6 +339,13 @@ export const itemsRouter = createTRPCRouter({
             itemId: input.id,
             auditRepository: repositories.auditRepository,
             itemRepository: repositories.itemRepository,
+            hasActive2062Coverage: ({ accountId, itemId }) =>
+              hasActive2062Coverage({
+                accountId,
+                itemId,
+                assignmentItemLinkRepository:
+                  repositories.assignmentItemLinkRepository,
+              }),
           }),
       );
 
@@ -385,6 +395,13 @@ export const itemsRouter = createTRPCRouter({
           auditRepository: repositories.auditRepository,
           handReceiptRepository: repositories.handReceiptRepository,
           itemRepository: repositories.itemRepository,
+          hasActive2062Coverage: ({ accountId, itemId }) =>
+            hasActive2062Coverage({
+              accountId,
+              itemId,
+              assignmentItemLinkRepository:
+                repositories.assignmentItemLinkRepository,
+            }),
         }),
       );
 
@@ -412,6 +429,13 @@ export const itemsRouter = createTRPCRouter({
             auditRepository: repositories.auditRepository,
             contactRepository: repositories.contactRepository,
             itemRepository: repositories.itemRepository,
+            hasActive2062Coverage: ({ accountId, itemId }) =>
+              hasActive2062Coverage({
+                accountId,
+                itemId,
+                assignmentItemLinkRepository:
+                  repositories.assignmentItemLinkRepository,
+              }),
           }),
       );
 
@@ -439,6 +463,13 @@ export const itemsRouter = createTRPCRouter({
             auditRepository: repositories.auditRepository,
             contactRepository: repositories.contactRepository,
             itemRepository: repositories.itemRepository,
+            hasActive2062Coverage: ({ accountId, itemId }) =>
+              hasActive2062Coverage({
+                accountId,
+                itemId,
+                assignmentItemLinkRepository:
+                  repositories.assignmentItemLinkRepository,
+              }),
           }),
       );
 

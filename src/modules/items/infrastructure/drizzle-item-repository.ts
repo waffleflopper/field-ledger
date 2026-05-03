@@ -1,6 +1,15 @@
 import { and, count, desc, eq, or, sql, type SQLWrapper } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
-import { contacts, handReceipts, items, locations } from "@/db/schema";
+import {
+  assignmentItemLinks,
+  assignments,
+  contacts,
+  documents,
+  handReceipts,
+  items,
+  locations,
+} from "@/db/schema";
 import {
   getMatchedItemSearchFields,
   normalizeItemSearchQuery,
@@ -18,11 +27,16 @@ import { runWithAuthenticatedDatabaseSession } from "@/modules/provider-boundari
 import type { createDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
 
 type DrizzleClient = ReturnType<typeof createDrizzleClient>;
+const signedToContacts = alias(contacts, "signed_to_contacts");
+const active2062Contacts = alias(contacts, "active_2062_contacts");
 type ItemRow = typeof items.$inferSelect;
 type ItemRowWithContact = {
   item: ItemRow;
-  contact: typeof contacts.$inferSelect | null;
+  contact: typeof signedToContacts.$inferSelect | null;
   location: typeof locations.$inferSelect | null;
+  active2062Assignment: typeof assignments.$inferSelect | null;
+  active2062Contact: typeof active2062Contacts.$inferSelect | null;
+  active2062Document: typeof documents.$inferSelect | null;
 };
 type ItemSearchRow = ItemRowWithContact & {
   handReceipt: typeof handReceipts.$inferSelect;
@@ -35,6 +49,7 @@ function toItemRecord(
   row: ItemRow,
   contactName: string | null = null,
   locationName: string | null = null,
+  active2062Coverage: ItemRecord["active2062Coverage"] = null,
 ): ItemRecord {
   return {
     id: row.id,
@@ -50,16 +65,29 @@ function toItemRecord(
     signedToContactName: contactName,
     locationId: row.locationId,
     locationName,
+    active2062Coverage,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
 function toItemRecordFromJoinedRow(row: ItemRowWithContact): ItemRecord {
+  const active2062Coverage =
+    row.active2062Assignment && row.active2062Contact && row.active2062Document
+      ? {
+          assignmentId: row.active2062Assignment.id,
+          contactId: row.active2062Contact.id,
+          contactName: row.active2062Contact.displayName,
+          documentId: row.active2062Document.id,
+          documentFilename: row.active2062Document.filename,
+        }
+      : null;
+
   return toItemRecord(
     row.item,
     row.contact?.displayName ?? null,
     row.location?.name ?? null,
+    active2062Coverage,
   );
 }
 
@@ -126,10 +154,37 @@ function createItemRepository(run: ItemOperation): ItemRepository {
 
     const rows = await run((transaction) =>
       transaction
-        .select({ item: items, contact: contacts, location: locations })
+        .select({
+          item: items,
+          contact: signedToContacts,
+          location: locations,
+          active2062Assignment: assignments,
+          active2062Contact: active2062Contacts,
+          active2062Document: documents,
+        })
         .from(items)
-        .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+        .leftJoin(
+          signedToContacts,
+          eq(items.signedToContactId, signedToContacts.id),
+        )
         .leftJoin(locations, eq(items.locationId, locations.id))
+        .leftJoin(
+          assignmentItemLinks,
+          and(
+            eq(assignmentItemLinks.itemId, items.id),
+            eq(assignmentItemLinks.accountId, items.accountId),
+            eq(assignmentItemLinks.status, "active"),
+          ),
+        )
+        .leftJoin(
+          assignments,
+          eq(assignmentItemLinks.assignmentId, assignments.id),
+        )
+        .leftJoin(
+          active2062Contacts,
+          eq(assignments.contactId, active2062Contacts.id),
+        )
+        .leftJoin(documents, eq(assignments.documentId, documents.id))
         .where(and(...filters))
         .orderBy(desc(items.createdAt)),
     );
@@ -158,10 +213,37 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findById(accountId, itemId) {
       const [row] = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts, location: locations })
+          .select({
+            item: items,
+            contact: signedToContacts,
+            location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
+          })
           .from(items)
-          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
           .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .limit(1),
       );
@@ -191,10 +273,37 @@ function createItemRepository(run: ItemOperation): ItemRepository {
 
       const [row] = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts, location: locations })
+          .select({
+            item: items,
+            contact: signedToContacts,
+            location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
+          })
           .from(items)
-          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
           .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
           .where(and(eq(items.accountId, accountId), eq(items.id, itemId)))
           .limit(1),
       );
@@ -204,10 +313,37 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findByEcn(accountId, ecn) {
       const rows = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts, location: locations })
+          .select({
+            item: items,
+            contact: signedToContacts,
+            location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
+          })
           .from(items)
-          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
           .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
           .where(and(eq(items.accountId, accountId), eq(items.ecn, ecn)))
           .orderBy(desc(items.createdAt)),
       );
@@ -217,10 +353,37 @@ function createItemRepository(run: ItemOperation): ItemRepository {
     async findBySerialNumber(accountId, serialNumber) {
       const rows = await run((transaction) =>
         transaction
-          .select({ item: items, contact: contacts, location: locations })
+          .select({
+            item: items,
+            contact: signedToContacts,
+            location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
+          })
           .from(items)
-          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
           .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
           .where(
             and(
               eq(items.accountId, accountId),
@@ -276,7 +439,7 @@ function createItemRepository(run: ItemOperation): ItemRepository {
           containsCaseInsensitive(items.generatedId, trimmedQuery),
           containsCaseInsensitive(items.nomenclature, trimmedQuery),
           containsCaseInsensitive(handReceipts.name, trimmedQuery),
-          containsCaseInsensitive(contacts.displayName, trimmedQuery),
+          containsCaseInsensitive(signedToContacts.displayName, trimmedQuery),
           containsCaseInsensitive(locations.name, trimmedQuery),
         ),
       ];
@@ -291,13 +454,36 @@ function createItemRepository(run: ItemOperation): ItemRepository {
           .select({
             item: items,
             handReceipt: handReceipts,
-            contact: contacts,
+            contact: signedToContacts,
             location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
           })
           .from(items)
           .innerJoin(handReceipts, eq(items.handReceiptId, handReceipts.id))
-          .leftJoin(contacts, eq(items.signedToContactId, contacts.id))
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
           .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
           .where(and(...filters))
           .orderBy(desc(items.updatedAt))
           .limit(50),

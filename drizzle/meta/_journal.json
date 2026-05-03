@@ -162,6 +162,20 @@
       "when": 1777752735314,
       "tag": "0022_slippery_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777767077641,
+      "tag": "0023_little_steel_serpent",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777768000000,
+      "tag": "0024_repair_assignment_link_closed_state_check",
+      "breakpoints": true
     }
   ]
 }

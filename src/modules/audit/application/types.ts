@@ -1,6 +1,8 @@
 export type KnownAuditAction =
   | "system.initialized"
   | "account.onboarding_completed"
+  | "assignment.created"
+  | "assignment_item_link.created"
   | "contact.created"
   | "document.uploaded"
   | "hand_receipt.created"
