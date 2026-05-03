@@ -25,6 +25,9 @@ const ownerTwoLinkId = "8310d384-4e92-4e12-ac71-e25353fa36b5";
 const ownerOneInsertAssignmentId = "15d0422a-9912-45cf-927e-6a49df7a7105";
 const ownerOneInsertLinkId = "5f483d29-f0c3-4867-bd2e-47b67e16fb5b";
 const ownerTwoBlockedLinkId = "1c5e5430-2e21-45b2-bbd9-b58113b7c4b8";
+const ownerOneConstraintItemId = "e048fd65-5df6-4cc9-b71a-5041668284f5";
+const ownerOneConstraintAssignmentId = "40c90c2c-adf5-4d4e-9b20-6326b0c0f045";
+const ownerOneConstraintLinkId = "fc60cfcf-ad17-4b6e-b835-b6532dd03d7f";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -164,9 +167,9 @@ describe("assignments-2062 RLS", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from assignment_item_links where id in (${ownerOneLinkId}, ${ownerTwoLinkId}, ${ownerOneInsertLinkId})`;
-    await sql`delete from assignments where id in (${ownerOneAssignmentId}, ${ownerTwoAssignmentId}, ${ownerOneInsertAssignmentId})`;
-    await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertItemId})`;
+    await sql`delete from assignment_item_links where id in (${ownerOneLinkId}, ${ownerTwoLinkId}, ${ownerOneInsertLinkId}, ${ownerOneConstraintLinkId})`;
+    await sql`delete from assignments where id in (${ownerOneAssignmentId}, ${ownerTwoAssignmentId}, ${ownerOneInsertAssignmentId}, ${ownerOneConstraintAssignmentId})`;
+    await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertItemId}, ${ownerOneConstraintItemId})`;
     await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId})`;
     await sql`delete from contacts where id in (${ownerOneContactId}, ${ownerTwoContactId})`;
     await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
@@ -291,11 +294,57 @@ describe("assignments-2062 RLS", () => {
   });
 
   it("prevents assignment item links from storing inconsistent closed state", async () => {
+    await sql`insert into items (
+      id,
+      account_id,
+      hand_receipt_id,
+      nomenclature,
+      ecn
+    ) values (
+      ${ownerOneConstraintItemId},
+      ${ownerOneAccountId},
+      ${ownerOneHandReceiptId},
+      'Owner one constraint item',
+      'RLS-2062-CONSTRAINT'
+    ) on conflict (id) do nothing`;
+    await sql`insert into assignments (
+      id,
+      account_id,
+      hand_receipt_id,
+      contact_id,
+      document_id
+    ) values (
+      ${ownerOneConstraintAssignmentId},
+      ${ownerOneAccountId},
+      ${ownerOneHandReceiptId},
+      ${ownerOneContactId},
+      ${ownerOneDocumentId}
+    ) on conflict (id) do nothing`;
+    await sql`insert into assignment_item_links (
+      id,
+      account_id,
+      assignment_id,
+      item_id
+    ) values (
+      ${ownerOneConstraintLinkId},
+      ${ownerOneAccountId},
+      ${ownerOneConstraintAssignmentId},
+      ${ownerOneConstraintItemId}
+    ) on conflict (id) do nothing`;
+
+    const visibleRows = await asAuthenticatedOwner(
+      ownerOneId,
+      async (transaction) =>
+        transaction`select id from assignment_item_links where id = ${ownerOneConstraintLinkId}`,
+    );
+
+    expect(visibleRows).toEqual([{ id: ownerOneConstraintLinkId }]);
+
     await expect(
       asAuthenticatedOwner(
         ownerOneId,
         async (transaction) =>
-          transaction`update assignment_item_links set closed_at = now() where id = ${ownerOneLinkId}`,
+          transaction`update assignment_item_links set closed_at = now() where id = ${ownerOneConstraintLinkId}`,
       ),
     ).rejects.toThrow();
   });

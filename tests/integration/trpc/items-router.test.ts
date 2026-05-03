@@ -5,6 +5,8 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import type { AppUnitOfWork } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { appRouter } from "@/server/trpc/router";
 import { InMemoryAccountRepository } from "../../support/account-repository";
+import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
+import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { createInMemoryAppUnitOfWork } from "../../support/app-unit-of-work";
 import { InMemoryContactRepository } from "../../support/contact-repository";
@@ -76,6 +78,8 @@ function createHandReceiptRepository() {
 function createCaller({
   account = createAccount(),
   accountRepository = new InMemoryAccountRepository([account]),
+  assignmentItemLinkRepository = new InMemoryAssignmentItemLinkRepository(),
+  assignmentRepository = new InMemoryAssignmentRepository(),
   auditRepository = new InMemoryAuditRepository(),
   contactRepository = new InMemoryContactRepository(),
   handReceiptRepository = createHandReceiptRepository(),
@@ -86,6 +90,8 @@ function createCaller({
 }: {
   account?: AccountRecord;
   accountRepository?: InMemoryAccountRepository;
+  assignmentItemLinkRepository?: InMemoryAssignmentItemLinkRepository;
+  assignmentRepository?: InMemoryAssignmentRepository;
   auditRepository?: InMemoryAuditRepository;
   contactRepository?: InMemoryContactRepository;
   handReceiptRepository?: InMemoryHandReceiptRepository;
@@ -101,6 +107,8 @@ function createCaller({
     },
     account,
     accountRepository,
+    assignmentItemLinkRepository,
+    assignmentRepository,
     auditRepository,
     contactRepository,
     handReceiptRepository,
@@ -111,6 +119,8 @@ function createCaller({
       unitOfWork ??
       createInMemoryAppUnitOfWork({
         accountRepository,
+        assignmentItemLinkRepository,
+        assignmentRepository,
         auditRepository,
         contactRepository,
         handReceiptRepository,
@@ -682,6 +692,83 @@ describe("itemsRouter", () => {
       "item.signed_to_assigned",
       "item.signed_to_cleared",
     ]);
+  });
+
+  it("blocks manual signed-to and archive mutations when active 2062 coverage exists", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const contactRepository = new InMemoryContactRepository([
+      {
+        id: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        accountId: "account-1",
+        displayName: "SSG Rivera",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Covered radio",
+        ecn: "ECN-702",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      auditRepository,
+      contactRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.assignSignedTo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message:
+        "Cannot change manual signed-to state while active 2062 coverage exists.",
+    });
+    await expect(
+      caller.items.assignSignedToWithNewContact({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactDisplayName: "CPL Nguyen",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message:
+        "Cannot change manual signed-to state while active 2062 coverage exists.",
+    });
+    await expect(
+      caller.items.archive({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message:
+        "Cannot archive item with active 2062 coverage until the active link is closed.",
+    });
+    expect(contactRepository.contacts).toHaveLength(1);
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("rejects cross-account item moves as not found", async () => {

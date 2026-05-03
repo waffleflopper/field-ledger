@@ -10,6 +10,7 @@ type LifecycleItemInput = {
   itemId: string;
   itemRepository: ItemRepository;
   auditRepository: AuditRepository;
+  hasActive2062Coverage?: Active2062CoverageLookup;
   now?: Date;
 };
 
@@ -19,12 +20,22 @@ type ItemLifecycleTransition = {
   auditAction: "item.archived" | "item.restored";
 };
 
+type Active2062CoverageLookup = (input: {
+  accountId: string;
+  itemId: string;
+}) => boolean | Promise<boolean>;
+
+function defaultHasActive2062Coverage() {
+  return false;
+}
+
 async function changeItemLifecycleStatus({
   account,
   actorId,
   itemId,
   itemRepository,
   auditRepository,
+  hasActive2062Coverage = defaultHasActive2062Coverage,
   now = new Date(),
   transition,
 }: LifecycleItemInput & { transition: ItemLifecycleTransition }) {
@@ -42,6 +53,15 @@ async function changeItemLifecycleStatus({
 
   if (existing.status === transition.targetStatus) {
     throw new Error(transition.alreadyInTargetMessage);
+  }
+
+  if (
+    transition.targetStatus === "archived" &&
+    (await hasActive2062Coverage({ accountId: account.id, itemId }))
+  ) {
+    throw new Error(
+      "Cannot archive item with active 2062 coverage until the active link is closed.",
+    );
   }
 
   const updated = await itemRepository.update(account.id, itemId, {

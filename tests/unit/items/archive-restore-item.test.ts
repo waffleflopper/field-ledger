@@ -116,6 +116,25 @@ describe("archiveItem", () => {
     ).rejects.toThrow("Item is already archived.");
     expect(auditRepository.events).toEqual([]);
   });
+
+  it("blocks archive while active 2062 coverage exists", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+
+    await expect(
+      archiveItem({
+        account: createAccount(),
+        actorId: "owner-1",
+        itemId: "active-item",
+        itemRepository: createRepository(),
+        auditRepository,
+        hasActive2062Coverage: ({ accountId, itemId }) =>
+          accountId === "account-1" && itemId === "active-item",
+      }),
+    ).rejects.toThrow(
+      "Cannot archive item with active 2062 coverage until the active link is closed.",
+    );
+    expect(auditRepository.events).toEqual([]);
+  });
 });
 
 describe("restoreItem", () => {
