@@ -176,6 +176,13 @@
       "when": 1777768000000,
       "tag": "0024_repair_assignment_link_closed_state_check",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1777770000000,
+      "tag": "0025_assignment_link_same_receipt",
+      "breakpoints": true
     }
   ]
 }

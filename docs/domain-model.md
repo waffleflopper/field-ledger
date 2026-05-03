@@ -234,6 +234,11 @@ Rules:
 - One 2062 assignment belongs to one hand receipt.
 - One item can have at most one active 2062 link.
 - Items may have many historical closed 2062 links.
+- Multi-item upload starts from hand receipt detail, uses one contact and one
+  private document for the assignment, and links only selected active items from
+  that hand receipt.
+- Assignment item-link RLS also enforces same-hand-receipt scope so a row cannot
+  connect an assignment to an item from another hand receipt.
 - Uploading a 2062 for a manually signed-to item converts it to formal 2062 coverage.
 - Closing a 2062 clears current signed-to state for linked items.
 - Individual item links can be closed when one item is returned.

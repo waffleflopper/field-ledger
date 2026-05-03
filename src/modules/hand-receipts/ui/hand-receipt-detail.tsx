@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   CalendarDays,
   ClipboardList,
+  FileUp,
   History,
   Pencil,
   RotateCcw,
@@ -424,18 +425,50 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                   records when you need preserved item history.
                 </p>
               </div>
-              {!isViewingArchivedItems ? (
-                <CreateItemForm
-                  canCreate={!isReadOnly && handReceipt.status === "active"}
-                  disabledReason={createItemDisabledReason}
-                  onSubmit={(input) =>
-                    createItemMutation.mutateAsync({
-                      handReceiptId,
-                      ...input,
-                    })
-                  }
-                />
-              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {!isViewingArchivedItems ? (
+                  <>
+                    <Button
+                      asChild={!isReadOnly && handReceipt.status === "active"}
+                      disabled={isReadOnly || handReceipt.status !== "active"}
+                      size="sm"
+                      title={
+                        isReadOnly
+                          ? "2062 creation is paused while this account is read-only."
+                          : handReceipt.status !== "active"
+                            ? "Archived hand receipts cannot receive new 2062 assignments."
+                            : "Upload a 2062 for multiple items"
+                      }
+                      type="button"
+                      variant="outline"
+                    >
+                      {!isReadOnly && handReceipt.status === "active" ? (
+                        <Link
+                          href={`/app/hand-receipts/${handReceiptId}/upload-2062`}
+                        >
+                          <FileUp aria-hidden="true" className="size-4" />
+                          Upload 2062
+                        </Link>
+                      ) : (
+                        <>
+                          <FileUp aria-hidden="true" className="size-4" />
+                          Upload 2062
+                        </>
+                      )}
+                    </Button>
+                    <CreateItemForm
+                      canCreate={!isReadOnly && handReceipt.status === "active"}
+                      disabledReason={createItemDisabledReason}
+                      onSubmit={(input) =>
+                        createItemMutation.mutateAsync({
+                          handReceiptId,
+                          ...input,
+                        })
+                      }
+                    />
+                  </>
+                ) : null}
+              </div>
             </div>
             <div className="flex w-fit rounded-lg border bg-background p-1">
               <button

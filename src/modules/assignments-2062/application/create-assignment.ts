@@ -3,10 +3,15 @@ import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import { createContact, type ContactRepository } from "@/modules/contacts";
 import type { DocumentRepository } from "@/modules/documents";
+import type { HandReceiptRepository } from "@/modules/hand-receipts";
 import type { ItemRepository } from "@/modules/items";
 import type { AssignmentItemLinkRepository } from "./assignment-item-link-repository";
 import type { AssignmentRepository } from "./assignment-repository";
-import type { CreateAssignmentInput } from "./types";
+import type {
+  AssignmentItemLinkRecord,
+  CreateAssignmentInput,
+  CreateAssignmentWithItemsInput,
+} from "./types";
 
 type CreateAssignmentArgs = {
   account: AccountRecord;
@@ -186,5 +191,213 @@ export async function createAssignment({
       documentFilename: document.filename,
     },
     link,
+  };
+}
+
+export async function createAssignmentWithItems({
+  account,
+  actorId,
+  input,
+  assignmentRepository,
+  assignmentItemLinkRepository,
+  auditRepository,
+  contactRepository,
+  documentRepository,
+  handReceiptRepository,
+  itemRepository,
+  now = new Date(),
+  createAssignmentId = () => globalThis.crypto.randomUUID(),
+  createAssignmentItemLinkId = () => globalThis.crypto.randomUUID(),
+}: Omit<CreateAssignmentArgs, "input"> & {
+  input: CreateAssignmentWithItemsInput;
+  handReceiptRepository: HandReceiptRepository;
+}) {
+  const capabilities = deriveAccountCapabilities(account, now);
+
+  if (capabilities.isReadOnly) {
+    throw new Error("This account is read-only.");
+  }
+
+  const uniqueItemIds = Array.from(new Set(input.itemIds));
+
+  if (uniqueItemIds.length === 0) {
+    throw new Error("Select at least one item.");
+  }
+
+  const handReceipt = await handReceiptRepository.findById(
+    account.id,
+    input.handReceiptId,
+  );
+
+  if (!handReceipt) {
+    throw new Error("Hand receipt was not found.");
+  }
+
+  if (handReceipt.status !== "active") {
+    throw new Error("Hand receipt must be active to upload a 2062.");
+  }
+
+  const contact =
+    "contactId" in input && input.contactId
+      ? await contactRepository.findById(account.id, input.contactId)
+      : await createContact({
+          account,
+          actorId,
+          input: { displayName: input.contactDisplayName ?? "" },
+          contactRepository,
+          auditRepository,
+          now,
+        });
+
+  if (!contact) {
+    throw new Error("Contact was not found.");
+  }
+
+  const document = await documentRepository.findById(
+    account.id,
+    input.documentId,
+  );
+
+  if (!document) {
+    throw new Error("Document was not found.");
+  }
+
+  if (document.handReceiptId !== input.handReceiptId) {
+    throw new Error("Document must belong to the hand receipt.");
+  }
+
+  const items = await Promise.all(
+    uniqueItemIds.map((itemId) => itemRepository.findById(account.id, itemId)),
+  );
+
+  if (items.some((item) => item === null)) {
+    throw new Error("Item was not found.");
+  }
+
+  const activeItems = items.map((item) => {
+    if (!item) {
+      throw new Error("Item was not found.");
+    }
+
+    if (item.status !== "active") {
+      throw new Error("Items must be active to upload a 2062.");
+    }
+
+    if (item.handReceiptId !== input.handReceiptId) {
+      throw new Error("Items must belong to the selected hand receipt.");
+    }
+
+    return item;
+  });
+
+  const activeLinks = await Promise.all(
+    activeItems.map((item) =>
+      assignmentItemLinkRepository.findActiveByItemId(account.id, item.id),
+    ),
+  );
+
+  if (activeLinks.some(Boolean)) {
+    throw new Active2062CoverageConflictError();
+  }
+
+  const assignment = await assignmentRepository.create({
+    id: createAssignmentId(),
+    accountId: account.id,
+    handReceiptId: input.handReceiptId,
+    contactId: contact.id,
+    documentId: document.id,
+    status: "active",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const links: AssignmentItemLinkRecord[] = [];
+
+  try {
+    for (const item of activeItems) {
+      links.push(
+        await assignmentItemLinkRepository.create({
+          id: createAssignmentItemLinkId(),
+          accountId: account.id,
+          assignmentId: assignment.id,
+          itemId: item.id,
+          status: "active",
+          closedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      );
+    }
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new Active2062CoverageConflictError();
+    }
+
+    throw error;
+  }
+
+  await Promise.all(
+    activeItems
+      .filter((item) => item.signedToContactId !== null)
+      .map(async (item) => {
+        const updatedItem = await itemRepository.update(account.id, item.id, {
+          signedToContactId: null,
+          updatedAt: now,
+        });
+
+        if (!updatedItem) {
+          throw new Error("Item signed-to state was not cleared.");
+        }
+      }),
+  );
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId,
+    action: "assignment.created",
+    target: { type: "assignment", id: assignment.id },
+    metadata: {
+      handReceiptId: input.handReceiptId,
+      itemIds: activeItems.map((item) => item.id),
+      itemCount: activeItems.length,
+      contactId: contact.id,
+      contactName: contact.displayName,
+      documentId: document.id,
+      documentFilename: document.filename,
+      convertedFromManualSignedToCount: activeItems.filter(
+        (item) => item.signedToContactId !== null,
+      ).length,
+    },
+    occurredAt: now,
+    repository: auditRepository,
+  });
+
+  for (const item of activeItems) {
+    await recordAuditEvent({
+      accountId: account.id,
+      actorId,
+      action: "assignment_item_link.created",
+      target: { type: "item", id: item.id },
+      metadata: {
+        assignmentId: assignment.id,
+        contactId: contact.id,
+        contactName: contact.displayName,
+        documentId: document.id,
+        documentFilename: document.filename,
+        itemIdentifier: item.ecn ?? item.serialNumber ?? item.generatedId,
+      },
+      occurredAt: now,
+      repository: auditRepository,
+    });
+  }
+
+  return {
+    assignment: {
+      ...assignment,
+      contactName: contact.displayName,
+      documentFilename: document.filename,
+    },
+    links,
+    items: activeItems,
   };
 }

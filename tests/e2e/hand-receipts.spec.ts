@@ -171,6 +171,97 @@ test("users can open and edit item details from a hand receipt", async ({
   await expect(page.getByText("Item updated")).toBeVisible();
 });
 
+test("users can create multi-item formal 2062 coverage from hand receipt detail", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Multi 2062 receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "Open Multi 2062 receipt" }).click();
+  await expectHandReceiptDetail(page, "Multi 2062 receipt");
+
+  for (const [nomenclature, ecn] of [
+    ["Multi radio", "ECN-MULTI-1"],
+    ["Multi generator", "ECN-MULTI-2"],
+  ] as const) {
+    await page.getByRole("button", { name: "Add item" }).click();
+    const createDialog = page.getByRole("dialog", {
+      name: "Add property item",
+    });
+    await createDialog.getByLabel("Nomenclature").fill(nomenclature);
+    await createDialog.getByLabel("ECN").fill(ecn);
+    await createDialog.getByRole("button", { name: "Create item" }).click();
+    await expect(
+      page.getByRole("link", { name: `Open ${nomenclature}` }),
+    ).toBeVisible();
+  }
+
+  await page.getByRole("link", { name: "Upload 2062" }).click();
+  await expect(page).toHaveURL(
+    /\/app\/hand-receipts\/[0-9a-f-]+\/upload-2062$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Multi 2062 receipt" }),
+  ).toBeVisible();
+
+  await page.getByLabel("Contact name").fill("SPC Multi");
+  await page.getByRole("button", { name: "Create SPC Multi" }).click();
+  await page.getByRole("button", { name: "Continue to document" }).click();
+
+  await page.getByLabel("Upload 2062 document").setInputFiles({
+    name: "multi-2062.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n% Field Ledger multi 2062 fixture\n"),
+  });
+  await expect(
+    page.getByText("multi-2062.pdf is saved as private document evidence."),
+  ).toBeVisible();
+  await page.getByLabel("Select document").selectOption({
+    label: "multi-2062.pdf",
+  });
+  await page.getByRole("button", { name: "Continue to items" }).click();
+
+  await page.getByLabel("Narrow items").fill("multi");
+  await page.getByLabel("Multi radio").check();
+  await page.getByLabel("Multi generator").check();
+  await page.getByRole("button", { name: "Review 2 items" }).click();
+
+  await expect(page.getByText("2 selected")).toBeVisible();
+  await expect(page.getByText("SPC Multi")).toBeVisible();
+  await expect(page.getByText("multi-2062.pdf")).toBeVisible();
+  await page.getByRole("button", { name: "Create assignment" }).click();
+
+  await expect(page).toHaveURL(/\/app\/hand-receipts\/[0-9a-f-]+$/);
+  await expect(page.getByText("DA Form 2062")).toHaveCount(2);
+  await expect(page.getByText("SPC Multi")).toHaveCount(2);
+});
+
+test("hand receipt upload 2062 flow uses desktop width without horizontal overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("Desktop upload 2062 receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page
+    .getByRole("link", { name: "Open Desktop upload 2062 receipt" })
+    .click();
+  await expectHandReceiptDetail(page, "Desktop upload 2062 receipt");
+
+  await page.getByRole("link", { name: "Upload 2062" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Desktop upload 2062 receipt" }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(1280);
+});
+
 test("users can archive, review, and restore property items", async ({
   page,
 }) => {

@@ -48,7 +48,7 @@ function createCaller(account = createAccount()) {
     {
       id: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
       accountId: account.id,
-      handReceiptId: "cccccccc-cccc-4ccc-cccc-cccccccccccc",
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
       filename: "signed-2062.pdf",
       mimeType: "application/pdf",
       sizeBytes: 100,
@@ -57,10 +57,22 @@ function createCaller(account = createAccount()) {
       createdAt: now,
       updatedAt: now,
     },
+    {
+      id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      accountId: account.id,
+      handReceiptId: "55555555-5555-4555-8555-555555555555",
+      filename: "archived-2062.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 100,
+      storagePath: `${account.id}/cccccccc-cccc-4ccc-8ccc-cccccccccccc`,
+      uploadedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    },
   ]);
   const handReceiptRepository = new InMemoryHandReceiptRepository([
     {
-      id: "cccccccc-cccc-4ccc-cccc-cccccccccccc",
+      id: "88888888-8888-4888-8888-888888888888",
       accountId: account.id,
       name: "Primary receipt",
       notes: null,
@@ -73,14 +85,73 @@ function createCaller(account = createAccount()) {
       createdAt: now,
       updatedAt: now,
     },
+    {
+      id: "55555555-5555-4555-8555-555555555555",
+      accountId: account.id,
+      name: "Archived receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "archived",
+      createdAt: now,
+      updatedAt: now,
+    },
   ]);
   const itemRepository = new InMemoryItemRepository([
     {
       id: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
       accountId: account.id,
-      handReceiptId: "cccccccc-cccc-4ccc-cccc-cccccccccccc",
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
       nomenclature: "Radio",
       ecn: "ECN-1",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "77777777-7777-4777-9777-777777777777",
+      accountId: account.id,
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      nomenclature: "Generator",
+      ecn: null,
+      serialNumber: "SER-2",
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "99999999-9999-4999-9999-999999999998",
+      accountId: account.id,
+      handReceiptId: "66666666-6666-4666-8666-666666666666",
+      nomenclature: "Other receipt item",
+      ecn: "OTHER-1",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "44444444-4444-4444-8444-444444444444",
+      accountId: account.id,
+      handReceiptId: "55555555-5555-4555-8555-555555555555",
+      nomenclature: "Archived receipt item",
+      ecn: "ARCH-1",
       serialNumber: null,
       generatedId: null,
       notes: null,
@@ -111,6 +182,7 @@ function createCaller(account = createAccount()) {
     assignmentRepository,
     contactRepository,
     auditRepository,
+    itemRepository,
     caller: appRouter.createCaller({
       session: { userId: account.userId, email: "owner@example.com" },
       account,
@@ -236,5 +308,82 @@ describe("assignments2062Router", () => {
         documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("creates a multi-item 2062 through the typed procedure", async () => {
+    const {
+      caller,
+      assignmentRepository,
+      assignmentItemLinkRepository,
+      auditRepository,
+    } = createCaller();
+
+    const result = await caller.assignments2062.createWithItems({
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      itemIds: [
+        "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        "77777777-7777-4777-9777-777777777777",
+      ],
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+
+    expect(result.assignment).toMatchObject({ status: "active" });
+    expect(result.links).toHaveLength(2);
+    expect(assignmentRepository.assignments).toHaveLength(1);
+    expect(assignmentItemLinkRepository.links).toHaveLength(2);
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "assignment.created",
+      "assignment_item_link.created",
+      "assignment_item_link.created",
+    ]);
+  });
+
+  it("maps empty multi-item selection to BAD_REQUEST", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.createWithItems({
+        handReceiptId: "88888888-8888-4888-8888-888888888888",
+        itemIds: [],
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("maps archived hand receipt multi-item creation to CONFLICT", async () => {
+    const { caller, assignmentRepository, assignmentItemLinkRepository } =
+      createCaller();
+
+    await expect(
+      caller.assignments2062.createWithItems({
+        handReceiptId: "55555555-5555-4555-8555-555555555555",
+        itemIds: ["44444444-4444-4444-8444-444444444444"],
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Hand receipt must be active to upload a 2062.",
+    });
+    expect(assignmentRepository.assignments).toEqual([]);
+    expect(assignmentItemLinkRepository.links).toEqual([]);
+  });
+
+  it("maps cross-hand-receipt multi-item selection to CONFLICT", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.createWithItems({
+        handReceiptId: "88888888-8888-4888-8888-888888888888",
+        itemIds: [
+          "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+          "99999999-9999-4999-9999-999999999998",
+        ],
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });
