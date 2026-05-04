@@ -483,6 +483,8 @@ describe("assignments2062Router", () => {
     assignmentRepository.assignments.push({
       ...activeAssignment,
       id: "33333333-3333-4333-8333-333333333333",
+      contactName: "SPC Rivera",
+      documentFilename: "closed-2062.pdf",
       status: "closed",
       createdAt: new Date("2026-04-01T12:00:00.000Z"),
       updatedAt: new Date("2026-04-02T12:00:00.000Z"),
@@ -495,6 +497,15 @@ describe("assignments2062Router", () => {
       closedAt: new Date("2026-04-02T12:00:00.000Z"),
       createdAt: new Date("2026-04-01T12:00:00.000Z"),
       updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+    assignmentItemLinkRepository.assignmentContexts.push({
+      assignmentId: "33333333-3333-4333-8333-333333333333",
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      handReceiptName: "Primary receipt",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      contactName: "SPC Rivera",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      documentFilename: "closed-2062.pdf",
     });
 
     await expect(

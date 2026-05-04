@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import {
+  AccountReadOnlyError,
   Active2062CoverageConflictError,
+  ContactNotFoundError,
   createAssignment,
   createAssignmentWithItems,
+  EmptyItemSelectionError,
+  HandReceiptNotActiveError,
+  ItemReceiptMismatchError,
 } from "@/modules/assignments-2062";
 import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
 import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
@@ -378,7 +383,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("Hand receipt must be active to upload a 2062.");
+    ).rejects.toBeInstanceOf(HandReceiptNotActiveError);
     expect(repositories.assignmentRepository.assignments).toEqual([]);
     expect(repositories.assignmentItemLinkRepository.links).toEqual([]);
     expect(repositories.auditRepository.events).toEqual([]);
@@ -443,7 +448,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("Select at least one item.");
+    ).rejects.toMatchObject(new EmptyItemSelectionError());
   });
 
   it("blocks multi-item creation against an archived hand receipt before mutating records", async () => {
@@ -484,7 +489,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("Items must belong to the selected hand receipt.");
+    ).rejects.toBeInstanceOf(ItemReceiptMismatchError);
   });
 
   it("blocks multi-item creation when any item already has active coverage", async () => {
@@ -532,7 +537,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("This account is read-only.");
+    ).rejects.toBeInstanceOf(AccountReadOnlyError);
   });
 
   it("blocks creation when the contact does not exist", async () => {
@@ -550,7 +555,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toThrow("Contact was not found.");
+    ).rejects.toBeInstanceOf(ContactNotFoundError);
   });
 
   it("blocks creation when the document does not exist", async () => {

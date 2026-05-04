@@ -83,6 +83,26 @@ function createRepositories() {
         updatedAt: newer,
       },
     ],
+    [
+      {
+        assignmentId: "assignment-active",
+        handReceiptId: "receipt-1",
+        handReceiptName: "Primary receipt",
+        contactId: "contact-1",
+        contactName: "SPC Rivera",
+        documentId: "document-1",
+        documentFilename: "active-2062.pdf",
+      },
+      {
+        assignmentId: "assignment-closed",
+        handReceiptId: "receipt-1",
+        handReceiptName: "Primary receipt",
+        contactId: "contact-2",
+        contactName: "SGT Morgan",
+        documentId: "document-2",
+        documentFilename: "closed-2062.pdf",
+      },
+    ],
   );
   const handReceiptRepository = new InMemoryHandReceiptRepository([
     {
@@ -147,6 +167,71 @@ describe("2062 list and coverage queries", () => {
         },
       ],
     });
+  });
+
+  it("returns multiple historical links newest first without per-link assignment lookups", async () => {
+    const repositories = createRepositories();
+
+    repositories.assignmentRepository.assignments.push({
+      id: "assignment-older-closed",
+      accountId: account.id,
+      handReceiptId: "receipt-1",
+      contactId: "contact-3",
+      contactName: "SSG Carter",
+      documentId: "document-3",
+      documentFilename: "older-2062.pdf",
+      status: "closed",
+      createdAt: older,
+      updatedAt: older,
+    });
+    repositories.assignmentItemLinkRepository.links.push({
+      id: "link-older-closed",
+      accountId: account.id,
+      assignmentId: "assignment-older-closed",
+      itemId: "item-1",
+      status: "closed",
+      closedAt: older,
+      createdAt: older,
+      updatedAt: older,
+    });
+    repositories.assignmentItemLinkRepository.assignmentContexts.push({
+      assignmentId: "assignment-older-closed",
+      handReceiptId: "receipt-1",
+      handReceiptName: "Primary receipt",
+      contactId: "contact-3",
+      contactName: "SSG Carter",
+      documentId: "document-3",
+      documentFilename: "older-2062.pdf",
+    });
+
+    let assignmentFinds = 0;
+    const originalFindById = repositories.assignmentRepository.findById.bind(
+      repositories.assignmentRepository,
+    );
+    repositories.assignmentRepository.findById = async (...args) => {
+      assignmentFinds += 1;
+      return originalFindById(...args);
+    };
+
+    const coverage = await getItemCoverage({
+      account,
+      itemId: "item-1",
+      ...repositories,
+    });
+
+    expect(coverage.history).toMatchObject([
+      {
+        assignmentId: "assignment-closed",
+        contactName: "SGT Morgan",
+        documentFilename: "closed-2062.pdf",
+      },
+      {
+        assignmentId: "assignment-older-closed",
+        contactName: "SSG Carter",
+        documentFilename: "older-2062.pdf",
+      },
+    ]);
+    expect(assignmentFinds).toBe(1);
   });
 
   it("scopes hand receipt assignment context to active formal assignments", async () => {

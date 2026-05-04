@@ -1,6 +1,7 @@
 import type {
   AssignmentItemLinkRecord,
   AssignmentStatus,
+  CoverageHistoryEntry,
   NewAssignmentItemLinkRecord,
 } from "./types";
 
@@ -19,6 +20,11 @@ export interface AssignmentItemLinkRepository {
     itemId: string,
     options?: { status?: AssignmentStatus },
   ): Promise<AssignmentItemLinkRecord[]>;
+  findByItemIdWithAssignment(
+    accountId: string,
+    itemId: string,
+    options?: { status?: AssignmentStatus },
+  ): Promise<CoverageHistoryEntry[]>;
   findByAssignmentId(
     accountId: string,
     assignmentId: string,
@@ -45,6 +51,9 @@ export function createUnavailableAssignmentItemLinkRepository(): AssignmentItemL
       throw new Error("An authenticated database session is required.");
     },
     async findByItemId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findByItemIdWithAssignment() {
       throw new Error("An authenticated database session is required.");
     },
     async findByAssignmentId() {

@@ -23,13 +23,17 @@ type SummaryDependencies = Omit<
   assignment: AssignmentRecord;
 };
 
-type HistoricalLinkDependencies = {
-  account: AccountRecord;
-  assignment: AssignmentRecord;
+type CoverageHistoryEntryDependencies = {
   closedAt: Date | null;
   createdAt: Date;
-  handReceiptRepository: HandReceiptRepository;
   linkId: string;
+  assignmentId: string;
+  handReceiptId: string;
+  handReceiptName: string;
+  contactId: string;
+  contactName: string;
+  documentId: string;
+  documentFilename: string;
 };
 
 async function toActiveAssignmentSummary({
@@ -68,36 +72,31 @@ async function toActiveAssignmentSummary({
   };
 }
 
-async function toHistoricalAssignmentLink({
-  account,
-  assignment,
-  handReceiptRepository,
-  linkId,
+function coverageEntryToHistoricalAssignmentLink({
+  assignmentId,
   closedAt,
+  contactId,
+  contactName,
   createdAt,
-}: HistoricalLinkDependencies): Promise<HistoricalAssignmentLink | null> {
+  documentFilename,
+  documentId,
+  handReceiptId,
+  handReceiptName,
+  linkId,
+}: CoverageHistoryEntryDependencies): HistoricalAssignmentLink | null {
   if (!closedAt) {
-    return null;
-  }
-
-  const handReceipt = await handReceiptRepository.findById(
-    account.id,
-    assignment.handReceiptId,
-  );
-
-  if (!handReceipt) {
     return null;
   }
 
   return {
     linkId,
-    assignmentId: assignment.id,
-    handReceiptId: assignment.handReceiptId,
-    handReceiptName: handReceipt.name,
-    contactId: assignment.contactId,
-    contactName: assignment.contactName ?? "Unknown contact",
-    documentId: assignment.documentId,
-    documentFilename: assignment.documentFilename ?? "2062 document",
+    assignmentId,
+    handReceiptId,
+    handReceiptName,
+    contactId,
+    contactName,
+    documentId,
+    documentFilename,
     closedAt,
     createdAt,
   };
@@ -169,11 +168,15 @@ export async function getItemCoverage({
 }: AssignmentQueryDependencies & {
   itemId: string;
 }): Promise<ItemCoverageResult> {
-  const [activeLink, historicalLinks] = await Promise.all([
+  const [activeLink, historicalEntries] = await Promise.all([
     assignmentItemLinkRepository.findActiveByItemId(account.id, itemId),
-    assignmentItemLinkRepository.findByItemId(account.id, itemId, {
-      status: "closed",
-    }),
+    assignmentItemLinkRepository.findByItemIdWithAssignment(
+      account.id,
+      itemId,
+      {
+        status: "closed",
+      },
+    ),
   ]);
 
   const activeAssignment = activeLink
@@ -188,26 +191,8 @@ export async function getItemCoverage({
       })
     : null;
 
-  const history = await Promise.all(
-    historicalLinks.map(async (link) => {
-      const assignment = await assignmentRepository.findById(
-        account.id,
-        link.assignmentId,
-      );
-
-      if (!assignment) {
-        return null;
-      }
-
-      return toHistoricalAssignmentLink({
-        account,
-        assignment,
-        closedAt: link.closedAt,
-        createdAt: link.createdAt,
-        handReceiptRepository,
-        linkId: link.id,
-      });
-    }),
+  const history = historicalEntries.map(
+    coverageEntryToHistoricalAssignmentLink,
   );
 
   return {

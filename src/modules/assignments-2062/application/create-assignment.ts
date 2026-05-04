@@ -12,6 +12,20 @@ import type {
   CreateAssignmentInput,
   CreateAssignmentWithItemsInput,
 } from "./types";
+import {
+  AccountReadOnlyError,
+  Active2062CoverageConflictError,
+  ContactDisplayNameRequiredError,
+  ContactNotFoundError,
+  DocumentNotFoundError,
+  DocumentReceiptMismatchError,
+  EmptyItemSelectionError,
+  HandReceiptNotActiveError,
+  HandReceiptNotFoundError,
+  ItemNotActiveError,
+  ItemNotFoundError,
+  ItemReceiptMismatchError,
+} from "./types";
 
 type CreateAssignmentArgs = {
   account: AccountRecord;
@@ -38,12 +52,6 @@ function isUniqueViolation(error: unknown) {
   );
 }
 
-export class Active2062CoverageConflictError extends Error {
-  constructor() {
-    super("Item already has active 2062 coverage.");
-  }
-}
-
 export async function createAssignment({
   account,
   actorId,
@@ -62,17 +70,17 @@ export async function createAssignment({
   const capabilities = deriveAccountCapabilities(account, now);
 
   if (capabilities.isReadOnly) {
-    throw new Error("This account is read-only.");
+    throw new AccountReadOnlyError();
   }
 
   const item = await itemRepository.findById(account.id, input.itemId);
 
   if (!item) {
-    throw new Error("Item was not found.");
+    throw new ItemNotFoundError();
   }
 
   if (item.status !== "active") {
-    throw new Error("Item must be active to upload a 2062.");
+    throw new ItemNotActiveError();
   }
 
   const handReceipt = await handReceiptRepository.findById(
@@ -81,11 +89,11 @@ export async function createAssignment({
   );
 
   if (!handReceipt) {
-    throw new Error("Hand receipt was not found.");
+    throw new HandReceiptNotFoundError();
   }
 
   if (handReceipt.status !== "active") {
-    throw new Error("Hand receipt must be active to upload a 2062.");
+    throw new HandReceiptNotActiveError();
   }
 
   const activeLink = await assignmentItemLinkRepository.findActiveByItemId(
@@ -95,6 +103,10 @@ export async function createAssignment({
 
   if (activeLink) {
     throw new Active2062CoverageConflictError();
+  }
+
+  if ("contactDisplayName" in input && !input.contactDisplayName?.trim()) {
+    throw new ContactDisplayNameRequiredError();
   }
 
   const contact =
@@ -110,7 +122,7 @@ export async function createAssignment({
         });
 
   if (!contact) {
-    throw new Error("Contact was not found.");
+    throw new ContactNotFoundError();
   }
 
   const document = await documentRepository.findById(
@@ -119,11 +131,13 @@ export async function createAssignment({
   );
 
   if (!document) {
-    throw new Error("Document was not found.");
+    throw new DocumentNotFoundError();
   }
 
   if (document.handReceiptId !== item.handReceiptId) {
-    throw new Error("Document must belong to the item's hand receipt.");
+    throw new DocumentReceiptMismatchError(
+      "Document must belong to the item's hand receipt.",
+    );
   }
 
   const convertedFromManualSignedTo = item.signedToContactId !== null;
@@ -230,13 +244,13 @@ export async function createAssignmentWithItems({
   const capabilities = deriveAccountCapabilities(account, now);
 
   if (capabilities.isReadOnly) {
-    throw new Error("This account is read-only.");
+    throw new AccountReadOnlyError();
   }
 
   const uniqueItemIds = Array.from(new Set(input.itemIds));
 
   if (uniqueItemIds.length === 0) {
-    throw new Error("Select at least one item.");
+    throw new EmptyItemSelectionError();
   }
 
   const handReceipt = await handReceiptRepository.findById(
@@ -245,11 +259,15 @@ export async function createAssignmentWithItems({
   );
 
   if (!handReceipt) {
-    throw new Error("Hand receipt was not found.");
+    throw new HandReceiptNotFoundError();
   }
 
   if (handReceipt.status !== "active") {
-    throw new Error("Hand receipt must be active to upload a 2062.");
+    throw new HandReceiptNotActiveError();
+  }
+
+  if ("contactDisplayName" in input && !input.contactDisplayName?.trim()) {
+    throw new ContactDisplayNameRequiredError();
   }
 
   const contact =
@@ -265,7 +283,7 @@ export async function createAssignmentWithItems({
         });
 
   if (!contact) {
-    throw new Error("Contact was not found.");
+    throw new ContactNotFoundError();
   }
 
   const document = await documentRepository.findById(
@@ -274,11 +292,11 @@ export async function createAssignmentWithItems({
   );
 
   if (!document) {
-    throw new Error("Document was not found.");
+    throw new DocumentNotFoundError();
   }
 
   if (document.handReceiptId !== input.handReceiptId) {
-    throw new Error("Document must belong to the hand receipt.");
+    throw new DocumentReceiptMismatchError();
   }
 
   const items = await Promise.all(
@@ -286,20 +304,20 @@ export async function createAssignmentWithItems({
   );
 
   if (items.some((item) => item === null)) {
-    throw new Error("Item was not found.");
+    throw new ItemNotFoundError();
   }
 
   const activeItems = items.map((item) => {
     if (!item) {
-      throw new Error("Item was not found.");
+      throw new ItemNotFoundError();
     }
 
     if (item.status !== "active") {
-      throw new Error("Items must be active to upload a 2062.");
+      throw new ItemNotActiveError("Items must be active to upload a 2062.");
     }
 
     if (item.handReceiptId !== input.handReceiptId) {
-      throw new Error("Items must belong to the selected hand receipt.");
+      throw new ItemReceiptMismatchError();
     }
 
     return item;

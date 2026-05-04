@@ -2,11 +2,22 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  AccountReadOnlyError,
   Active2062CoverageConflictError,
+  ContactDisplayNameRequiredError,
+  ContactNotFoundError,
   createAssignment,
   createAssignmentWithItems,
+  DocumentNotFoundError,
+  DocumentReceiptMismatchError,
+  EmptyItemSelectionError,
   getHandReceiptAssignments,
   getItemCoverage,
+  HandReceiptNotActiveError,
+  HandReceiptNotFoundError,
+  ItemNotActiveError,
+  ItemNotFoundError,
+  ItemReceiptMismatchError,
   listActiveAssignments,
 } from "@/modules/assignments-2062";
 import type {
@@ -59,35 +70,19 @@ function toTRPCError(
   const message =
     error instanceof Error ? error.message : "Unable to create 2062.";
 
-  if (
-    error instanceof Active2062CoverageConflictError ||
-    message === "Item must be active to upload a 2062." ||
-    message === "Items must be active to upload a 2062." ||
-    message === "Hand receipt must be active to upload a 2062." ||
-    message === "Document must belong to the item's hand receipt." ||
-    message === "Document must belong to the hand receipt." ||
-    message === "Items must belong to the selected hand receipt."
-  ) {
+  if (isConflictError(error)) {
     throw new TRPCError({ code: "CONFLICT", message });
   }
 
-  if (message === "This account is read-only.") {
+  if (error instanceof AccountReadOnlyError) {
     throw new TRPCError({ code: "FORBIDDEN", message });
   }
 
-  if (
-    message === "Item was not found." ||
-    message === "Contact was not found." ||
-    message === "Document was not found." ||
-    message === "Hand receipt was not found."
-  ) {
+  if (isNotFoundError(error)) {
     throw new TRPCError({ code: "NOT_FOUND", message });
   }
 
-  if (
-    message === "Contact display name is required." ||
-    message === "Select at least one item."
-  ) {
+  if (isBadRequestError(error)) {
     throw new TRPCError({ code: "BAD_REQUEST", message });
   }
 
@@ -101,6 +96,32 @@ function toTRPCError(
     code: "INTERNAL_SERVER_ERROR",
     message: "Unable to create 2062.",
   });
+}
+
+function isConflictError(error: unknown) {
+  return (
+    error instanceof Active2062CoverageConflictError ||
+    error instanceof DocumentReceiptMismatchError ||
+    error instanceof HandReceiptNotActiveError ||
+    error instanceof ItemNotActiveError ||
+    error instanceof ItemReceiptMismatchError
+  );
+}
+
+function isNotFoundError(error: unknown) {
+  return (
+    error instanceof ContactNotFoundError ||
+    error instanceof DocumentNotFoundError ||
+    error instanceof HandReceiptNotFoundError ||
+    error instanceof ItemNotFoundError
+  );
+}
+
+function isBadRequestError(error: unknown) {
+  return (
+    error instanceof ContactDisplayNameRequiredError ||
+    error instanceof EmptyItemSelectionError
+  );
 }
 
 async function runInUnitOfWork<T>(
