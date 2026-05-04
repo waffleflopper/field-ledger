@@ -493,7 +493,7 @@ describe("assignments2062Router", () => {
       closedOn: "2026-05-01",
     });
 
-    expect(result?.assignment).toMatchObject({
+    expect(result.assignment).toMatchObject({
       id: assignment.id,
       status: "closed",
       contactName: "SPC Rivera",
@@ -600,6 +600,20 @@ describe("assignments2062Router", () => {
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: assignment.id,
+        closedOn: "",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    await expect(
+      caller.assignments2062.removeItemLink({
+        itemLinkId: link.id,
+        closedOn: "",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
     await caller.assignments2062.close({ assignmentId: assignment.id });
 
     await expect(
@@ -609,6 +623,16 @@ describe("assignments2062Router", () => {
     await expect(
       caller.assignments2062.removeItemLink({ itemLinkId: link.id }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("maps missing assignment close to NOT_FOUND", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: "99999999-9999-4999-9999-999999999999",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("returns current and historical item coverage through the typed procedure", async () => {

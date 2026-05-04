@@ -126,12 +126,12 @@ describe("closeAssignment", () => {
       expect.objectContaining({
         id: "link-1",
         status: "closed",
-        closedAt: new Date("2026-05-01T00:00:00.000Z"),
+        closedAt: new Date("2026-05-01T12:00:00.000Z"),
       }),
       expect.objectContaining({
         id: "link-2",
         status: "closed",
-        closedAt: new Date("2026-05-01T00:00:00.000Z"),
+        closedAt: new Date("2026-05-01T12:00:00.000Z"),
       }),
     ]);
     await expect(
@@ -175,7 +175,7 @@ describe("closeAssignment", () => {
     expect(
       defaultDateRepositories.assignmentItemLinkRepository.links[0],
     ).toMatchObject({
-      closedAt: new Date("2026-05-02T00:00:00.000Z"),
+      closedAt: new Date("2026-05-02T12:00:00.000Z"),
     });
 
     const futureDateRepositories = createRepositories();

@@ -280,19 +280,28 @@ export const assignments2062Router = createTRPCRouter({
   close: protectedProcedure
     .input(closeAssignmentInput)
     .mutation(({ ctx, input }) =>
-      runInUnitOfWork(ctx, "assignments2062.close", (repositories) =>
-        closeAssignment({
+      runInUnitOfWork(ctx, "assignments2062.close", async (repositories) => {
+        const result = await closeAssignment({
           account: ctx.account,
           actorId: ctx.session.userId,
           assignmentId: input.assignmentId,
-          ...(input.closedOn ? { closedOn: input.closedOn } : {}),
+          ...(input.closedOn !== undefined ? { closedOn: input.closedOn } : {}),
           assignmentRepository: repositories.assignmentRepository,
           assignmentItemLinkRepository:
             repositories.assignmentItemLinkRepository,
           auditRepository: repositories.auditRepository,
           itemRepository: repositories.itemRepository,
-        }),
-      ),
+        });
+
+        if (!result) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Assignment was not found.",
+          });
+        }
+
+        return result;
+      }),
     ),
   removeItemLink: protectedProcedure
     .input(removeItemLinkInput)
@@ -302,7 +311,7 @@ export const assignments2062Router = createTRPCRouter({
           account: ctx.account,
           actorId: ctx.session.userId,
           itemLinkId: input.itemLinkId,
-          ...(input.closedOn ? { closedOn: input.closedOn } : {}),
+          ...(input.closedOn !== undefined ? { closedOn: input.closedOn } : {}),
           assignmentRepository: repositories.assignmentRepository,
           assignmentItemLinkRepository:
             repositories.assignmentItemLinkRepository,

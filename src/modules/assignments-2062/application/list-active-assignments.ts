@@ -30,12 +30,7 @@ type SummaryDependencies = Omit<
 
 type BatchSummaryDependencies = {
   assignment: AssignmentRecord;
-  activeItems: {
-    linkId: string;
-    itemId: string;
-    nomenclature: string;
-    identifier: string;
-  }[];
+  activeItems: ActiveAssignmentSummary["activeItems"];
   handReceipt: HandReceiptRecord | null;
 };
 
@@ -74,22 +69,27 @@ async function toActiveAssignmentSummary({
     return null;
   }
 
-  const activeItems = await Promise.all(
-    activeLinks.map(async (link) => {
-      const item = await itemRepository.findById(account.id, link.itemId);
+  const activeItems = (
+    await Promise.all(
+      activeLinks.map(async (link) => {
+        const item = await itemRepository.findById(account.id, link.itemId);
 
-      if (!item) {
-        return null;
-      }
+        if (!item) {
+          return null;
+        }
 
-      return {
-        linkId: link.id,
-        itemId: item.id,
-        nomenclature: item.nomenclature,
-        identifier:
-          item.ecn ?? item.serialNumber ?? item.generatedId ?? "No ID",
-      };
-    }),
+        return {
+          linkId: link.id,
+          itemId: item.id,
+          nomenclature: item.nomenclature,
+          identifier:
+            item.ecn ?? item.serialNumber ?? item.generatedId ?? "No ID",
+        };
+      }),
+    )
+  ).filter(
+    (item): item is ActiveAssignmentSummary["activeItems"][number] =>
+      item !== null,
   );
 
   return {
@@ -100,8 +100,8 @@ async function toActiveAssignmentSummary({
     contactName: assignment.contactName ?? "Unknown contact",
     documentId: assignment.documentId,
     documentFilename: assignment.documentFilename ?? "2062 document",
-    itemCount: activeLinks.length,
-    activeItems: activeItems.filter((item) => item !== null),
+    itemCount: activeItems.length,
+    activeItems,
     status: "active",
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
@@ -147,40 +147,31 @@ async function summarizeActiveAssignments({
     ...new Set(assignments.map((assignment) => assignment.handReceiptId)),
   ];
 
-  const [handReceipts, activeLinksByAssignment] = await Promise.all([
+  const [handReceipts, activeLinks] = await Promise.all([
     handReceiptRepository.findManyByIds(account.id, handReceiptIds),
-    Promise.all(
-      assignmentIds.map(
-        async (assignmentId) =>
-          [
-            assignmentId,
-            await assignmentItemLinkRepository.findByAssignmentId(
-              account.id,
-              assignmentId,
-              { status: "active" },
-            ),
-          ] as const,
-      ),
+    assignmentItemLinkRepository.findByAssignmentIds(
+      account.id,
+      assignmentIds,
+      {
+        status: "active",
+      },
     ),
   ]);
 
   const handReceiptsById = new Map(
     handReceipts.map((handReceipt) => [handReceipt.id, handReceipt]),
   );
-  const activeLinksMap = new Map(activeLinksByAssignment);
-  const itemIds = [
-    ...new Set(
-      activeLinksByAssignment.flatMap(([, links]) =>
-        links.map((link) => link.itemId),
-      ),
-    ),
-  ];
-  const items = await Promise.all(
-    itemIds.map((itemId) => itemRepository.findById(account.id, itemId)),
-  );
-  const itemsById = new Map(
-    items.filter((item) => item !== null).map((item) => [item.id, item]),
-  );
+  const activeLinksMap = new Map<string, typeof activeLinks>();
+
+  for (const link of activeLinks) {
+    const assignmentLinks = activeLinksMap.get(link.assignmentId) ?? [];
+    assignmentLinks.push(link);
+    activeLinksMap.set(link.assignmentId, assignmentLinks);
+  }
+
+  const itemIds = [...new Set(activeLinks.map((link) => link.itemId))];
+  const items = await itemRepository.findManyByIds(account.id, itemIds);
+  const itemsById = new Map(items.map((item) => [item.id, item]));
 
   return assignments
     .map((assignment) => {

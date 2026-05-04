@@ -74,7 +74,7 @@ function normalizeCloseDate(closedOn: string | undefined, now: Date) {
 }
 
 function closeDateToTimestamp(closeDate: string) {
-  return new Date(`${closeDate}T00:00:00.000Z`);
+  return new Date(`${closeDate}T12:00:00.000Z`);
 }
 
 async function clearFormalSignedToState({

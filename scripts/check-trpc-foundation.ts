@@ -73,6 +73,9 @@ async function main() {
       async findById() {
         return null;
       },
+      async findManyByIds() {
+        return [];
+      },
       async findByHandReceiptId() {
         return [];
       },

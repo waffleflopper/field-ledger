@@ -56,6 +56,15 @@ function CloseAssignmentDialog({
   const today = todayDateOnly();
   const isFutureDate = closedOn > today;
 
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open);
+
+    if (!open) {
+      setError(null);
+      setClosedOn(todayDateOnly());
+    }
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -83,7 +92,7 @@ function CloseAssignmentDialog({
         <Undo2 aria-hidden="true" className="size-4" />
         Close
       </Button>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent>
           <form className="space-y-4" onSubmit={submit}>
             <DialogHeader>
@@ -117,7 +126,7 @@ function CloseAssignmentDialog({
             <DialogFooter>
               <Button
                 disabled={closeMutation.isPending}
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 type="button"
                 variant="outline"
               >
@@ -167,11 +176,20 @@ function RemoveItemLinkDialog({
   const isFutureDate = closedOn > today;
   const isLastItem = assignment.itemCount === 1;
 
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open);
+
+    if (!open) {
+      setError(null);
+      setClosedOn(todayDateOnly());
+    }
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isFutureDate) {
-      setError("Close date cannot be in the future.");
+      setError("Remove date cannot be in the future.");
       return;
     }
 
@@ -196,7 +214,7 @@ function RemoveItemLinkDialog({
       >
         <X aria-hidden="true" className="size-4" />
       </Button>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent>
           <form className="space-y-4" onSubmit={submit}>
             <DialogHeader>
@@ -227,13 +245,13 @@ function RemoveItemLinkDialog({
             </div>
             {error || isFutureDate ? (
               <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error ?? "Close date cannot be in the future."}
+                {error ?? "Remove date cannot be in the future."}
               </p>
             ) : null}
             <DialogFooter>
               <Button
                 disabled={removeMutation.isPending}
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 type="button"
                 variant="outline"
               >

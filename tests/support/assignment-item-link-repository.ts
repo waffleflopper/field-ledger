@@ -173,6 +173,25 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
       );
   }
 
+  async findByAssignmentIds(
+    accountId: string,
+    assignmentIds: string[],
+    options: { status?: AssignmentStatus } = {},
+  ) {
+    const assignmentIdSet = new Set(assignmentIds);
+
+    return this.links
+      .filter(
+        (link) =>
+          link.accountId === accountId &&
+          assignmentIdSet.has(link.assignmentId),
+      )
+      .filter(
+        (link) =>
+          options.status === undefined || link.status === options.status,
+      );
+  }
+
   async countActiveByAssignmentIds(accountId: string, assignmentIds: string[]) {
     const assignmentIdSet = new Set(assignmentIds);
     const counts = new Map<string, number>();
