@@ -10,7 +10,10 @@ export {
   createAssignment,
   createAssignmentWithItems,
 } from "./application/create-assignment";
-export { hasActive2062Coverage } from "./application/has-active-2062-coverage";
+export {
+  getActive2062CoverageInfo,
+  hasActive2062Coverage,
+} from "./application/has-active-2062-coverage";
 export {
   getHandReceiptAssignments,
   getItemCoverage,
@@ -39,6 +42,7 @@ export type {
   ActiveAssignmentSummary,
   ActiveAssignmentItemSummary,
   Active2062Coverage,
+  Active2062CoverageInfo,
   AssignmentItemLinkRecord,
   AssignmentRecord,
   AssignmentStatus,

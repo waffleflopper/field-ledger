@@ -199,6 +199,79 @@ test("users can create single-item formal 2062 coverage from item detail", async
   await expect(page.getByText("Item linked to 2062")).toBeVisible();
 });
 
+test("item workflows warn and block around active 2062 coverage", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("2062 source receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.goto("/app/hand-receipts");
+  await page.getByRole("button", { name: "New hand receipt" }).click();
+  await page.getByLabel("Name").fill("2062 target receipt");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.goto("/app/hand-receipts");
+  await page.getByRole("link", { name: "Open 2062 source receipt" }).click();
+
+  await page.getByRole("button", { name: "Add item" }).click();
+  const createItemDialog = page.getByRole("dialog", {
+    name: "Add property item",
+  });
+  await createItemDialog.getByLabel("Nomenclature").fill("2062 blocked radio");
+  await createItemDialog.getByLabel("ECN").fill("ECN-2062-BLOCK");
+  await createItemDialog.getByRole("button", { name: "Create item" }).click();
+  await page.getByRole("link", { name: "Open 2062 blocked radio" }).click();
+
+  await page.getByLabel("Contact name").fill("SGT Morgan");
+  await page.getByRole("button", { name: "Create SGT Morgan" }).click();
+  await page.getByRole("link", { name: "Upload 2062" }).first().click();
+  await page.getByLabel("Upload 2062 document").setInputFiles({
+    name: "blocked-2062.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n% Field Ledger blocked 2062 fixture\n"),
+  });
+  await page.getByLabel("Select document").selectOption({
+    label: "blocked-2062.pdf",
+  });
+  await page.getByRole("button", { name: "Create 2062" }).click();
+
+  await page.getByRole("button", { name: "Move" }).click();
+  const moveDialog = page.getByRole("dialog", { name: "Move item" });
+  await expect(
+    moveDialog.getByText("Move blocked by active 2062"),
+  ).toBeVisible();
+  await expect(
+    moveDialog.getByText("Close this item's active 2062 link before moving"),
+  ).toBeVisible();
+  await expect(moveDialog.getByRole("button", { name: "Move" })).toBeDisabled();
+  await moveDialog.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "Archive item" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive this item?",
+  });
+  await expect(
+    archiveDialog.getByText("Archiving will close the active 2062 link"),
+  ).toBeVisible();
+  await expect(
+    archiveDialog.getByText("The linked document and item history stay preserved."),
+  ).toBeVisible();
+  await expect(
+    archiveDialog.getByText(
+      "This is the last active item on the 2062, so the assignment will close.",
+    ),
+  ).toBeVisible();
+  await archiveDialog
+    .getByRole("button", { name: "Archive and close link" })
+    .click();
+
+  await expect(page.getByText("archived property item")).toBeVisible();
+  await expect(page.getByText("Item archived")).toBeVisible();
+  await expect(page.getByText("Item removed from 2062")).toBeVisible();
+});
+
 test("archived item records appear only when deliberately included", async ({
   page,
 }) => {

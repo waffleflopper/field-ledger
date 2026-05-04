@@ -1,4 +1,5 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
+import type { Active2062CoverageInfo } from "@/modules/assignments-2062";
 import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 import { deriveAccountCapabilities } from "@/modules/billing";
 import type { ItemRepository } from "./item-repository";
@@ -10,7 +11,8 @@ type LifecycleItemInput = {
   itemId: string;
   itemRepository: ItemRepository;
   auditRepository: AuditRepository;
-  hasActive2062Coverage?: Active2062CoverageLookup;
+  getActive2062CoverageInfo?: Active2062CoverageInfoLookup;
+  closeActive2062ItemLink?: CloseActive2062ItemLink;
   now?: Date;
 };
 
@@ -20,13 +22,18 @@ type ItemLifecycleTransition = {
   auditAction: "item.archived" | "item.restored";
 };
 
-type Active2062CoverageLookup = (input: {
+type Active2062CoverageInfoLookup = (input: {
   accountId: string;
   itemId: string;
-}) => boolean | Promise<boolean>;
+}) => Active2062CoverageInfo | null | Promise<Active2062CoverageInfo | null>;
 
-function defaultHasActive2062Coverage() {
-  return false;
+type CloseActive2062ItemLink = (input: {
+  itemLinkId: string;
+  now: Date;
+}) => unknown | Promise<unknown>;
+
+function defaultGetActive2062CoverageInfo() {
+  return null;
 }
 
 async function changeItemLifecycleStatus({
@@ -35,7 +42,8 @@ async function changeItemLifecycleStatus({
   itemId,
   itemRepository,
   auditRepository,
-  hasActive2062Coverage = defaultHasActive2062Coverage,
+  getActive2062CoverageInfo = defaultGetActive2062CoverageInfo,
+  closeActive2062ItemLink,
   now = new Date(),
   transition,
 }: LifecycleItemInput & { transition: ItemLifecycleTransition }) {
@@ -55,13 +63,13 @@ async function changeItemLifecycleStatus({
     throw new Error(transition.alreadyInTargetMessage);
   }
 
-  if (
-    transition.targetStatus === "archived" &&
-    (await hasActive2062Coverage({ accountId: account.id, itemId }))
-  ) {
-    throw new Error(
-      "Cannot archive item with active 2062 coverage until the active link is closed.",
-    );
+  const active2062Coverage =
+    transition.targetStatus === "archived"
+      ? await getActive2062CoverageInfo({ accountId: account.id, itemId })
+      : null;
+
+  if (active2062Coverage && !closeActive2062ItemLink) {
+    throw new Error("Active 2062 link closure is unavailable.");
   }
 
   const updated = await itemRepository.update(account.id, itemId, {
@@ -88,6 +96,15 @@ async function changeItemLifecycleStatus({
     occurredAt: now,
     repository: auditRepository,
   });
+
+  if (active2062Coverage) {
+    await closeActive2062ItemLink?.({
+      itemLinkId: active2062Coverage.itemLinkId,
+      now,
+    });
+
+    return (await itemRepository.findById(account.id, itemId)) ?? updated;
+  }
 
   return updated;
 }
