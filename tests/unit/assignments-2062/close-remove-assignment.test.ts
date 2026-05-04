@@ -224,6 +224,29 @@ describe("closeAssignment", () => {
 });
 
 describe("removeAssignmentItemLink", () => {
+  it("blocks read-only accounts before changing item links", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      removeAssignmentItemLink({
+        account: createAccount({ accessState: "paused_read_only" }),
+        actorId: "owner-1",
+        itemLinkId: "link-1",
+        ...repositories,
+        now,
+      }),
+    ).rejects.toBeInstanceOf(AccountReadOnlyError);
+
+    expect(repositories.assignmentRepository.assignments[0]).toMatchObject({
+      status: "active",
+    });
+    expect(repositories.assignmentItemLinkRepository.links).toEqual([
+      expect.objectContaining({ id: "link-1", status: "active" }),
+      expect.objectContaining({ id: "link-2", status: "active" }),
+    ]);
+    expect(repositories.auditRepository.events).toEqual([]);
+  });
+
   it("removes one item from a multi-item assignment without closing the assignment", async () => {
     const repositories = createRepositories();
 

@@ -157,6 +157,34 @@ describe("documentsRouter", () => {
     });
   });
 
+  it("maps read-only upload completion to FORBIDDEN before storage verification", async () => {
+    const documentRepository = new InMemoryDocumentRepository();
+    const storagePort = new MockStoragePort({
+      existingPaths: ["account-1/7f9fedcf-58cb-4651-96d8-ea0cb8fc68b1"],
+    });
+    const caller = createCaller({
+      account: createAccount({ accessState: "paused_read_only" }),
+      documentRepository,
+      storagePort,
+    });
+
+    await expect(
+      caller.documents.completeUpload({
+        documentId: "7f9fedcf-58cb-4651-96d8-ea0cb8fc68b1",
+        filename: "signed-2062.pdf",
+        handReceiptId: "8d899b9d-ee59-4f5a-a587-934a750fce48",
+        mimeType: "application/pdf",
+        sizeBytes: 1024,
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+
+    expect(storagePort.existsCalls).toEqual([]);
+    expect(documentRepository.documents).toEqual([]);
+  });
+
   it("rejects invalid MIME types before the procedure runs", async () => {
     await expect(
       createCaller().documents.initiateUpload({
@@ -185,6 +213,45 @@ describe("documentsRouter", () => {
     ]);
     const caller = createCaller({ documentRepository });
 
+    await expect(
+      caller.documents.getById({
+        id: "4d39229c-f714-4e3f-9ea1-77c9bfdca76c",
+      }),
+    ).resolves.toMatchObject({
+      document: {
+        filename: "signed-2062.pdf",
+      },
+      downloadUrl:
+        "https://storage.test/download/account-1/4d39229c-f714-4e3f-9ea1-77c9bfdca76c",
+    });
+  });
+
+  it("keeps document list and download access available for read-only accounts", async () => {
+    const documentRepository = new InMemoryDocumentRepository([
+      {
+        id: "4d39229c-f714-4e3f-9ea1-77c9bfdca76c",
+        accountId: "account-1",
+        handReceiptId: "8d899b9d-ee59-4f5a-a587-934a750fce48",
+        filename: "signed-2062.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 1024,
+        storagePath: "account-1/4d39229c-f714-4e3f-9ea1-77c9bfdca76c",
+        uploadedAt: new Date("2026-05-02T12:00:00.000Z"),
+        createdAt: new Date("2026-05-02T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-02T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      account: createAccount({ accessState: "paused_read_only" }),
+      documentRepository,
+    });
+
+    await expect(caller.documents.list()).resolves.toMatchObject([
+      {
+        id: "4d39229c-f714-4e3f-9ea1-77c9bfdca76c",
+        filename: "signed-2062.pdf",
+      },
+    ]);
     await expect(
       caller.documents.getById({
         id: "4d39229c-f714-4e3f-9ea1-77c9bfdca76c",

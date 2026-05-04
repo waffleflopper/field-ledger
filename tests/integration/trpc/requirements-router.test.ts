@@ -397,6 +397,64 @@ describe("requirementsRouter", () => {
     });
   });
 
+  it("keeps requirement list and completion history available for read-only accounts", async () => {
+    const requirementId = "6e08300d-d56f-454d-a093-1b7c8657f796";
+    const requirementCompletionRepository =
+      new InMemoryRequirementCompletionRepository([
+        {
+          id: "completion-1",
+          accountId: "account-1",
+          requirementId,
+          completedOn: "2026-05-01",
+          notes: "Completed before pause.",
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const requirementRepository = new InMemoryRequirementRepository([
+      {
+        id: requirementId,
+        accountId: "account-1",
+        itemId: itemOneId,
+        name: "Monthly function check",
+        notes: null,
+        intervalType: "monthly",
+        intervalValue: null,
+        nextDueDate: "2026-05-15",
+        status: "active",
+        pausedAt: null,
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      account: createAccount({
+        accessState: "paused_read_only",
+        subscriptionTier: "pro",
+      }),
+      requirementCompletionRepository,
+      requirementRepository,
+    });
+
+    await expect(
+      caller.requirements.list({ itemId: itemOneId }),
+    ).resolves.toMatchObject([
+      {
+        id: requirementId,
+        name: "Monthly function check",
+      },
+    ]);
+    await expect(
+      caller.requirements.listCompletionHistory({
+        requirementId,
+      }),
+    ).resolves.toMatchObject([
+      {
+        completedOn: "2026-05-01",
+        notes: "Completed before pause.",
+      },
+    ]);
+  });
+
   it("keeps requirement lists scoped to the selected item", async () => {
     const requirementRepository = new InMemoryRequirementRepository([
       {

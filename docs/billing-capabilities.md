@@ -50,10 +50,22 @@ Read-only behavior is enforced in three layers:
 3. Module UI queries `billing.capabilities` and disables, hides, or explains
    write actions while preserving record review.
 
-Core property reads remain available for paused/read-only accounts. This
-includes hand receipts, items, contacts, locations, search results, and
-activity. Expired trials with no active plan resolve to the same read-only
-capability behavior dynamically.
+Core operational reads remain available for paused/read-only accounts. This
+includes hand receipts, items, contacts, locations, search results,
+requirements and completion history, document metadata and downloads, active
+2062 assignments, closed 2062 coverage history, and activity. Expired trials
+with no active plan resolve to the same read-only capability behavior
+dynamically.
+
+Read-only write blocking applies to the remaining MVP operational workflows:
+
+- Requirements: create, edit, complete, pause, resume, and next-due adjustment
+  actions are blocked while list and completion-history reads remain available.
+- Documents: upload initiation and upload completion are blocked while existing
+  document list, metadata, and download reads remain available.
+- Formal 2062s: assignment creation, whole-assignment close, and individual
+  item-link removal are blocked while active assignment and item coverage reads
+  remain available.
 
 ## Capability Helpers
 

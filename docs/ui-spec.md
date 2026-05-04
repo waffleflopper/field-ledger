@@ -109,6 +109,12 @@ enforcement.
   and activity remain reviewable.
 - `DashboardReadOnlyNotice` suppresses active requirement work tiles for
   read-only accounts.
+- Requirement UI remains visible as review context, but create, edit, complete,
+  pause, resume, and due-date adjustment controls are unavailable.
+- Document UI keeps existing document review/download paths available, but
+  upload entry points are unavailable.
+- 2062 UI keeps active assignments and coverage history visible, but create,
+  close, and remove-item-link controls are unavailable.
 
 ## Key Workflows
 

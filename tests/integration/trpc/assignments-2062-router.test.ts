@@ -201,6 +201,85 @@ function createCaller(account = createAccount()) {
   };
 }
 
+function seedExistingAssignmentFixture({
+  assignmentItemLinkRepository,
+  assignmentRepository,
+  includeClosedHistory = false,
+}: {
+  assignmentItemLinkRepository: InMemoryAssignmentItemLinkRepository;
+  assignmentRepository: InMemoryAssignmentRepository;
+  includeClosedHistory?: boolean;
+}) {
+  const activeAssignmentId = "11111111-1111-4111-8111-111111111111";
+  const activeLinkId = "22222222-2222-4222-8222-222222222222";
+  const closedAssignmentId = "33333333-3333-4333-8333-333333333333";
+  const closedLinkId = "44444444-4444-4444-8444-444444444444";
+
+  assignmentRepository.assignments.push({
+    id: activeAssignmentId,
+    accountId: "account-1",
+    handReceiptId: "88888888-8888-4888-8888-888888888888",
+    contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+    contactName: "SPC Rivera",
+    documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    documentFilename: "signed-2062.pdf",
+    status: "active",
+    createdAt: now,
+    updatedAt: now,
+  });
+  assignmentItemLinkRepository.links.push({
+    id: activeLinkId,
+    accountId: "account-1",
+    assignmentId: activeAssignmentId,
+    itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+    status: "active",
+    closedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  if (includeClosedHistory) {
+    assignmentRepository.assignments.push({
+      id: closedAssignmentId,
+      accountId: "account-1",
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      contactName: "SPC Rivera",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      documentFilename: "closed-2062.pdf",
+      status: "closed",
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+    assignmentItemLinkRepository.links.push({
+      id: closedLinkId,
+      accountId: "account-1",
+      assignmentId: closedAssignmentId,
+      itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      status: "closed",
+      closedAt: new Date("2026-04-02T12:00:00.000Z"),
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+    assignmentItemLinkRepository.assignmentContexts.push({
+      assignmentId: closedAssignmentId,
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      handReceiptName: "Primary receipt",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      contactName: "SPC Rivera",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+      documentFilename: "closed-2062.pdf",
+    });
+  }
+
+  return {
+    activeAssignmentId,
+    activeLinkId,
+    closedAssignmentId,
+    closedLinkId,
+  };
+}
+
 describe("assignments2062Router", () => {
   it("creates a single-item 2062 through the typed procedure", async () => {
     const { caller, assignmentRepository, assignmentItemLinkRepository } =
@@ -514,6 +593,36 @@ describe("assignments2062Router", () => {
     );
   });
 
+  it("maps read-only assignment close to FORBIDDEN without changing records", async () => {
+    const {
+      caller,
+      assignmentRepository,
+      assignmentItemLinkRepository,
+      auditRepository,
+    } = createCaller(createAccount({ accessState: "paused_read_only" }));
+    const { activeAssignmentId } = seedExistingAssignmentFixture({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+    });
+
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: activeAssignmentId,
+        closedOn: "2026-05-01",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    expect(assignmentRepository.assignments[0]).toMatchObject({
+      status: "active",
+    });
+    expect(assignmentItemLinkRepository.links[0]).toMatchObject({
+      status: "active",
+    });
+    expect(auditRepository.events).toEqual([]);
+  });
+
   it("removes one item link while leaving other active links in place", async () => {
     const { caller, assignmentRepository, assignmentItemLinkRepository } =
       createCaller();
@@ -549,6 +658,36 @@ describe("assignments2062Router", () => {
       expect.objectContaining({ id: link.id, status: "closed" }),
       expect.objectContaining({ status: "active" }),
     ]);
+  });
+
+  it("maps read-only item-link removal to FORBIDDEN without changing records", async () => {
+    const {
+      caller,
+      assignmentRepository,
+      assignmentItemLinkRepository,
+      auditRepository,
+    } = createCaller(createAccount({ accessState: "paused_read_only" }));
+    const { activeLinkId } = seedExistingAssignmentFixture({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+    });
+
+    await expect(
+      caller.assignments2062.removeItemLink({
+        itemLinkId: activeLinkId,
+        closedOn: "2026-05-01",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    expect(assignmentRepository.assignments[0]).toMatchObject({
+      status: "active",
+    });
+    expect(assignmentItemLinkRepository.links[0]).toMatchObject({
+      status: "active",
+    });
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("auto-closes the assignment when the final item link is removed", async () => {
@@ -698,6 +837,51 @@ describe("assignments2062Router", () => {
         {
           assignmentId: "33333333-3333-4333-8333-333333333333",
           linkId: "44444444-4444-4444-8444-444444444444",
+        },
+      ],
+    });
+  });
+
+  it("keeps 2062 list and coverage reads available for read-only accounts", async () => {
+    const { caller, assignmentItemLinkRepository, assignmentRepository } =
+      createCaller(createAccount({ accessState: "paused_read_only" }));
+    const { activeAssignmentId, closedAssignmentId, closedLinkId } =
+      seedExistingAssignmentFixture({
+        assignmentItemLinkRepository,
+        assignmentRepository,
+        includeClosedHistory: true,
+      });
+
+    await expect(caller.assignments2062.list()).resolves.toMatchObject([
+      {
+        id: activeAssignmentId,
+        contactName: "SPC Rivera",
+        itemCount: 1,
+      },
+    ]);
+    await expect(
+      caller.assignments2062.getHandReceiptAssignments({
+        handReceiptId: "88888888-8888-4888-8888-888888888888",
+      }),
+    ).resolves.toMatchObject([
+      {
+        id: activeAssignmentId,
+        handReceiptName: "Primary receipt",
+      },
+    ]);
+    await expect(
+      caller.assignments2062.getItemCoverage({
+        itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      }),
+    ).resolves.toMatchObject({
+      current: {
+        id: activeAssignmentId,
+        contactName: "SPC Rivera",
+      },
+      history: [
+        {
+          assignmentId: closedAssignmentId,
+          linkId: closedLinkId,
         },
       ],
     });

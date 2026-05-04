@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
 import {
   completeDocumentUpload,
+  DocumentUploadReadOnlyError,
   initiateDocumentUpload,
 } from "@/modules/documents";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
@@ -200,6 +201,39 @@ describe("completeDocumentUpload", () => {
       }),
     ).rejects.toThrow("This account is read-only.");
     expect(storagePort.uploadCalls).toEqual([]);
+  });
+
+  it("blocks read-only completion before storage verification", async () => {
+    const storagePort = new MockStoragePort({
+      existingPaths: ["account-1/document-1"],
+    });
+    const documentRepository = new InMemoryDocumentRepository();
+    const auditRepository = new InMemoryAuditRepository();
+
+    await expect(
+      completeDocumentUpload({
+        account: createAccount({ accessState: "paused_read_only" }),
+        actorId: "owner-1",
+        input: {
+          documentId: "document-1",
+          filename: "signed-2062.pdf",
+          mimeType: "application/pdf",
+          sizeBytes: 1234,
+          handReceiptId: "hand-receipt-1",
+        },
+        documentRepository,
+        handReceiptRepository: new InMemoryHandReceiptRepository([
+          createHandReceipt(),
+        ]),
+        auditRepository,
+        storagePort,
+        now: new Date("2026-05-02T12:00:00.000Z"),
+      }),
+    ).rejects.toBeInstanceOf(DocumentUploadReadOnlyError);
+
+    expect(storagePort.existsCalls).toEqual([]);
+    expect(documentRepository.documents).toEqual([]);
+    expect(auditRepository.events).toEqual([]);
   });
 
   it("rejects files over the application upload limit before storage is touched", async () => {
