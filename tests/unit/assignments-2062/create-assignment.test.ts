@@ -363,6 +363,27 @@ describe("createAssignment", () => {
     ).rejects.toThrow("Item was not found.");
   });
 
+  it("blocks single-item creation against an archived hand receipt before mutating records", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "item-archived-receipt",
+          contactId: "contact-1",
+          documentId: "document-archived",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Hand receipt must be active to upload a 2062.");
+    expect(repositories.assignmentRepository.assignments).toEqual([]);
+    expect(repositories.assignmentItemLinkRepository.links).toEqual([]);
+    expect(repositories.auditRepository.events).toEqual([]);
+  });
+
   it("creates one assignment with multiple same-hand-receipt item links", async () => {
     const repositories = createRepositories();
     let linkSequence = 0;

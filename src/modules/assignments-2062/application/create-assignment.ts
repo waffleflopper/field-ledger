@@ -22,6 +22,7 @@ type CreateAssignmentArgs = {
   auditRepository: AuditRepository;
   contactRepository: ContactRepository;
   documentRepository: DocumentRepository;
+  handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   now?: Date;
   createAssignmentId?: () => string;
@@ -52,6 +53,7 @@ export async function createAssignment({
   auditRepository,
   contactRepository,
   documentRepository,
+  handReceiptRepository,
   itemRepository,
   now = new Date(),
   createAssignmentId = () => globalThis.crypto.randomUUID(),
@@ -71,6 +73,19 @@ export async function createAssignment({
 
   if (item.status !== "active") {
     throw new Error("Item must be active to upload a 2062.");
+  }
+
+  const handReceipt = await handReceiptRepository.findById(
+    account.id,
+    item.handReceiptId,
+  );
+
+  if (!handReceipt) {
+    throw new Error("Hand receipt was not found.");
+  }
+
+  if (handReceipt.status !== "active") {
+    throw new Error("Hand receipt must be active to upload a 2062.");
   }
 
   const activeLink = await assignmentItemLinkRepository.findActiveByItemId(

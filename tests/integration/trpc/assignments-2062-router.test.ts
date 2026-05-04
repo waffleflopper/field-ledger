@@ -310,6 +310,24 @@ describe("assignments2062Router", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("maps archived hand receipt single-item creation to CONFLICT", async () => {
+    const { caller, assignmentRepository, assignmentItemLinkRepository } =
+      createCaller();
+
+    await expect(
+      caller.assignments2062.create({
+        itemId: "44444444-4444-4444-8444-444444444444",
+        contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+        documentId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Hand receipt must be active to upload a 2062.",
+    });
+    expect(assignmentRepository.assignments).toEqual([]);
+    expect(assignmentItemLinkRepository.links).toEqual([]);
+  });
+
   it("creates a multi-item 2062 through the typed procedure", async () => {
     const {
       caller,

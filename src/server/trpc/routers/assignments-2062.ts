@@ -150,6 +150,7 @@ export const assignments2062Router = createTRPCRouter({
           auditRepository: repositories.auditRepository,
           contactRepository: repositories.contactRepository,
           documentRepository: repositories.documentRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
           itemRepository: repositories.itemRepository,
         }),
       ),
