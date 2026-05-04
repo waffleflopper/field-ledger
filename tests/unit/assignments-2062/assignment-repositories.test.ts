@@ -71,4 +71,68 @@ describe("assignment test repositories", () => {
       constraint: "assignment_item_links_one_active_item_idx",
     });
   });
+
+  it("matches item-link recency tie-breakers used by the database repository", async () => {
+    const sameClosedAt = new Date("2026-05-02T14:00:00.000Z");
+    const sameUpdatedAt = new Date("2026-05-02T15:00:00.000Z");
+    const repository = new InMemoryAssignmentItemLinkRepository(
+      [
+        {
+          id: "closed-link-older-created",
+          accountId: "account-1",
+          assignmentId: "assignment-1",
+          itemId: "item-1",
+          status: "closed",
+          closedAt: sameClosedAt,
+          createdAt: older,
+          updatedAt: sameUpdatedAt,
+        },
+        {
+          id: "closed-link-newer-created",
+          accountId: "account-1",
+          assignmentId: "assignment-2",
+          itemId: "item-1",
+          status: "closed",
+          closedAt: sameClosedAt,
+          createdAt: newer,
+          updatedAt: sameUpdatedAt,
+        },
+      ],
+      [
+        {
+          assignmentId: "assignment-1",
+          handReceiptId: "receipt-1",
+          handReceiptName: "Primary receipt",
+          contactId: "contact-1",
+          contactName: "SPC Rivera",
+          documentId: "document-1",
+          documentFilename: "older.pdf",
+        },
+        {
+          assignmentId: "assignment-2",
+          handReceiptId: "receipt-1",
+          handReceiptName: "Primary receipt",
+          contactId: "contact-2",
+          contactName: "SGT Morgan",
+          documentId: "document-2",
+          documentFilename: "newer.pdf",
+        },
+      ],
+    );
+
+    await expect(
+      repository.findByItemId("account-1", "item-1", { status: "closed" }),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: "closed-link-newer-created" }),
+      expect.objectContaining({ id: "closed-link-older-created" }),
+    ]);
+    await expect(
+      repository.findByItemIdWithAssignment("account-1", "item-1", {
+        status: "closed",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({ linkId: "closed-link-newer-created" }),
+      expect.objectContaining({ linkId: "closed-link-older-created" }),
+    ]);
+  });
 });

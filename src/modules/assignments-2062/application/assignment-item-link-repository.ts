@@ -30,6 +30,10 @@ export interface AssignmentItemLinkRepository {
     assignmentId: string,
     options?: { status?: AssignmentStatus },
   ): Promise<AssignmentItemLinkRecord[]>;
+  countActiveByAssignmentIds(
+    accountId: string,
+    assignmentIds: string[],
+  ): Promise<Map<string, number>>;
   updateStatus(
     accountId: string,
     linkId: string,
@@ -57,6 +61,9 @@ export function createUnavailableAssignmentItemLinkRepository(): AssignmentItemL
       throw new Error("An authenticated database session is required.");
     },
     async findByAssignmentId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async countActiveByAssignmentIds() {
       throw new Error("An authenticated database session is required.");
     },
     async updateStatus() {

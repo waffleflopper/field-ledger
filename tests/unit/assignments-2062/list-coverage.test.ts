@@ -146,6 +146,86 @@ describe("2062 list and coverage queries", () => {
     ]);
   });
 
+  it("batches active assignment summary lookups", async () => {
+    const repositories = createRepositories();
+
+    repositories.assignmentRepository.assignments.push({
+      id: "assignment-active-2",
+      accountId: account.id,
+      handReceiptId: "receipt-2",
+      contactId: "contact-2",
+      contactName: "SGT Morgan",
+      documentId: "document-2",
+      documentFilename: "active-2-2062.pdf",
+      status: "active",
+      createdAt: older,
+      updatedAt: older,
+    });
+    repositories.handReceiptRepository.handReceipts.push({
+      id: "receipt-2",
+      accountId: account.id,
+      name: "Secondary receipt",
+      notes: null,
+      handReceiptNumber: null,
+      holderName: null,
+      unitName: null,
+      uic: null,
+      effectiveDate: null,
+      status: "active",
+      createdAt: older,
+      updatedAt: older,
+    });
+    repositories.assignmentItemLinkRepository.links.push({
+      id: "link-active-3",
+      accountId: account.id,
+      assignmentId: "assignment-active-2",
+      itemId: "item-3",
+      status: "active",
+      closedAt: null,
+      createdAt: older,
+      updatedAt: older,
+    });
+
+    let handReceiptFinds = 0;
+    let handReceiptBatchFinds = 0;
+    let linkFinds = 0;
+    let linkBatchCounts = 0;
+    const originalFindManyByIds =
+      repositories.handReceiptRepository.findManyByIds.bind(
+        repositories.handReceiptRepository,
+      );
+    const originalCountActiveByAssignmentIds =
+      repositories.assignmentItemLinkRepository.countActiveByAssignmentIds.bind(
+        repositories.assignmentItemLinkRepository,
+      );
+
+    repositories.handReceiptRepository.findById = async () => {
+      handReceiptFinds += 1;
+      return null;
+    };
+    repositories.handReceiptRepository.findManyByIds = async (...args) => {
+      handReceiptBatchFinds += 1;
+      return originalFindManyByIds(...args);
+    };
+    repositories.assignmentItemLinkRepository.findByAssignmentId = async () => {
+      linkFinds += 1;
+      return [];
+    };
+    repositories.assignmentItemLinkRepository.countActiveByAssignmentIds =
+      async (...args) => {
+        linkBatchCounts += 1;
+        return originalCountActiveByAssignmentIds(...args);
+      };
+
+    const summaries = await listActiveAssignments({ account, ...repositories });
+
+    expect(summaries).toHaveLength(2);
+    expect(handReceiptFinds).toBe(0);
+    expect(linkFinds).toBe(0);
+    expect(handReceiptBatchFinds).toBe(1);
+    expect(linkBatchCounts).toBe(1);
+  });
+
   it("separates current and historical 2062 coverage for an item", async () => {
     const repositories = createRepositories();
 

@@ -17,6 +17,27 @@ type AssignmentLinkContext = Pick<
   | "documentFilename"
 >;
 
+function compareLinksByRecency(
+  left: Pick<AssignmentItemLinkRecord, "closedAt" | "createdAt" | "updatedAt">,
+  right: Pick<AssignmentItemLinkRecord, "closedAt" | "createdAt" | "updatedAt">,
+) {
+  const closedDelta =
+    (right.closedAt?.getTime() ?? Number.NEGATIVE_INFINITY) -
+    (left.closedAt?.getTime() ?? Number.NEGATIVE_INFINITY);
+
+  if (closedDelta !== 0) {
+    return closedDelta;
+  }
+
+  const updatedDelta = right.updatedAt.getTime() - left.updatedAt.getTime();
+
+  if (updatedDelta !== 0) {
+    return updatedDelta;
+  }
+
+  return right.createdAt.getTime() - left.createdAt.getTime();
+}
+
 export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkRepository {
   links: AssignmentItemLinkRecord[] = [];
   assignmentContexts: AssignmentLinkContext[] = [];
@@ -86,13 +107,7 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
         (link) =>
           options.status === undefined || link.status === options.status,
       )
-      .sort((left, right) => {
-        const leftTime = left.closedAt?.getTime() ?? left.updatedAt.getTime();
-        const rightTime =
-          right.closedAt?.getTime() ?? right.updatedAt.getTime();
-
-        return rightTime - leftTime;
-      });
+      .sort(compareLinksByRecency);
   }
 
   async findByItemIdWithAssignment(
@@ -138,11 +153,7 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
           return left.status === "active" ? -1 : 1;
         }
 
-        const leftTime = left.closedAt?.getTime() ?? left.updatedAt.getTime();
-        const rightTime =
-          right.closedAt?.getTime() ?? right.updatedAt.getTime();
-
-        return rightTime - leftTime;
+        return compareLinksByRecency(left, right);
       });
   }
 
@@ -160,6 +171,25 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
         (link) =>
           options.status === undefined || link.status === options.status,
       );
+  }
+
+  async countActiveByAssignmentIds(accountId: string, assignmentIds: string[]) {
+    const assignmentIdSet = new Set(assignmentIds);
+    const counts = new Map<string, number>();
+
+    for (const link of this.links) {
+      if (
+        link.accountId !== accountId ||
+        link.status !== "active" ||
+        !assignmentIdSet.has(link.assignmentId)
+      ) {
+        continue;
+      }
+
+      counts.set(link.assignmentId, (counts.get(link.assignmentId) ?? 0) + 1);
+    }
+
+    return counts;
   }
 
   async updateStatus(

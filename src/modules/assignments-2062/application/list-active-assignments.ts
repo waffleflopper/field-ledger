@@ -1,5 +1,8 @@
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
-import type { HandReceiptRepository } from "@/modules/hand-receipts";
+import type {
+  HandReceiptRecord,
+  HandReceiptRepository,
+} from "@/modules/hand-receipts";
 import type { AssignmentItemLinkRepository } from "./assignment-item-link-repository";
 import type { AssignmentRepository } from "./assignment-repository";
 import type {
@@ -21,6 +24,12 @@ type SummaryDependencies = Omit<
   "assignmentRepository"
 > & {
   assignment: AssignmentRecord;
+};
+
+type BatchSummaryDependencies = {
+  assignment: AssignmentRecord;
+  activeLinkCount: number;
+  handReceipt: HandReceiptRecord | null;
 };
 
 type CoverageHistoryEntryDependencies = {
@@ -72,6 +81,66 @@ async function toActiveAssignmentSummary({
   };
 }
 
+function toActiveAssignmentSummaryBatch({
+  activeLinkCount,
+  assignment,
+  handReceipt,
+}: BatchSummaryDependencies): ActiveAssignmentSummary | null {
+  if (assignment.status !== "active" || !handReceipt) {
+    return null;
+  }
+
+  return {
+    id: assignment.id,
+    handReceiptId: assignment.handReceiptId,
+    handReceiptName: handReceipt.name,
+    contactId: assignment.contactId,
+    contactName: assignment.contactName ?? "Unknown contact",
+    documentId: assignment.documentId,
+    documentFilename: assignment.documentFilename ?? "2062 document",
+    itemCount: activeLinkCount,
+    status: "active",
+    createdAt: assignment.createdAt,
+    updatedAt: assignment.updatedAt,
+  };
+}
+
+async function summarizeActiveAssignments({
+  account,
+  assignments,
+  assignmentItemLinkRepository,
+  handReceiptRepository,
+}: Omit<AssignmentQueryDependencies, "assignmentRepository"> & {
+  assignments: AssignmentRecord[];
+}): Promise<ActiveAssignmentSummary[]> {
+  const assignmentIds = assignments.map((assignment) => assignment.id);
+  const handReceiptIds = [
+    ...new Set(assignments.map((assignment) => assignment.handReceiptId)),
+  ];
+
+  const [handReceipts, activeLinkCounts] = await Promise.all([
+    handReceiptRepository.findManyByIds(account.id, handReceiptIds),
+    assignmentItemLinkRepository.countActiveByAssignmentIds(
+      account.id,
+      assignmentIds,
+    ),
+  ]);
+
+  const handReceiptsById = new Map(
+    handReceipts.map((handReceipt) => [handReceipt.id, handReceipt]),
+  );
+
+  return assignments
+    .map((assignment) =>
+      toActiveAssignmentSummaryBatch({
+        activeLinkCount: activeLinkCounts.get(assignment.id) ?? 0,
+        assignment,
+        handReceipt: handReceiptsById.get(assignment.handReceiptId) ?? null,
+      }),
+    )
+    .filter((summary): summary is ActiveAssignmentSummary => Boolean(summary));
+}
+
 function coverageEntryToHistoricalAssignmentLink({
   assignmentId,
   closedAt,
@@ -112,20 +181,12 @@ export async function listActiveAssignments({
     status: "active",
   });
 
-  const summaries = await Promise.all(
-    assignments.map((assignment) =>
-      toActiveAssignmentSummary({
-        account,
-        assignment,
-        assignmentItemLinkRepository,
-        handReceiptRepository,
-      }),
-    ),
-  );
-
-  return summaries.filter((summary): summary is ActiveAssignmentSummary =>
-    Boolean(summary),
-  );
+  return summarizeActiveAssignments({
+    account,
+    assignments,
+    assignmentItemLinkRepository,
+    handReceiptRepository,
+  });
 }
 
 export async function getHandReceiptAssignments({
@@ -143,20 +204,12 @@ export async function getHandReceiptAssignments({
     { status: "active" },
   );
 
-  const summaries = await Promise.all(
-    assignments.map((assignment) =>
-      toActiveAssignmentSummary({
-        account,
-        assignment,
-        assignmentItemLinkRepository,
-        handReceiptRepository,
-      }),
-    ),
-  );
-
-  return summaries.filter((summary): summary is ActiveAssignmentSummary =>
-    Boolean(summary),
-  );
+  return summarizeActiveAssignments({
+    account,
+    assignments,
+    assignmentItemLinkRepository,
+    handReceiptRepository,
+  });
 }
 
 export async function getItemCoverage({

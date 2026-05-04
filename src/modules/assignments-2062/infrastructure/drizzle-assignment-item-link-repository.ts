@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 
 import {
   assignmentItemLinks,
@@ -193,6 +193,30 @@ function createAssignmentItemLinkRepository(
       );
 
       return rows.map(toLinkRecord);
+    },
+    async countActiveByAssignmentIds(accountId, assignmentIds) {
+      if (assignmentIds.length === 0) {
+        return new Map();
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            assignmentId: assignmentItemLinks.assignmentId,
+            count: count(),
+          })
+          .from(assignmentItemLinks)
+          .where(
+            and(
+              eq(assignmentItemLinks.accountId, accountId),
+              eq(assignmentItemLinks.status, "active"),
+              inArray(assignmentItemLinks.assignmentId, assignmentIds),
+            ),
+          )
+          .groupBy(assignmentItemLinks.assignmentId),
+      );
+
+      return new Map(rows.map((row) => [row.assignmentId, row.count]));
     },
     async updateStatus(accountId, linkId, status, updatedAt, closedAt = null) {
       const [updated] = await run((transaction) =>

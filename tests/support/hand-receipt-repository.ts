@@ -49,6 +49,16 @@ export class InMemoryHandReceiptRepository implements HandReceiptRepository {
     );
   }
 
+  async findManyByIds(accountId: string, handReceiptIds: string[]) {
+    const handReceiptIdSet = new Set(handReceiptIds);
+
+    return this.handReceipts.filter(
+      (handReceipt) =>
+        handReceipt.accountId === accountId &&
+        handReceiptIdSet.has(handReceipt.id),
+    );
+  }
+
   async update(
     accountId: string,
     handReceiptId: string,

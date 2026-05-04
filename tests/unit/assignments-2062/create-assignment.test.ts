@@ -448,7 +448,7 @@ describe("createAssignment", () => {
         ...repositories,
         now,
       }),
-    ).rejects.toMatchObject(new EmptyItemSelectionError());
+    ).rejects.toBeInstanceOf(EmptyItemSelectionError);
   });
 
   it("blocks multi-item creation against an archived hand receipt before mutating records", async () => {

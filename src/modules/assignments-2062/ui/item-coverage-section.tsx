@@ -33,7 +33,11 @@ export function ItemCoverageSection({
     itemId,
   });
   const coverage = coverageQuery.data;
-  const canUpload = itemStatus === "active" && !coverage?.current;
+  const canUpload =
+    coverageQuery.isSuccess &&
+    coverage !== undefined &&
+    itemStatus === "active" &&
+    !coverage.current;
 
   return (
     <section className="rounded-lg border bg-card p-4">

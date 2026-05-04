@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 
 import { handReceipts } from "@/db/schema";
 import type { HandReceiptRepository } from "@/modules/hand-receipts";
@@ -86,6 +86,25 @@ function createHandReceiptRepository(
       );
 
       return row ? toHandReceiptRecord(row) : null;
+    },
+    async findManyByIds(accountId, handReceiptIds) {
+      if (handReceiptIds.length === 0) {
+        return [];
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(handReceipts)
+          .where(
+            and(
+              eq(handReceipts.accountId, accountId),
+              inArray(handReceipts.id, handReceiptIds),
+            ),
+          ),
+      );
+
+      return rows.map(toHandReceiptRecord);
     },
     async update(accountId, handReceiptId, updates) {
       const [updatedHandReceipt] = await run(async (transaction) => {

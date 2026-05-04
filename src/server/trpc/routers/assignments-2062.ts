@@ -150,34 +150,45 @@ async function runInUnitOfWork<T>(
 
 export const assignments2062Router = createTRPCRouter({
   list: protectedProcedure.query(({ ctx }) =>
-    listActiveAssignments({
-      account: ctx.account,
-      assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
-      assignmentRepository: ctx.assignmentRepository,
-      handReceiptRepository: ctx.handReceiptRepository,
-    }),
+    runInUnitOfWork(ctx, "assignments2062.list", (repositories) =>
+      listActiveAssignments({
+        account: ctx.account,
+        assignmentItemLinkRepository: repositories.assignmentItemLinkRepository,
+        assignmentRepository: repositories.assignmentRepository,
+        handReceiptRepository: repositories.handReceiptRepository,
+      }),
+    ),
   ),
   getItemCoverage: protectedProcedure
     .input(z.object({ itemId: z.uuid() }))
     .query(({ ctx, input }) =>
-      getItemCoverage({
-        account: ctx.account,
-        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
-        assignmentRepository: ctx.assignmentRepository,
-        handReceiptRepository: ctx.handReceiptRepository,
-        itemId: input.itemId,
-      }),
+      runInUnitOfWork(ctx, "assignments2062.getItemCoverage", (repositories) =>
+        getItemCoverage({
+          account: ctx.account,
+          assignmentItemLinkRepository:
+            repositories.assignmentItemLinkRepository,
+          assignmentRepository: repositories.assignmentRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          itemId: input.itemId,
+        }),
+      ),
     ),
   getHandReceiptAssignments: protectedProcedure
     .input(z.object({ handReceiptId: z.uuid() }))
     .query(({ ctx, input }) =>
-      getHandReceiptAssignments({
-        account: ctx.account,
-        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
-        assignmentRepository: ctx.assignmentRepository,
-        handReceiptId: input.handReceiptId,
-        handReceiptRepository: ctx.handReceiptRepository,
-      }),
+      runInUnitOfWork(
+        ctx,
+        "assignments2062.getHandReceiptAssignments",
+        (repositories) =>
+          getHandReceiptAssignments({
+            account: ctx.account,
+            assignmentItemLinkRepository:
+              repositories.assignmentItemLinkRepository,
+            assignmentRepository: repositories.assignmentRepository,
+            handReceiptId: input.handReceiptId,
+            handReceiptRepository: repositories.handReceiptRepository,
+          }),
+      ),
     ),
   create: protectedProcedure
     .input(createAssignmentInput)

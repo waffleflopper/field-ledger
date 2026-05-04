@@ -53,6 +53,9 @@ async function main() {
       async findById() {
         return null;
       },
+      async findManyByIds() {
+        return [];
+      },
       async update() {
         throw new Error("Foundation check should not update hand receipts.");
       },
