@@ -232,6 +232,9 @@ test("item workflows warn and block around active 2062 coverage", async ({
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.4\n% Field Ledger blocked 2062 fixture\n"),
   });
+  await expect(
+    page.getByText("blocked-2062.pdf is saved as private document evidence."),
+  ).toBeVisible();
   await page.getByLabel("Select document").selectOption({
     label: "blocked-2062.pdf",
   });

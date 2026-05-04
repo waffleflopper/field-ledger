@@ -1023,6 +1023,81 @@ describe("itemsRouter", () => {
     });
   });
 
+  it("maps covered item archive link closure races to conflict", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const assignmentRepository = new InMemoryAssignmentRepository([
+      {
+        id: "26975a26-42c7-4307-b883-d676482f1545",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        contactName: "SSG Rivera",
+        documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+        documentFilename: "signed-2062.pdf",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Race covered radio",
+        ecn: "ECN-707",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const originalFindById =
+      assignmentItemLinkRepository.findById.bind(assignmentItemLinkRepository);
+    assignmentItemLinkRepository.findById = async (...args) => {
+      const link = await originalFindById(...args);
+
+      if (!link) {
+        return null;
+      }
+
+      return {
+        ...link,
+        status: "closed",
+        closedAt: new Date("2026-05-02T12:00:00.000Z"),
+      };
+    };
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+      auditRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.archive({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Item link is already closed.",
+    });
+  });
+
   it("rejects cross-account item moves as not found", async () => {
     const itemRepository = new InMemoryItemRepository([
       {

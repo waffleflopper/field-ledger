@@ -4,6 +4,8 @@ import { z } from "zod";
 import {
   getActive2062CoverageInfo,
   hasActive2062Coverage,
+  ItemLinkAlreadyClosedError,
+  ItemLinkNotFoundError,
   removeAssignmentItemLink,
 } from "@/modules/assignments-2062";
 import {
@@ -126,6 +128,20 @@ function toTRPCError(
 ): never {
   const message =
     error instanceof Error ? error.message : "Unable to update item.";
+
+  if (error instanceof ItemLinkNotFoundError) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message,
+    });
+  }
+
+  if (error instanceof ItemLinkAlreadyClosedError) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message,
+    });
+  }
 
   switch (message) {
     case "This account is read-only.":
