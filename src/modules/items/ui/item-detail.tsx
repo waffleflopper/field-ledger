@@ -39,6 +39,9 @@ type ItemDetailProps = {
   itemId: string;
 };
 
+const coverageCheckFallback =
+  "Unable to verify 2062 coverage status. Try again or check your connection.";
+
 function formatDate(value: Date | string | null) {
   if (!value) {
     return "Not set";
@@ -211,7 +214,9 @@ function MoveItemDialog({
               />
               <div className="space-y-1">
                 <p className="font-medium">Coverage check failed</p>
-                <p className="leading-6">{moveCoverageError}</p>
+                <p className="leading-6">
+                  {moveCoverageError || coverageCheckFallback}
+                </p>
               </div>
             </div>
           </div>
@@ -551,7 +556,9 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
                 />
                 <div className="space-y-1">
                   <p className="font-medium">Coverage check failed</p>
-                  <p className="leading-6">{archiveCoverageError}</p>
+                  <p className="leading-6">
+                    {archiveCoverageError || coverageCheckFallback}
+                  </p>
                 </div>
               </div>
             </div>

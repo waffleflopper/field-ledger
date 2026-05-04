@@ -130,6 +130,17 @@ Step-based workflows should avoid tall stacked progress rails on phone. Use
 compact horizontal rails or equivalent compressed progress indicators, with
 full-width primary buttons where thumb reach matters.
 
+## Error, Blocked, and Empty States
+
+Error blocks should state what could not be loaded or saved, show the plain
+service error when available, provide a non-empty fallback, and offer Retry when
+the user can safely try the same read again.
+
+Blocked-state copy should name the actual product state: read-only account,
+archived item or receipt, active 2062 coverage, or missing data. Empty states
+should describe what is absent and offer only navigation or actions available to
+the current account.
+
 ## Key Workflows
 
 ### Upload 2062 From Hand Receipt

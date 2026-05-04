@@ -222,6 +222,17 @@ test("users can create single-item formal 2062 coverage from item detail", async
   await expect(page.getByText("signed-2062.pdf")).toBeVisible();
   await expect(page.getByText("No 2062")).toBeHidden();
   await expect(page.getByText("Item linked to 2062")).toBeVisible();
+
+  const coveredItemUrl = page.url();
+  await page.goto(`${coveredItemUrl}/upload-2062`);
+  await expect(
+    page.getByRole("heading", {
+      name: "This item already has active 2062 coverage",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Close the existing assignment before creating a new one."),
+  ).toBeVisible();
 });
 
 test("item workflows warn and block around active 2062 coverage", async ({

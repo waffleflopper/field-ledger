@@ -165,6 +165,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   const [itemLifecycleError, setItemLifecycleError] = useState<string | null>(
     null,
   );
+  const [createItemError, setCreateItemError] = useState<string | null>(null);
   const utilities = trpc.useUtils();
   const handReceiptQuery = trpc.handReceipts.getById.useQuery({
     id: handReceiptId,
@@ -255,6 +256,8 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
   });
   const createItemMutation = trpc.items.create.useMutation({
     onSuccess: async (result) => {
+      setCreateItemError(null);
+
       if (result.item) {
         await Promise.all([
           utilities.items.listByHandReceipt.invalidate({
@@ -269,6 +272,9 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
           }),
         ]);
       }
+    },
+    onError: (error) => {
+      setCreateItemError(error.message || "Item could not be created.");
     },
   });
   const restoreItemMutation = trpc.items.restore.useMutation({
@@ -353,8 +359,8 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
 
       {isReadOnly ? (
         <p className="rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
-          This account is read-only. Detail records remain available, but edits
-          and lifecycle changes are paused until access is restored.
+          Detail records remain available, but edits and lifecycle changes are
+          paused until access is restored.
         </p>
       ) : null}
 
@@ -431,17 +437,27 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                     <CreateItemForm
                       canCreate={!isReadOnly && handReceipt.status === "active"}
                       disabledReason={createItemDisabledReason}
-                      onSubmit={(input) =>
-                        createItemMutation.mutateAsync({
+                      onSubmit={(input) => {
+                        setCreateItemError(null);
+
+                        return createItemMutation.mutateAsync({
                           handReceiptId,
                           ...input,
-                        })
-                      }
+                        });
+                      }}
                     />
                   </>
                 ) : null}
               </div>
             </div>
+            {createItemError ? (
+              <p
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
+                role="alert"
+              >
+                {createItemError}
+              </p>
+            ) : null}
             <div className="flex w-fit rounded-lg border bg-background p-1">
               <button
                 aria-pressed={itemView === "active"}
