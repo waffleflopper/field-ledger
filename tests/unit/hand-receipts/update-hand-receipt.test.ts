@@ -79,6 +79,7 @@ describe("updateHandReceipt", () => {
         targetType: "hand_receipt",
         targetId: "receipt-1",
         metadata: {
+          name: "HQ hand receipt",
           changedFields: [
             "name",
             "notes",

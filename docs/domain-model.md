@@ -41,7 +41,8 @@ notice states that Field Ledger is for property accountability assistance, is
 not an official Army system of record, and must not store classified
 information, PHI, or sensitive operational details. Paused/read-only accounts
 can acknowledge the notice, but the copy must make clear that new hand receipt
-work waits until access is restored.
+work waits until access is restored. Completing onboarding emits
+`account.onboarding_completed` with boundary-notice acknowledgment metadata.
 
 ## Hand Receipts
 
@@ -68,8 +69,8 @@ Status:
 Archived hand receipts are hidden from day-to-day workflows.
 Creation of a hand receipt emits `hand_receipt.created` through the audit
 logger boundary. Editing a hand receipt emits `hand_receipt.updated` with the
-changed field names in metadata. Archiving and restoring a hand receipt emit
-`hand_receipt.archived` and `hand_receipt.restored`.
+hand receipt name and changed field names in metadata. Archiving and restoring
+a hand receipt emit `hand_receipt.archived` and `hand_receipt.restored`.
 
 Activity is the user-readable surface over audit events. Hand receipt activity
 labels are:
@@ -82,8 +83,8 @@ labels are:
 Activity reads are account-scoped. The general Activity route can show recent
 account history, the dashboard shows a lower-priority recent activity section,
 and hand receipt detail shows only recent events for that receipt. Activity UI
-should show readable labels and receipt names when available, not raw action
-strings, target type names, or database ids.
+should show readable labels and entity names when available, not raw action
+strings, raw target type names, or database ids.
 
 When item requirements exist, archived hand receipts should suppress contained
 item reminders so inactive buckets do not create day-to-day requirement noise.

@@ -6,6 +6,7 @@ import {
   type AccountRecord,
 } from "@/modules/accounts/application/ensure-account";
 import { InMemoryAccountRepository } from "../../support/account-repository";
+import { InMemoryAuditRepository } from "../../support/audit-repository";
 
 const trialAccount: AccountRecord = {
   id: "6a9b6ae8-ed65-4f5a-b8c3-585cf141abce",
@@ -50,6 +51,7 @@ describe("account onboarding", () => {
 
   it("marks onboarding complete idempotently", async () => {
     const repository = new InMemoryAccountRepository([trialAccount]);
+    const auditRepository = new InMemoryAuditRepository();
     const completedAt = new Date("2026-04-30T12:00:00.000Z");
 
     await expect(
@@ -57,11 +59,25 @@ describe("account onboarding", () => {
         account: trialAccount,
         completedAt,
         repository,
+        auditRepository,
       }),
     ).resolves.toMatchObject({
       completed: true,
       completedAt,
     });
+    expect(auditRepository.events).toMatchObject([
+      {
+        accountId: trialAccount.id,
+        actorId: trialAccount.userId,
+        action: "account.onboarding_completed",
+        targetType: "account",
+        targetId: trialAccount.id,
+        occurredAt: completedAt,
+        metadata: {
+          acknowledgedBoundaryNotice: true,
+        },
+      },
+    ]);
 
     await expect(
       completeOnboarding({
@@ -71,10 +87,12 @@ describe("account onboarding", () => {
         },
         completedAt: new Date("2026-05-01T12:00:00.000Z"),
         repository,
+        auditRepository,
       }),
     ).resolves.toMatchObject({
       completed: true,
       completedAt,
     });
+    expect(auditRepository.events).toHaveLength(1);
   });
 });

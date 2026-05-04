@@ -12,6 +12,7 @@ export const accountsRouter = createTRPCRouter({
     completeOnboarding({
       account: ctx.account,
       repository: ctx.accountRepository,
+      auditRepository: ctx.auditRepository,
     }),
   ),
 });

@@ -1,4 +1,5 @@
 import { deriveAccountCapabilities } from "@/modules/billing";
+import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 
 export type AccessState = "trialing" | "active" | "paused_read_only";
 export type SubscriptionTier = "base" | "pro";
@@ -82,6 +83,7 @@ type GetOnboardingStatusInput = {
 type CompleteOnboardingInput = {
   account: AccountRecord;
   repository: AccountRepository;
+  auditRepository: AuditRepository;
   completedAt?: Date;
   now?: Date;
 };
@@ -104,6 +106,7 @@ export function getOnboardingStatus({
 export async function completeOnboarding({
   account,
   repository,
+  auditRepository,
   completedAt = new Date(),
   now,
 }: CompleteOnboardingInput) {
@@ -119,6 +122,21 @@ export async function completeOnboarding({
   if (!updatedAccount) {
     throw new Error("Unable to complete owner account onboarding.");
   }
+
+  await recordAuditEvent({
+    accountId: account.id,
+    actorId: account.userId,
+    action: "account.onboarding_completed",
+    target: {
+      type: "account",
+      id: account.id,
+    },
+    metadata: {
+      acknowledgedBoundaryNotice: true,
+    },
+    occurredAt: completedAt,
+    repository: auditRepository,
+  });
 
   return getOnboardingStatus({ account: updatedAccount, now });
 }
