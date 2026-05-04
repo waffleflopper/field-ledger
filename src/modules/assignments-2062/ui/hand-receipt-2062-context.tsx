@@ -292,7 +292,6 @@ export function HandReceipt2062Context({
 
   async function refresh2062Context() {
     await Promise.all([
-      assignmentsQuery.refetch(),
       utilities.assignments2062.list.invalidate(),
       utilities.assignments2062.getHandReceiptAssignments.invalidate({
         handReceiptId,
