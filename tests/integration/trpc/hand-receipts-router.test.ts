@@ -243,12 +243,14 @@ describe("handReceiptsRouter", () => {
         updatedAt: new Date("2026-04-30T12:00:00.000Z"),
       },
     ]);
+    const auditRepository = new InMemoryAuditRepository();
     const caller = createCaller({
       account: createAccount({
         accessState: "paused_read_only",
         subscriptionTier: "pro",
       }),
       handReceiptRepository: repository,
+      auditRepository,
     });
 
     await expect(caller.handReceipts.list()).resolves.toMatchObject([
@@ -265,6 +267,7 @@ describe("handReceiptsRouter", () => {
       code: "FORBIDDEN",
       message: "This account is read-only.",
     });
+    expect(auditRepository.events).toEqual([]);
     expect(repository.handReceipts).toHaveLength(1);
   });
 
