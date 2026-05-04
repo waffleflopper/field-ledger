@@ -322,8 +322,7 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
     ) ?? [];
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
   const archiveCoverage = archiveCoverageQuery.data;
-  const archiveHasActive2062 =
-    archiveCoverage?.hasActiveCoverage === true;
+  const archiveHasActive2062 = archiveCoverage?.hasActiveCoverage === true;
   const archiveCoverageError = archiveCoverageQuery.error?.message ?? null;
   const archiveMutation = trpc.items.archive.useMutation({
     onSuccess: async (archived) => {

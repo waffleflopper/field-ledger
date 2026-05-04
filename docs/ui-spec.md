@@ -91,6 +91,25 @@ Due windows:
 - upcoming: 15 through 30 days
 - beyond 30 days: hidden by default
 
+Paused/read-only accounts keep dashboard review access, but operational
+requirement sections should not ask the user to complete active work. Use a
+plain read-only notice instead of due-work calls to action.
+
+## Read-Only UI Pattern
+
+Use `billing.capabilities` as the UI source of truth for access gating. UI
+gating explains the application-service rule; it does not replace server-side
+enforcement.
+
+- Detail pages should show an inline read-only banner near the page heading.
+- Write buttons should be disabled or hidden where the action cannot start.
+- Disabled controls should keep plain reasons near the control or in the
+  native `title` where the existing component pattern uses titles.
+- Existing records, archived history, search results, documents, 2062 context,
+  and activity remain reviewable.
+- `DashboardReadOnlyNotice` suppresses active requirement work tiles for
+  read-only accounts.
+
 ## Key Workflows
 
 ### Upload 2062 From Hand Receipt

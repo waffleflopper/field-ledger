@@ -259,7 +259,7 @@ test("users can create multi-item formal 2062 coverage from hand receipt detail"
   });
   await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(1));
   await expect(
-    removeDialog.getByText("Close date cannot be in the future."),
+    removeDialog.getByText("Remove date cannot be in the future."),
   ).toBeVisible();
   await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(-1));
   await removeDialog.getByRole("button", { name: "Remove item" }).click();

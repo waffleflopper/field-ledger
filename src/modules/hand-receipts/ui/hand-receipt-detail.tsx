@@ -354,7 +354,7 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
       {isReadOnly ? (
         <p className="rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
           This account is read-only. Detail records remain available, but edits
-          are paused until access is restored.
+          and lifecycle changes are paused until access is restored.
         </p>
       ) : null}
 

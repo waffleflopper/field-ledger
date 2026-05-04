@@ -259,7 +259,9 @@ test("item workflows warn and block around active 2062 coverage", async ({
     archiveDialog.getByText("Archiving will close the active 2062 link"),
   ).toBeVisible();
   await expect(
-    archiveDialog.getByText("The linked document and item history stay preserved."),
+    archiveDialog.getByText(
+      "The linked document and item history stay preserved.",
+    ),
   ).toBeVisible();
   await expect(
     archiveDialog.getByText(
