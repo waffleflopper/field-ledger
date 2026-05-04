@@ -109,7 +109,7 @@ test("users can create and see an item requirement from item detail", async ({
   await page.getByRole("link", { name: "Open Requirement radio" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Requirements" }),
+    page.getByRole("heading", { name: "Requirements", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Add requirement" }).click();
   const createRequirementDialog = page.getByRole("dialog", {
