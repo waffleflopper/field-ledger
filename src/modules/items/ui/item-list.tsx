@@ -71,6 +71,14 @@ export function ItemList({
                   </span>
                 </span>
               ) : null}
+              {item.active2062Coverage ? (
+                <span className="inline-flex items-center gap-1">
+                  Signed to {item.active2062Coverage.contactName}
+                  <span className="rounded-sm border bg-secondary px-1 font-mono text-[0.63rem] uppercase">
+                    DA Form 2062
+                  </span>
+                </span>
+              ) : null}
             </div>
           </div>
           {canRestore && item.status === "archived" && onRestore ? (

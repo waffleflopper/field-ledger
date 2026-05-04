@@ -5,6 +5,7 @@ export { createUnavailableAssignmentRepository } from "./application/assignment-
 export {
   Active2062CoverageConflictError,
   createAssignment,
+  createAssignmentWithItems,
 } from "./application/create-assignment";
 export { hasActive2062Coverage } from "./application/has-active-2062-coverage";
 export type {
@@ -13,6 +14,7 @@ export type {
   AssignmentRecord,
   AssignmentStatus,
   CreateAssignmentInput,
+  CreateAssignmentWithItemsInput,
   NewAssignmentItemLinkRecord,
   NewAssignmentRecord,
 } from "./application/types";

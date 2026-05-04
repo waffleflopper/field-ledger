@@ -4,12 +4,14 @@ import type { AccountRecord } from "@/modules/accounts/application/ensure-accoun
 import {
   Active2062CoverageConflictError,
   createAssignment,
+  createAssignmentWithItems,
 } from "@/modules/assignments-2062";
 import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
 import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryContactRepository } from "../../support/contact-repository";
 import { InMemoryDocumentRepository } from "../../support/document-repository";
+import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
 import { InMemoryItemRepository } from "../../support/item-repository";
 
 const now = new Date("2026-05-02T12:00:00.000Z");
@@ -54,6 +56,62 @@ function createRepositories() {
         createdAt: now,
         updatedAt: now,
       },
+      {
+        id: "document-archived",
+        accountId: "account-1",
+        handReceiptId: "receipt-archived",
+        filename: "archived-2062.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 100,
+        storagePath: "account-1/document-archived",
+        uploadedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]),
+    handReceiptRepository: new InMemoryHandReceiptRepository([
+      {
+        id: "receipt-1",
+        accountId: "account-1",
+        name: "Primary receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "receipt-2",
+        accountId: "account-1",
+        name: "Secondary receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "receipt-archived",
+        accountId: "account-1",
+        name: "Archived receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "archived",
+        createdAt: now,
+        updatedAt: now,
+      },
     ]),
     itemRepository: new InMemoryItemRepository([
       {
@@ -62,6 +120,51 @@ function createRepositories() {
         handReceiptId: "receipt-1",
         nomenclature: "Radio",
         ecn: "ECN-1",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: null,
+        signedToContactName: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "item-2",
+        accountId: "account-1",
+        handReceiptId: "receipt-1",
+        nomenclature: "Generator",
+        ecn: null,
+        serialNumber: "SER-2",
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "contact-1",
+        signedToContactName: "SPC Rivera",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "item-other-receipt",
+        accountId: "account-1",
+        handReceiptId: "receipt-2",
+        nomenclature: "Truck",
+        ecn: "ECN-3",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: null,
+        signedToContactName: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "item-archived-receipt",
+        accountId: "account-1",
+        handReceiptId: "receipt-archived",
+        nomenclature: "Archived radio",
+        ecn: "ARCH-1",
         serialNumber: null,
         generatedId: null,
         notes: null,
@@ -258,6 +361,178 @@ describe("createAssignment", () => {
         now,
       }),
     ).rejects.toThrow("Item was not found.");
+  });
+
+  it("blocks single-item creation against an archived hand receipt before mutating records", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignment({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          itemId: "item-archived-receipt",
+          contactId: "contact-1",
+          documentId: "document-archived",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Hand receipt must be active to upload a 2062.");
+    expect(repositories.assignmentRepository.assignments).toEqual([]);
+    expect(repositories.assignmentItemLinkRepository.links).toEqual([]);
+    expect(repositories.auditRepository.events).toEqual([]);
+  });
+
+  it("creates one assignment with multiple same-hand-receipt item links", async () => {
+    const repositories = createRepositories();
+    let linkSequence = 0;
+
+    const result = await createAssignmentWithItems({
+      account: createAccount(),
+      actorId: "owner-1",
+      input: {
+        handReceiptId: "receipt-1",
+        itemIds: ["item-1", "item-2"],
+        contactId: "contact-1",
+        documentId: "document-1",
+      },
+      ...repositories,
+      now,
+      createAssignmentId: () => "assignment-1",
+      createAssignmentItemLinkId: () => `link-${++linkSequence}`,
+    });
+
+    expect(result.assignment).toMatchObject({
+      id: "assignment-1",
+      handReceiptId: "receipt-1",
+      contactId: "contact-1",
+      documentId: "document-1",
+      status: "active",
+    });
+    expect(result.links).toHaveLength(2);
+    expect(result.links.map((link) => link.itemId)).toEqual([
+      "item-1",
+      "item-2",
+    ]);
+    await expect(
+      repositories.itemRepository.findById("account-1", "item-2"),
+    ).resolves.toMatchObject({ signedToContactId: null });
+    expect(
+      repositories.auditRepository.events.map((event) => event.action),
+    ).toEqual([
+      "assignment.created",
+      "assignment_item_link.created",
+      "assignment_item_link.created",
+    ]);
+  });
+
+  it("blocks multi-item creation with an empty selection", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignmentWithItems({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          handReceiptId: "receipt-1",
+          itemIds: [],
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Select at least one item.");
+  });
+
+  it("blocks multi-item creation against an archived hand receipt before mutating records", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignmentWithItems({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          handReceiptId: "receipt-archived",
+          itemIds: ["item-archived-receipt"],
+          contactId: "contact-1",
+          documentId: "document-archived",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Hand receipt must be active to upload a 2062.");
+    expect(repositories.assignmentRepository.assignments).toEqual([]);
+    expect(repositories.assignmentItemLinkRepository.links).toEqual([]);
+    expect(repositories.auditRepository.events).toEqual([]);
+  });
+
+  it("blocks items from another hand receipt", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignmentWithItems({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          handReceiptId: "receipt-1",
+          itemIds: ["item-1", "item-other-receipt"],
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("Items must belong to the selected hand receipt.");
+  });
+
+  it("blocks multi-item creation when any item already has active coverage", async () => {
+    const repositories = createRepositories();
+    repositories.assignmentItemLinkRepository.links.push({
+      id: "existing-link",
+      accountId: "account-1",
+      assignmentId: "existing-assignment",
+      itemId: "item-2",
+      status: "active",
+      closedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await expect(
+      createAssignmentWithItems({
+        account: createAccount(),
+        actorId: "owner-1",
+        input: {
+          handReceiptId: "receipt-1",
+          itemIds: ["item-1", "item-2"],
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toBeInstanceOf(Active2062CoverageConflictError);
+  });
+
+  it("blocks multi-item creation for read-only accounts", async () => {
+    const repositories = createRepositories();
+
+    await expect(
+      createAssignmentWithItems({
+        account: createAccount({ accessState: "paused_read_only" }),
+        actorId: "owner-1",
+        input: {
+          handReceiptId: "receipt-1",
+          itemIds: ["item-1"],
+          contactId: "contact-1",
+          documentId: "document-1",
+        },
+        ...repositories,
+        now,
+      }),
+    ).rejects.toThrow("This account is read-only.");
   });
 
   it("blocks creation when the contact does not exist", async () => {

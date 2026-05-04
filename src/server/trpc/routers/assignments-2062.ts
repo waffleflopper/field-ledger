@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   Active2062CoverageConflictError,
   createAssignment,
+  createAssignmentWithItems,
 } from "@/modules/assignments-2062";
 import type {
   AppUnitOfWork,
@@ -27,6 +28,27 @@ const createAssignmentInput = z
     path: ["contactId"],
   });
 
+const createAssignmentWithItemsInput = z
+  .object({
+    handReceiptId: z.uuid(),
+    itemIds: z.array(z.uuid()),
+    contactId: z.uuid().optional(),
+    contactDisplayName: z.string().trim().min(1).max(120).optional(),
+    documentId: z.uuid(),
+  })
+  .refine((input) => input.itemIds.length > 0, {
+    message: "Select at least one item.",
+    path: ["itemIds"],
+  })
+  .refine((input) => input.contactId || input.contactDisplayName, {
+    message: "Select or create a contact.",
+    path: ["contactId"],
+  })
+  .refine((input) => !(input.contactId && input.contactDisplayName), {
+    message: "Use an existing contact or create a new one, not both.",
+    path: ["contactId"],
+  });
+
 function toTRPCError(
   error: unknown,
   context: { accountId: string; operation: string; userId: string },
@@ -37,7 +59,11 @@ function toTRPCError(
   if (
     error instanceof Active2062CoverageConflictError ||
     message === "Item must be active to upload a 2062." ||
-    message === "Document must belong to the item's hand receipt."
+    message === "Items must be active to upload a 2062." ||
+    message === "Hand receipt must be active to upload a 2062." ||
+    message === "Document must belong to the item's hand receipt." ||
+    message === "Document must belong to the hand receipt." ||
+    message === "Items must belong to the selected hand receipt."
   ) {
     throw new TRPCError({ code: "CONFLICT", message });
   }
@@ -49,12 +75,16 @@ function toTRPCError(
   if (
     message === "Item was not found." ||
     message === "Contact was not found." ||
-    message === "Document was not found."
+    message === "Document was not found." ||
+    message === "Hand receipt was not found."
   ) {
     throw new TRPCError({ code: "NOT_FOUND", message });
   }
 
-  if (message === "Contact display name is required.") {
+  if (
+    message === "Contact display name is required." ||
+    message === "Select at least one item."
+  ) {
     throw new TRPCError({ code: "BAD_REQUEST", message });
   }
 
@@ -120,6 +150,39 @@ export const assignments2062Router = createTRPCRouter({
           auditRepository: repositories.auditRepository,
           contactRepository: repositories.contactRepository,
           documentRepository: repositories.documentRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      ),
+    ),
+  createWithItems: protectedProcedure
+    .input(createAssignmentWithItemsInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "assignments2062.createWithItems", (repositories) =>
+        createAssignmentWithItems({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          input:
+            input.contactId !== undefined
+              ? {
+                  handReceiptId: input.handReceiptId,
+                  itemIds: input.itemIds,
+                  contactId: input.contactId,
+                  documentId: input.documentId,
+                }
+              : {
+                  handReceiptId: input.handReceiptId,
+                  itemIds: input.itemIds,
+                  contactDisplayName: input.contactDisplayName ?? "",
+                  documentId: input.documentId,
+                },
+          assignmentRepository: repositories.assignmentRepository,
+          assignmentItemLinkRepository:
+            repositories.assignmentItemLinkRepository,
+          auditRepository: repositories.auditRepository,
+          contactRepository: repositories.contactRepository,
+          documentRepository: repositories.documentRepository,
+          handReceiptRepository: repositories.handReceiptRepository,
           itemRepository: repositories.itemRepository,
         }),
       ),

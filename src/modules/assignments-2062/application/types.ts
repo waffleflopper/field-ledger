@@ -61,3 +61,19 @@ export type CreateAssignmentInput =
       contactDisplayName: string;
       documentId: string;
     };
+
+export type CreateAssignmentWithItemsInput =
+  | {
+      handReceiptId: string;
+      itemIds: string[];
+      contactId: string;
+      contactDisplayName?: never;
+      documentId: string;
+    }
+  | {
+      handReceiptId: string;
+      itemIds: string[];
+      contactId?: never;
+      contactDisplayName: string;
+      documentId: string;
+    };

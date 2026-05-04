@@ -60,19 +60,21 @@ Implement `/app/items/[itemId]/upload-2062` as a focused one-item assignment flo
 
 **User stories covered**: As a user, I can upload one 2062 and link it to multiple items from the same hand receipt.
 
+**Status**: Implemented by issue #61.
+
 ### What To Build
 
 Implement `/app/hand-receipts/[handReceiptId]/upload-2062` with contact selection, document upload, and multi-item selection limited to the current hand receipt.
 
 ### Acceptance Criteria
 
-- [ ] Flow starts from hand receipt detail.
-- [ ] User selects or creates a required contact.
-- [ ] User uploads a required document.
-- [ ] User selects at least one item from the current hand receipt.
-- [ ] Items from other hand receipts cannot be selected.
-- [ ] Linked items show signed-to state from active 2062 coverage.
-- [ ] Creation emits audit events.
+- [x] Flow starts from hand receipt detail.
+- [x] User selects or creates a required contact.
+- [x] User uploads a required document.
+- [x] User selects at least one item from the current hand receipt.
+- [x] Items from other hand receipts cannot be selected.
+- [x] Linked items show signed-to state from active 2062 coverage.
+- [x] Creation emits audit events.
 
 ---
 
@@ -129,4 +131,3 @@ Tie active 2062 constraints into item move/archive behavior.
 - [ ] Archiving an item with active 2062 is allowed with warning and closes that item link.
 - [ ] If archiving closes the last active link on a 2062, the user is prompted to close the assignment.
 - [ ] All state changes emit audit events.
-

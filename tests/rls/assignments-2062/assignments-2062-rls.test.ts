@@ -10,6 +10,7 @@ const ownerTwoId = "better-auth-assignment-owner-two";
 const ownerOneAccountId = "52cc4b16-96e8-49c2-ae21-b00dc36d9b0c";
 const ownerTwoAccountId = "8bc2df20-b293-4f29-a2b0-f98cb43abf3c";
 const ownerOneHandReceiptId = "f7b1d8ea-3063-4ed4-b0df-f197db9e54d6";
+const ownerOneSecondHandReceiptId = "3d49c1cf-f307-401f-8432-7b8ffc89df76";
 const ownerTwoHandReceiptId = "3d63f1fd-8dd1-48d5-bd2c-7ace6c5f496e";
 const ownerOneContactId = "853f65af-1d2a-41c4-bda9-ae18d80da2ea";
 const ownerTwoContactId = "be747d2b-efeb-421a-b900-921221af35bb";
@@ -28,6 +29,8 @@ const ownerTwoBlockedLinkId = "1c5e5430-2e21-45b2-bbd9-b58113b7c4b8";
 const ownerOneConstraintItemId = "e048fd65-5df6-4cc9-b71a-5041668284f5";
 const ownerOneConstraintAssignmentId = "40c90c2c-adf5-4d4e-9b20-6326b0c0f045";
 const ownerOneConstraintLinkId = "fc60cfcf-ad17-4b6e-b835-b6532dd03d7f";
+const ownerOneCrossReceiptItemId = "fffd0d6f-50df-4016-844c-e071080ce6b2";
+const ownerOneCrossReceiptLinkId = "79dcf63c-d35d-4b1b-8509-0e61978c445c";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -67,6 +70,11 @@ describe("assignments-2062 RLS", () => {
         id: ownerOneHandReceiptId,
         account_id: ownerOneAccountId,
         name: "Owner one receipt",
+      },
+      {
+        id: ownerOneSecondHandReceiptId,
+        account_id: ownerOneAccountId,
+        name: "Owner one second receipt",
       },
       {
         id: ownerTwoHandReceiptId,
@@ -167,12 +175,12 @@ describe("assignments-2062 RLS", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from assignment_item_links where id in (${ownerOneLinkId}, ${ownerTwoLinkId}, ${ownerOneInsertLinkId}, ${ownerOneConstraintLinkId})`;
+    await sql`delete from assignment_item_links where id in (${ownerOneLinkId}, ${ownerTwoLinkId}, ${ownerOneInsertLinkId}, ${ownerOneConstraintLinkId}, ${ownerOneCrossReceiptLinkId})`;
     await sql`delete from assignments where id in (${ownerOneAssignmentId}, ${ownerTwoAssignmentId}, ${ownerOneInsertAssignmentId}, ${ownerOneConstraintAssignmentId})`;
-    await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertItemId}, ${ownerOneConstraintItemId})`;
+    await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertItemId}, ${ownerOneConstraintItemId}, ${ownerOneCrossReceiptItemId})`;
     await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId})`;
     await sql`delete from contacts where id in (${ownerOneContactId}, ${ownerTwoContactId})`;
-    await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerTwoHandReceiptId})`;
+    await sql`delete from hand_receipts where id in (${ownerOneHandReceiptId}, ${ownerOneSecondHandReceiptId}, ${ownerTwoHandReceiptId})`;
     await sql`delete from accounts where id in (${ownerOneAccountId}, ${ownerTwoAccountId})`;
     await sql.end();
   });
@@ -345,6 +353,40 @@ describe("assignments-2062 RLS", () => {
         ownerOneId,
         async (transaction) =>
           transaction`update assignment_item_links set closed_at = now() where id = ${ownerOneConstraintLinkId}`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("prevents linking an item from a different hand receipt on the same account", async () => {
+    await sql`insert into items (
+      id,
+      account_id,
+      hand_receipt_id,
+      nomenclature,
+      ecn
+    ) values (
+      ${ownerOneCrossReceiptItemId},
+      ${ownerOneAccountId},
+      ${ownerOneSecondHandReceiptId},
+      'Owner one second receipt item',
+      'RLS-2062-CROSS'
+    ) on conflict (id) do nothing`;
+
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into assignment_item_links (
+            id,
+            account_id,
+            assignment_id,
+            item_id
+          ) values (
+            ${ownerOneCrossReceiptLinkId},
+            ${ownerOneAccountId},
+            ${ownerOneAssignmentId},
+            ${ownerOneCrossReceiptItemId}
+          )`,
       ),
     ).rejects.toThrow();
   });
