@@ -267,7 +267,15 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
   const createAssignment = trpc.assignments2062.createWithItems.useMutation({
     onSuccess: async () => {
       await Promise.all([
+        utilities.assignments2062.list.invalidate(),
+        utilities.assignments2062.getHandReceiptAssignments.invalidate({
+          handReceiptId,
+        }),
+        ...validSelectedItemIds.map((itemId) =>
+          utilities.assignments2062.getItemCoverage.invalidate({ itemId }),
+        ),
         utilities.items.listByHandReceipt.invalidate({ handReceiptId }),
+        utilities.items.list.invalidate(),
         utilities.items.search.invalidate(),
         utilities.handReceipts.getById.invalidate({ id: handReceiptId }),
         utilities.audit.listRecentActivity.invalidate(),
