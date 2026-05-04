@@ -234,6 +234,12 @@ Rules:
 - One 2062 assignment belongs to one hand receipt.
 - One item can have at most one active 2062 link.
 - Items may have many historical closed 2062 links.
+- Active 2062s list formal assignment records only. Manual signed-to state does
+  not appear in the Active 2062s list because it has no DA Form 2062 document.
+- 2062 coverage on item detail means current formal coverage plus historical
+  closed links for that item.
+- Hand receipt 2062 context means active formal assignments scoped to that hand
+  receipt.
 - Multi-item upload starts from hand receipt detail, uses one contact and one
   private document for the assignment, and links only selected active items from
   that hand receipt.

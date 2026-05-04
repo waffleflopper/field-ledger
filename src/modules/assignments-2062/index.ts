@@ -3,18 +3,40 @@ export { createUnavailableAssignmentItemLinkRepository } from "./application/ass
 export type { AssignmentRepository } from "./application/assignment-repository";
 export { createUnavailableAssignmentRepository } from "./application/assignment-repository";
 export {
-  Active2062CoverageConflictError,
   createAssignment,
   createAssignmentWithItems,
 } from "./application/create-assignment";
 export { hasActive2062Coverage } from "./application/has-active-2062-coverage";
+export {
+  getHandReceiptAssignments,
+  getItemCoverage,
+  listActiveAssignments,
+} from "./application/list-active-assignments";
+export {
+  AccountReadOnlyError,
+  Active2062CoverageConflictError,
+  ContactDisplayNameRequiredError,
+  ContactNotFoundError,
+  DocumentNotFoundError,
+  DocumentReceiptMismatchError,
+  EmptyItemSelectionError,
+  HandReceiptNotActiveError,
+  HandReceiptNotFoundError,
+  ItemNotActiveError,
+  ItemNotFoundError,
+  ItemReceiptMismatchError,
+} from "./application/types";
 export type {
+  ActiveAssignmentSummary,
   Active2062Coverage,
   AssignmentItemLinkRecord,
   AssignmentRecord,
   AssignmentStatus,
+  CoverageHistoryEntry,
   CreateAssignmentInput,
   CreateAssignmentWithItemsInput,
+  HistoricalAssignmentLink,
+  ItemCoverageResult,
   NewAssignmentItemLinkRecord,
   NewAssignmentRecord,
 } from "./application/types";

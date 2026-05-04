@@ -15,6 +15,10 @@ export interface HandReceiptRepository {
     accountId: string,
     handReceiptId: string,
   ): Promise<HandReceiptRecord | null>;
+  findManyByIds(
+    accountId: string,
+    handReceiptIds: string[],
+  ): Promise<HandReceiptRecord[]>;
   update(
     accountId: string,
     handReceiptId: string,
@@ -32,6 +36,9 @@ export function createUnavailableHandReceiptRepository(): HandReceiptRepository 
       throw new Error("An authenticated database session is required.");
     },
     async findById() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findManyByIds() {
       throw new Error("An authenticated database session is required.");
     },
     async update() {

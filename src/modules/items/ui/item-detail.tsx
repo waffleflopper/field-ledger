@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRightLeft,
   ClipboardList,
-  FileText,
   Hash,
   History,
   PackageSearch,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { ItemCoverageSection } from "@/modules/assignments-2062/ui/item-coverage-section";
 import { ContactPicker } from "@/modules/contacts/ui/contact-picker";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
 import type { ItemRecord } from "@/modules/items";
@@ -74,75 +74,6 @@ function MetadataRow({
         {value || "Not set"}
       </dd>
     </div>
-  );
-}
-
-function Active2062Section({
-  isReadOnly,
-  item,
-}: {
-  isReadOnly: boolean;
-  item: ItemRecord;
-}) {
-  const canUpload = item.status === "active" && !item.active2062Coverage;
-
-  return (
-    <section className="rounded-lg border bg-card p-4">
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-          <FileText aria-hidden="true" className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="space-y-1">
-            <h2 className="text-sm font-semibold tracking-normal">
-              Active 2062s
-            </h2>
-            {item.active2062Coverage ? (
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {item.active2062Coverage.contactName}
-                  </p>
-                  <span className="rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">
-                    DA Form 2062
-                  </span>
-                </div>
-                <p className="break-words text-sm text-muted-foreground">
-                  {item.active2062Coverage.documentFilename}
-                </p>
-              </div>
-            ) : item.signedToContactName ? (
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    Manual signed-to state
-                  </p>
-                  <span className="rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">
-                    Informal
-                  </span>
-                </div>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Manual signed-to state can be converted by uploading a formal
-                  2062.
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm leading-6 text-muted-foreground">
-                No formal 2062 coverage is active for this item.
-              </p>
-            )}
-          </div>
-          {canUpload && !isReadOnly ? (
-            <Button asChild size="sm">
-              <Link href={`/app/items/${item.id}/upload-2062`}>
-                <FileText aria-hidden="true" className="size-4" />
-                Upload 2062
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -647,7 +578,12 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
           isReadOnly={isReadOnly}
           itemId={item.id}
         />
-        <Active2062Section isReadOnly={isReadOnly} item={item} />
+        <ItemCoverageSection
+          isReadOnly={isReadOnly}
+          itemId={item.id}
+          itemStatus={item.status}
+          signedToContactName={item.signedToContactName ?? null}
+        />
       </div>
 
       <section className="space-y-3">

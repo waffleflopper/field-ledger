@@ -35,7 +35,18 @@ export function Upload2062Form({
   const createAssignment = trpc.assignments2062.create.useMutation({
     onSuccess: async () => {
       await Promise.all([
+        utilities.assignments2062.list.invalidate(),
+        utilities.assignments2062.getItemCoverage.invalidate({
+          itemId: item.id,
+        }),
+        utilities.assignments2062.getHandReceiptAssignments.invalidate({
+          handReceiptId: item.handReceiptId,
+        }),
         utilities.items.getById.invalidate({ id: item.id }),
+        utilities.items.listByHandReceipt.invalidate({
+          handReceiptId: item.handReceiptId,
+          status: "active",
+        }),
         utilities.items.search.invalidate(),
         utilities.audit.listRecentActivity.invalidate(),
         utilities.audit.listTargetActivity.invalidate({

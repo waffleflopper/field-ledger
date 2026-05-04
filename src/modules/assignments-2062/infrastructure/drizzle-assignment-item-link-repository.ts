@@ -1,9 +1,16 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 
-import { assignmentItemLinks } from "@/db/schema";
+import {
+  assignmentItemLinks,
+  assignments,
+  contacts,
+  documents,
+  handReceipts,
+} from "@/db/schema";
 import type {
   AssignmentItemLinkRecord,
   AssignmentItemLinkRepository,
+  CoverageHistoryEntry,
 } from "@/modules/assignments-2062";
 import type {
   AuthenticatedDatabaseSession,
@@ -28,6 +35,30 @@ function toLinkRecord(row: LinkRow): AssignmentItemLinkRecord {
     closedAt: row.closedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  };
+}
+
+function toCoverageHistoryEntry(row: {
+  link: LinkRow;
+  assignment: typeof assignments.$inferSelect;
+  contact: typeof contacts.$inferSelect;
+  document: typeof documents.$inferSelect;
+  handReceipt: typeof handReceipts.$inferSelect;
+}): CoverageHistoryEntry {
+  return {
+    linkId: row.link.id,
+    assignmentId: row.link.assignmentId,
+    itemId: row.link.itemId,
+    status: row.link.status,
+    closedAt: row.link.closedAt,
+    createdAt: row.link.createdAt,
+    updatedAt: row.link.updatedAt,
+    handReceiptId: row.assignment.handReceiptId,
+    handReceiptName: row.handReceipt.name,
+    contactId: row.assignment.contactId,
+    contactName: row.contact.displayName,
+    documentId: row.assignment.documentId,
+    documentFilename: row.document.filename,
   };
 }
 
@@ -79,6 +110,71 @@ function createAssignmentItemLinkRepository(
 
       return row ? toLinkRecord(row) : null;
     },
+    async findByItemId(accountId, itemId, options = {}) {
+      const filters = [
+        eq(assignmentItemLinks.accountId, accountId),
+        eq(assignmentItemLinks.itemId, itemId),
+      ];
+
+      if (options.status) {
+        filters.push(eq(assignmentItemLinks.status, options.status));
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(assignmentItemLinks)
+          .where(and(...filters))
+          .orderBy(
+            desc(assignmentItemLinks.closedAt),
+            desc(assignmentItemLinks.updatedAt),
+            desc(assignmentItemLinks.createdAt),
+          ),
+      );
+
+      return rows.map(toLinkRecord);
+    },
+    async findByItemIdWithAssignment(accountId, itemId, options = {}) {
+      const filters = [
+        eq(assignmentItemLinks.accountId, accountId),
+        eq(assignmentItemLinks.itemId, itemId),
+      ];
+
+      if (options.status) {
+        filters.push(eq(assignmentItemLinks.status, options.status));
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            link: assignmentItemLinks,
+            assignment: assignments,
+            contact: contacts,
+            document: documents,
+            handReceipt: handReceipts,
+          })
+          .from(assignmentItemLinks)
+          .innerJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .innerJoin(contacts, eq(assignments.contactId, contacts.id))
+          .innerJoin(documents, eq(assignments.documentId, documents.id))
+          .innerJoin(
+            handReceipts,
+            eq(assignments.handReceiptId, handReceipts.id),
+          )
+          .where(and(...filters))
+          .orderBy(
+            sql`case when ${assignmentItemLinks.status} = 'active' then 0 else 1 end`,
+            desc(assignmentItemLinks.closedAt),
+            desc(assignmentItemLinks.updatedAt),
+            desc(assignmentItemLinks.createdAt),
+          ),
+      );
+
+      return rows.map(toCoverageHistoryEntry);
+    },
     async findByAssignmentId(accountId, assignmentId, options = {}) {
       const filters = [
         eq(assignmentItemLinks.accountId, accountId),
@@ -97,6 +193,30 @@ function createAssignmentItemLinkRepository(
       );
 
       return rows.map(toLinkRecord);
+    },
+    async countActiveByAssignmentIds(accountId, assignmentIds) {
+      if (assignmentIds.length === 0) {
+        return new Map();
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            assignmentId: assignmentItemLinks.assignmentId,
+            count: count(),
+          })
+          .from(assignmentItemLinks)
+          .where(
+            and(
+              eq(assignmentItemLinks.accountId, accountId),
+              eq(assignmentItemLinks.status, "active"),
+              inArray(assignmentItemLinks.assignmentId, assignmentIds),
+            ),
+          )
+          .groupBy(assignmentItemLinks.assignmentId),
+      );
+
+      return new Map(rows.map((row) => [row.assignmentId, row.count]));
     },
     async updateStatus(accountId, linkId, status, updatedAt, closedAt = null) {
       const [updated] = await run((transaction) =>

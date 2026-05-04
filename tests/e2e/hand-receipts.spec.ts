@@ -148,7 +148,7 @@ test("users can open and edit item details from a hand receipt", async ({
     page.getByRole("heading", { name: "Requirements" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Active 2062s" }),
+    page.getByRole("heading", { name: "2062 Coverage" }),
   ).toBeVisible();
   await expect(page.getByText("Arms room")).toBeVisible();
 
@@ -236,7 +236,16 @@ test("users can create multi-item formal 2062 coverage from hand receipt detail"
 
   await expect(page).toHaveURL(/\/app\/hand-receipts\/[0-9a-f-]+$/);
   await expect(page.getByText("DA Form 2062")).toHaveCount(2);
-  await expect(page.getByText("SPC Multi")).toHaveCount(2);
+  await expect(page.getByText("SPC Multi")).toHaveCount(3);
+  await expect(page.getByText("2 items covered")).toBeVisible();
+
+  await page.goto("/app/active-2062s");
+  await expect(
+    page.getByRole("heading", { name: "Active 2062s" }),
+  ).toBeVisible();
+  await expect(page.getByText("SPC Multi")).toBeVisible();
+  await expect(page.getByText("Multi 2062 receipt")).toBeVisible();
+  await expect(page.getByText("2 items")).toBeVisible();
 });
 
 test("hand receipt upload 2062 flow uses desktop width without horizontal overflow", async ({
