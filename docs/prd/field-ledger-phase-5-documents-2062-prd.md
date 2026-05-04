@@ -67,7 +67,7 @@ item from a multi-item 2062. Closing a 2062 clears current signed-to state for
 all active linked items. Removing one item link clears current signed-to state
 for only that item and leaves the assignment active if other item links remain.
 Return/close dates default to today, past dates are allowed, future dates must
-be handled deliberately, and all history and documents are preserved.
+be blocked, and all history and documents are preserved.
 
 Finally, item workflows will enforce active 2062 meaning. An item with active
 2062 coverage cannot move to another hand receipt until its active 2062 item
@@ -125,7 +125,7 @@ audit/activity events.
 44. As a user, I want to close a whole 2062 assignment, so that returned property no longer appears signed out.
 45. As a user, I want close date to default to today, so that current returns are fast to record.
 46. As a user, I want to enter a past close date, so that I can record returns after the fact.
-47. As a user, I want future close dates blocked or clearly warned, so that assignment history does not pretend property already returned.
+47. As a user, I want future close dates blocked, so that assignment history does not pretend property already returned.
 48. As a user, I want closing a 2062 to clear current signed-to state for all active linked items, so that returned items stop appearing assigned out.
 49. As a user, I want closing a 2062 to preserve the document and item history, so that accountability evidence remains reviewable.
 50. As a user, I want closing a 2062 to emit assignment and item activity, so that history explains the return.
@@ -216,9 +216,7 @@ audit/activity events.
   removed, so empty active assignments do not linger.
 - Default close/remove return date to today.
 - Allow past close/remove dates.
-- Decide during issue slicing whether future close/remove dates are blocked
-  outright or allowed only behind an explicit warning; in either case, the UI
-  and domain service must handle the rule consistently.
+- Block future close/remove dates in both the UI and domain service.
 - Emit audit/activity events for assignment creation, item-link creation,
   whole-assignment close, single-item removal, manual-to-formal conversion, and
   assignment-related item state changes.

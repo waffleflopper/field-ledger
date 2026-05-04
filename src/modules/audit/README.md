@@ -29,10 +29,31 @@ Current action names:
 
 - `system.initialized`
 - `account.onboarding_completed`
+- `assignment.closed`
+- `assignment.created`
+- `assignment_item_link.created`
+- `assignment_item_link.removed`
+- `contact.created`
+- `document.uploaded`
 - `hand_receipt.created`
 - `hand_receipt.updated`
 - `hand_receipt.archived`
 - `hand_receipt.restored`
+- `item.created`
+- `item.archived`
+- `item.moved`
+- `item.restored`
+- `item.signed_to_assigned`
+- `item.signed_to_cleared`
+- `item.location_changed`
+- `item.updated`
+- `location.created`
+- `requirement.completed`
+- `requirement.created`
+- `requirement.next_due_adjusted`
+- `requirement.paused`
+- `requirement.resumed`
+- `requirement.updated`
 
 Future slices should add stable domain action names when they add real
 workflows. Prefer stable domain lifecycle labels over implementation-specific

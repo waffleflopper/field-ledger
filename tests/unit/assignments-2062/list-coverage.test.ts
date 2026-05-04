@@ -9,6 +9,7 @@ import {
 import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
 import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { InMemoryItemRepository } from "../../support/item-repository";
 
 const older = new Date("2026-05-01T12:00:00.000Z");
 const newer = new Date("2026-05-02T12:00:00.000Z");
@@ -120,11 +121,59 @@ function createRepositories() {
       updatedAt: older,
     },
   ]);
+  const itemRepository = new InMemoryItemRepository([
+    {
+      id: "item-1",
+      accountId: account.id,
+      handReceiptId: "receipt-1",
+      nomenclature: "Radio",
+      ecn: "ECN-1",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+    {
+      id: "item-2",
+      accountId: account.id,
+      handReceiptId: "receipt-1",
+      nomenclature: "Generator",
+      ecn: null,
+      serialNumber: "SER-2",
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+    {
+      id: "item-3",
+      accountId: account.id,
+      handReceiptId: "receipt-2",
+      nomenclature: "Truck",
+      ecn: "ECN-3",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+  ]);
 
   return {
     assignmentItemLinkRepository,
     assignmentRepository,
     handReceiptRepository,
+    itemRepository,
   };
 }
 
@@ -221,9 +270,9 @@ describe("2062 list and coverage queries", () => {
 
     expect(summaries).toHaveLength(2);
     expect(handReceiptFinds).toBe(0);
-    expect(linkFinds).toBe(0);
+    expect(linkFinds).toBe(2);
     expect(handReceiptBatchFinds).toBe(1);
-    expect(linkBatchCounts).toBe(1);
+    expect(linkBatchCounts).toBe(0);
   });
 
   it("separates current and historical 2062 coverage for an item", async () => {

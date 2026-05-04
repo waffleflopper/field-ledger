@@ -116,6 +116,7 @@ Due windows:
 
 - Close all active item links by default.
 - Allow past return date.
+- Block future return dates.
 - Preserve document and history.
 - Clear current signed-to state for linked items.
 
@@ -123,6 +124,8 @@ Due windows:
 
 - Close only that item link.
 - Keep assignment active if other items remain linked.
+- Removing the last active item closes the assignment.
+- Allow past return date and block future return dates.
 - Preserve item history and document.
 
 ## UI Constraints

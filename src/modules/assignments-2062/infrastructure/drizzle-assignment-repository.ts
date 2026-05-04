@@ -137,7 +137,11 @@ function createAssignmentRepository(
           .returning(),
       );
 
-      return updated ? toAssignmentRecord(updated) : null;
+      if (!updated) {
+        return null;
+      }
+
+      return this.findById(accountId, assignmentId);
     },
   };
 }

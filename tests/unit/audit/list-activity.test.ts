@@ -220,6 +220,52 @@ describe("listRecentActivity", () => {
     ]);
   });
 
+  it("returns readable target context from 2062 assignment metadata", async () => {
+    const repository: AuditRepository = {
+      async record(event) {
+        return {
+          id: "event-1",
+          createdAt: event.createdAt ?? event.occurredAt,
+          ...event,
+        };
+      },
+      async listByAccountId() {
+        return [
+          {
+            id: "event-1",
+            accountId: "account-1",
+            actorId: "user-1",
+            action: "assignment.closed",
+            targetType: "assignment",
+            targetId: "assignment-1",
+            occurredAt: new Date("2026-05-01T12:00:00.000Z"),
+            metadata: {
+              handReceiptId: "receipt-1",
+              contactName: "SPC Rivera",
+              documentFilename: "signed-2062.pdf",
+            },
+            createdAt: new Date("2026-05-01T12:00:01.000Z"),
+          },
+        ];
+      },
+      async listByTarget() {
+        return [];
+      },
+    };
+
+    await expect(
+      listRecentActivity({
+        accountId: "account-1",
+        repository,
+      }),
+    ).resolves.toMatchObject([
+      {
+        label: "2062 assignment closed",
+        targetLabel: "SPC Rivera",
+      },
+    ]);
+  });
+
   it("passes target filters to the repository for contextual activity", async () => {
     const { repository, getReceivedTarget } = createRecordingRepository();
 

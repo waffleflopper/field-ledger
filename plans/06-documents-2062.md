@@ -106,14 +106,15 @@ Implement closing all links for an active 2062 and closing a single item link fr
 
 ### Acceptance Criteria
 
-- [ ] Closing a 2062 clears current signed-to state for all linked items.
-- [ ] Removing one item link clears current signed-to state for only that item.
-- [ ] If other item links remain, the 2062 can stay active.
-- [ ] Return/close date defaults to today.
-- [ ] Past return/close dates are allowed.
-- [ ] Future return/close dates are blocked or warned.
-- [ ] Document and history are preserved.
-- [ ] Close/remove actions emit audit events.
+- [x] Closing a 2062 clears current signed-to state for all linked items.
+- [x] Removing one item link clears current signed-to state for only that item.
+- [x] If other item links remain, the 2062 can stay active.
+- [x] Removing the last active item link closes the assignment.
+- [x] Return/close date defaults to today.
+- [x] Past return/close dates are allowed.
+- [x] Future return/close dates are blocked.
+- [x] Document and history are preserved.
+- [x] Close/remove actions emit audit events.
 
 ---
 

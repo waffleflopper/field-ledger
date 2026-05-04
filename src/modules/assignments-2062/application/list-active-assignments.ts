@@ -3,6 +3,7 @@ import type {
   HandReceiptRecord,
   HandReceiptRepository,
 } from "@/modules/hand-receipts";
+import type { ItemRepository } from "@/modules/items";
 import type { AssignmentItemLinkRepository } from "./assignment-item-link-repository";
 import type { AssignmentRepository } from "./assignment-repository";
 import type {
@@ -17,6 +18,7 @@ type AssignmentQueryDependencies = {
   assignmentItemLinkRepository: AssignmentItemLinkRepository;
   assignmentRepository: AssignmentRepository;
   handReceiptRepository: HandReceiptRepository;
+  itemRepository: ItemRepository;
 };
 
 type SummaryDependencies = Omit<
@@ -28,7 +30,12 @@ type SummaryDependencies = Omit<
 
 type BatchSummaryDependencies = {
   assignment: AssignmentRecord;
-  activeLinkCount: number;
+  activeItems: {
+    linkId: string;
+    itemId: string;
+    nomenclature: string;
+    identifier: string;
+  }[];
   handReceipt: HandReceiptRecord | null;
 };
 
@@ -50,6 +57,7 @@ async function toActiveAssignmentSummary({
   assignment,
   assignmentItemLinkRepository,
   handReceiptRepository,
+  itemRepository,
 }: SummaryDependencies): Promise<ActiveAssignmentSummary | null> {
   if (assignment.status !== "active") {
     return null;
@@ -66,6 +74,24 @@ async function toActiveAssignmentSummary({
     return null;
   }
 
+  const activeItems = await Promise.all(
+    activeLinks.map(async (link) => {
+      const item = await itemRepository.findById(account.id, link.itemId);
+
+      if (!item) {
+        return null;
+      }
+
+      return {
+        linkId: link.id,
+        itemId: item.id,
+        nomenclature: item.nomenclature,
+        identifier:
+          item.ecn ?? item.serialNumber ?? item.generatedId ?? "No ID",
+      };
+    }),
+  );
+
   return {
     id: assignment.id,
     handReceiptId: assignment.handReceiptId,
@@ -75,6 +101,7 @@ async function toActiveAssignmentSummary({
     documentId: assignment.documentId,
     documentFilename: assignment.documentFilename ?? "2062 document",
     itemCount: activeLinks.length,
+    activeItems: activeItems.filter((item) => item !== null),
     status: "active",
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
@@ -82,7 +109,7 @@ async function toActiveAssignmentSummary({
 }
 
 function toActiveAssignmentSummaryBatch({
-  activeLinkCount,
+  activeItems,
   assignment,
   handReceipt,
 }: BatchSummaryDependencies): ActiveAssignmentSummary | null {
@@ -98,7 +125,8 @@ function toActiveAssignmentSummaryBatch({
     contactName: assignment.contactName ?? "Unknown contact",
     documentId: assignment.documentId,
     documentFilename: assignment.documentFilename ?? "2062 document",
-    itemCount: activeLinkCount,
+    itemCount: activeItems.length,
+    activeItems,
     status: "active",
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
@@ -110,6 +138,7 @@ async function summarizeActiveAssignments({
   assignments,
   assignmentItemLinkRepository,
   handReceiptRepository,
+  itemRepository,
 }: Omit<AssignmentQueryDependencies, "assignmentRepository"> & {
   assignments: AssignmentRecord[];
 }): Promise<ActiveAssignmentSummary[]> {
@@ -118,26 +147,68 @@ async function summarizeActiveAssignments({
     ...new Set(assignments.map((assignment) => assignment.handReceiptId)),
   ];
 
-  const [handReceipts, activeLinkCounts] = await Promise.all([
+  const [handReceipts, activeLinksByAssignment] = await Promise.all([
     handReceiptRepository.findManyByIds(account.id, handReceiptIds),
-    assignmentItemLinkRepository.countActiveByAssignmentIds(
-      account.id,
-      assignmentIds,
+    Promise.all(
+      assignmentIds.map(
+        async (assignmentId) =>
+          [
+            assignmentId,
+            await assignmentItemLinkRepository.findByAssignmentId(
+              account.id,
+              assignmentId,
+              { status: "active" },
+            ),
+          ] as const,
+      ),
     ),
   ]);
 
   const handReceiptsById = new Map(
     handReceipts.map((handReceipt) => [handReceipt.id, handReceipt]),
   );
+  const activeLinksMap = new Map(activeLinksByAssignment);
+  const itemIds = [
+    ...new Set(
+      activeLinksByAssignment.flatMap(([, links]) =>
+        links.map((link) => link.itemId),
+      ),
+    ),
+  ];
+  const items = await Promise.all(
+    itemIds.map((itemId) => itemRepository.findById(account.id, itemId)),
+  );
+  const itemsById = new Map(
+    items.filter((item) => item !== null).map((item) => [item.id, item]),
+  );
 
   return assignments
-    .map((assignment) =>
-      toActiveAssignmentSummaryBatch({
-        activeLinkCount: activeLinkCounts.get(assignment.id) ?? 0,
+    .map((assignment) => {
+      const activeLinks = activeLinksMap.get(assignment.id) ?? [];
+      const activeItems = activeLinks
+        .map((link) => {
+          const item = itemsById.get(link.itemId);
+
+          if (!item) {
+            return null;
+          }
+
+          return {
+            linkId: link.id,
+            itemId: item.id,
+            nomenclature: item.nomenclature,
+            identifier:
+              item.ecn ?? item.serialNumber ?? item.generatedId ?? "No ID",
+          };
+        })
+        .filter((item) => item !== null);
+
+      return toActiveAssignmentSummaryBatch({
+        activeItems,
         assignment,
         handReceipt: handReceiptsById.get(assignment.handReceiptId) ?? null,
-      }),
-    )
+      });
+    })
     .filter((summary): summary is ActiveAssignmentSummary => Boolean(summary));
 }
 
@@ -176,6 +247,7 @@ export async function listActiveAssignments({
   assignmentItemLinkRepository,
   assignmentRepository,
   handReceiptRepository,
+  itemRepository,
 }: AssignmentQueryDependencies): Promise<ActiveAssignmentSummary[]> {
   const assignments = await assignmentRepository.findByAccountId(account.id, {
     status: "active",
@@ -186,6 +258,7 @@ export async function listActiveAssignments({
     assignments,
     assignmentItemLinkRepository,
     handReceiptRepository,
+    itemRepository,
   });
 }
 
@@ -195,6 +268,7 @@ export async function getHandReceiptAssignments({
   assignmentRepository,
   handReceiptId,
   handReceiptRepository,
+  itemRepository,
 }: AssignmentQueryDependencies & {
   handReceiptId: string;
 }): Promise<ActiveAssignmentSummary[]> {
@@ -209,6 +283,7 @@ export async function getHandReceiptAssignments({
     assignments,
     assignmentItemLinkRepository,
     handReceiptRepository,
+    itemRepository,
   });
 }
 
@@ -217,6 +292,7 @@ export async function getItemCoverage({
   assignmentItemLinkRepository,
   assignmentRepository,
   handReceiptRepository,
+  itemRepository,
   itemId,
 }: AssignmentQueryDependencies & {
   itemId: string;
@@ -241,6 +317,7 @@ export async function getItemCoverage({
         assignment: activeAssignment,
         assignmentItemLinkRepository,
         handReceiptRepository,
+        itemRepository,
       })
     : null;
 

@@ -39,6 +39,14 @@ export function canUploadDocument(capabilities: AccountCapabilities) {
   return !capabilities.isReadOnly;
 }
 
+export function canClose2062Assignment(capabilities: AccountCapabilities) {
+  return !capabilities.isReadOnly;
+}
+
+export function canRemove2062ItemLink(capabilities: AccountCapabilities) {
+  return !capabilities.isReadOnly;
+}
+
 export function canEditRequirement(capabilities: AccountCapabilities) {
   return !capabilities.isReadOnly;
 }

@@ -3,6 +3,10 @@ export { createUnavailableAssignmentItemLinkRepository } from "./application/ass
 export type { AssignmentRepository } from "./application/assignment-repository";
 export { createUnavailableAssignmentRepository } from "./application/assignment-repository";
 export {
+  closeAssignment,
+  removeAssignmentItemLink,
+} from "./application/close-assignment";
+export {
   createAssignment,
   createAssignmentWithItems,
 } from "./application/create-assignment";
@@ -15,6 +19,9 @@ export {
 export {
   AccountReadOnlyError,
   Active2062CoverageConflictError,
+  AssignmentAlreadyClosedError,
+  CloseDateFutureError,
+  CloseDateInvalidError,
   ContactDisplayNameRequiredError,
   ContactNotFoundError,
   DocumentNotFoundError,
@@ -22,12 +29,15 @@ export {
   EmptyItemSelectionError,
   HandReceiptNotActiveError,
   HandReceiptNotFoundError,
+  ItemLinkAlreadyClosedError,
+  ItemLinkNotFoundError,
   ItemNotActiveError,
   ItemNotFoundError,
   ItemReceiptMismatchError,
 } from "./application/types";
 export type {
   ActiveAssignmentSummary,
+  ActiveAssignmentItemSummary,
   Active2062Coverage,
   AssignmentItemLinkRecord,
   AssignmentRecord,
