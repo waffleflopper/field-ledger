@@ -8,6 +8,7 @@ Use a domain-first structure:
 
 ```text
 src/modules/accounts/
+src/modules/app-foundation/
 src/modules/audit/
 src/modules/billing/
 src/modules/contacts/
@@ -17,10 +18,12 @@ src/modules/items/
 src/modules/locations/
 src/modules/requirements/
 src/modules/assignments-2062/
-src/modules/import-export/
+src/modules/provider-boundaries/
 ```
 
-The exact folder names can evolve during scaffold, but the dependency rule should not.
+`import-export` remains a documented post-MVP boundary, but it does not have an
+MVP implementation module yet. The exact folder names can evolve during
+scaffold, but the dependency rule should not.
 
 ## Dependency Rule
 

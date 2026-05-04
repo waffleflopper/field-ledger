@@ -59,7 +59,8 @@ notes.
 - tRPC
 - TanStack Query
 - Drizzle
-- Supabase Auth, Postgres, and Storage
+- Better Auth
+- Supabase Postgres and Storage
 - Local Supabase for development
 - Vitest and Playwright
 
@@ -69,19 +70,26 @@ internal boundaries.
 
 ## Current Status
 
-The repo is in the foundation stage. The scaffold proves the real app stack is
-installed and wired, and the first auth/session slice is now in place:
+The MVP baseline is implemented and in hardening closeout. The app now has real
+authenticated product routes for dashboard, hand receipts, item search, item
+detail, Active 2062s, Activity, and upload 2062 workflows, with placeholder
+surfaces still reserved for billing, contacts, locations, and settings.
 
-- Next.js app shell
-- Tailwind v4 and shadcn/ui setup
-- tRPC plus TanStack Query foundation
-- Drizzle config and first scaffold migration
-- Local Supabase config on nondefault ports
-- Provider-boundary starting point, including Supabase Auth session access
-- Public `/auth/login` and protected `/app/...` route behavior
-- Unit, integration, RLS-placeholder, and browser test commands
+Implemented MVP behavior includes:
 
-Product workflows are intentionally added in small vertical slices.
+- Better Auth sign-in, account initialization, onboarding, and read-only access
+  behavior.
+- Hand receipt create, edit, archive, restore, list, and detail workflows.
+- Property item create, edit, archive, restore, move, global search, reusable
+  contact/location context, and manual signed-to state.
+- Item requirements with due windows, completion history, pause/resume, manual
+  next-due adjustment, and dashboard review behavior.
+- Private document upload for formal 2062 workflows, single-item and multi-item
+  2062 assignment creation, active 2062 review, close, and remove-item-link
+  behavior.
+- Audit/activity events with readable Activity surfaces.
+- Supabase RLS coverage for account-owned MVP data and focused browser coverage
+  for core mobile/desktop workflows.
 
 ## Quick Start
 
@@ -103,13 +111,15 @@ Start local Supabase:
 pnpm supabase:start
 ```
 
-Copy the local publishable key from:
+Copy the local service-role key from:
 
 ```sh
 pnpm supabase:status
 ```
 
-Then paste it into `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
+Then paste it into `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. Local
+email/password auth uses Better Auth and does not require Supabase Auth
+publishable keys.
 
 Apply local migrations:
 

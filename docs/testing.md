@@ -23,20 +23,15 @@ Command:
 pnpm test:unit
 ```
 
-Current scaffold proof:
+Current unit coverage includes 37 test files across accounts, app foundation,
+assignments-2062, audit, billing, contacts, documents, hand receipts, items,
+locations, and requirements. These tests cover capability decisions,
+application-service lifecycle rules, validation, audit emission, date handling,
+and read-only blocking.
 
-- `tests/unit/accounts/ensure-account.test.ts`
-- `tests/unit/app-foundation/get-scaffold-health.test.ts`
-
-Requirement proof:
-
-- `tests/unit/requirements/requirement-due-date.test.ts` covers recurring due
-  date calculation.
-- `tests/unit/requirements/requirement-completion.test.ts` covers completion
-  behavior, past completion dates, future-date blocking, next-due recalculation,
-  and audit emission.
-- `tests/unit/requirements/requirement-lifecycle.test.ts` covers manual next
-  due adjustment plus pause/resume behavior.
+`tests/support/` contains in-memory repositories and test helpers used by unit
+and integration tests to keep application-service coverage fast and focused
+without depending on browser flows.
 
 ## Integration Tests
 
@@ -60,17 +55,10 @@ Command:
 pnpm test:integration
 ```
 
-Current scaffold proof:
-
-- `tests/integration/trpc/foundation-router.test.ts`
-- `tests/integration/auth/protected-procedure.test.ts`
-
-Requirement proof:
-
-- `tests/integration/trpc/requirements-router.test.ts` covers the typed
-  requirement workflow, including completion history.
-- `tests/integration/trpc/audit-router.test.ts` covers readable requirement
-  activity labels and requirement target-scoped activity reads.
+Current integration coverage includes 12 test files across auth and tRPC
+routers. The suite covers protected procedures and typed router behavior for
+accounts, assignments-2062, audit, billing, contacts, documents, hand receipts,
+items, locations, onboarding, requirements, and app foundation.
 
 ## RLS Tests
 
@@ -99,7 +87,7 @@ The account foundation includes the first RLS-protected production table, so
 `pnpm test:rls` now runs real tests instead of using scaffold
 `--passWithNoTests` behavior.
 
-Current table-level RLS proof:
+Current RLS coverage includes 15 test files. Table-level RLS proof:
 
 - `tests/rls/accounts/accounts-rls.test.ts`
 - `tests/rls/audit/audit-events-rls.test.ts`
@@ -112,7 +100,7 @@ Current table-level RLS proof:
 - `tests/rls/documents/documents-rls.test.ts`
 - `tests/rls/assignments-2062/assignments-2062-rls.test.ts`
 
-Current repository-level RLS proof:
+Repository-level RLS proof:
 
 - `tests/rls/audit/audit-repository-rls.test.ts`
 - `tests/rls/hand-receipts/hand-receipt-repository-rls.test.ts`
@@ -136,16 +124,22 @@ Command:
 pnpm test:e2e
 ```
 
-Current scaffold proof:
+Current browser coverage includes 9 specs:
 
-- `tests/e2e/scaffold.spec.ts`
+- `tests/e2e/app-shell.spec.ts`
 - `tests/e2e/auth.spec.ts`
+- `tests/e2e/blocked-states.spec.ts`
+- `tests/e2e/dashboard-requirements.spec.ts`
+- `tests/e2e/hand-receipts.spec.ts`
+- `tests/e2e/items.spec.ts`
+- `tests/e2e/onboarding.spec.ts`
+- `tests/e2e/responsive-smoke.spec.ts`
+- `tests/e2e/scaffold.spec.ts`
 
-Requirement proof:
-
-- `tests/e2e/dashboard-requirements.spec.ts` covers dashboard overdue, due
-  soon, and upcoming sections plus mobile priority ordering and desktop
-  overflow.
+Together they cover app shell navigation, auth, onboarding, dashboard
+requirements, read-only blocked states, validation and empty states, hand
+receipt and item workflows, 2062 flows, archived records, activity surfacing,
+and focused responsive smoke checks.
 
 Auth-related browser tests should verify the app-owned auth/session boundary
 and Better Auth flow, not route or UI calls to provider internals.

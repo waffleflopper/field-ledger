@@ -26,12 +26,12 @@ Implement item creation inside a selected hand receipt, including identifier val
 
 ### Acceptance Criteria
 
-- [ ] Item requires nomenclature and a hand receipt.
-- [ ] Item requires ECN, serial number, or generated ID.
-- [ ] User can generate an app ID when ECN/serial is unknown.
-- [ ] Generated ID remains stable and searchable.
-- [ ] Duplicate ECN/serial warnings are shown and can be confirmed.
-- [ ] Creation emits an audit event.
+- [x] Item requires nomenclature and a hand receipt.
+- [x] Item requires ECN, serial number, or generated ID.
+- [x] User can generate an app ID when ECN/serial is unknown.
+- [x] Generated ID remains stable and searchable.
+- [x] Duplicate ECN/serial warnings are shown and can be confirmed.
+- [x] Creation emits an audit event.
 
 ---
 
@@ -45,12 +45,12 @@ Add item detail and editing, including ECN/serial edits with audit history and p
 
 ### Acceptance Criteria
 
-- [ ] User can view item detail from hand receipt and search contexts.
-- [ ] User can edit nomenclature, ECN, serial number, generated ID presence rules, and notes if present.
-- [ ] Identifier edits keep the item valid.
-- [ ] Identifier changes emit audit events.
-- [ ] Item UI works well without photos.
-- [ ] Read-only/paused accounts cannot edit.
+- [x] User can view item detail from hand receipt and search contexts.
+- [x] User can edit nomenclature, ECN, serial number, generated ID presence rules, and notes if present.
+- [x] Identifier edits keep the item valid.
+- [x] Identifier changes emit audit events.
+- [x] Item UI works well without photos.
+- [x] Read-only/paused accounts cannot edit.
 
 ---
 
@@ -64,12 +64,12 @@ Implement item archive/restore and moving items between hand receipts, with acti
 
 ### Acceptance Criteria
 
-- [ ] User can archive an item with optional reason/notes.
-- [ ] Archived items are hidden from normal lists/search by default.
-- [ ] User can restore archived items.
-- [ ] User can move an item between hand receipts.
-- [ ] Movement behavior leaves a clear constraint hook for active 2062 coverage.
-- [ ] Archive, restore, and move emit audit events.
+- [x] User can archive an item with optional reason/notes.
+- [x] Archived items are hidden from normal lists/search by default.
+- [x] User can restore archived items.
+- [x] User can move an item between hand receipts.
+- [x] Movement behavior leaves a clear constraint hook for active 2062 coverage.
+- [x] Archive, restore, and move emit audit events.
 
 ---
 
@@ -108,12 +108,12 @@ Implement account-wide contacts and manual signed-to fallback through contact se
 
 ### Acceptance Criteria
 
-- [ ] User can create contacts with display name only.
-- [ ] Contacts are account-wide.
-- [ ] Manual signed-to always references a contact.
-- [ ] Typing a new signed-to name creates a contact.
-- [ ] Existing contacts are suggested to reduce duplicates.
-- [ ] Manual signed-to items appear in signed-out surfaces with a no-2062 indicator.
+- [x] User can create contacts with display name only.
+- [x] Contacts are account-wide.
+- [x] Manual signed-to always references a contact.
+- [x] Typing a new signed-to name creates a contact.
+- [x] Existing contacts are suggested to reduce duplicates.
+- [x] Manual signed-to items appear in signed-out surfaces with a no-2062 indicator.
 
 ---
 
@@ -127,9 +127,9 @@ Implement account-wide reusable locations and item location assignment.
 
 ### Acceptance Criteria
 
-- [ ] User can create locations with name only.
-- [ ] Locations are account-wide and optional.
-- [ ] Items can have no location or one current location.
-- [ ] Location changes emit audit events.
-- [ ] Search/filtering can use location context.
-- [ ] Read-only/paused accounts cannot change locations.
+- [x] User can create locations with name only.
+- [x] Locations are account-wide and optional.
+- [x] Items can have no location or one current location.
+- [x] Location changes emit audit events.
+- [x] Search/filtering can use location context.
+- [x] Read-only/paused accounts cannot change locations.

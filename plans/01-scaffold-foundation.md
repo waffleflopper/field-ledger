@@ -29,11 +29,11 @@ Create the initial Next.js app scaffold with TypeScript, pnpm, Tailwind v4, shad
 
 ### Acceptance Criteria
 
-- [ ] The project runs locally with `pnpm dev`.
-- [ ] TypeScript, linting, and formatting conventions are established.
-- [ ] Tailwind v4 is configured and ready for shadcn/ui.
-- [ ] The docs and repo-local skills remain intact.
-- [ ] No product workflow is implemented beyond scaffold proof.
+- [x] The project runs locally with `pnpm dev`.
+- [x] TypeScript, linting, and formatting conventions are established.
+- [x] Tailwind v4 is configured and ready for shadcn/ui.
+- [x] The docs and repo-local skills remain intact.
+- [x] No product workflow is implemented beyond scaffold proof.
 
 ---
 
@@ -47,11 +47,11 @@ Add local Supabase development setup, environment example documentation, and the
 
 ### Acceptance Criteria
 
-- [ ] Local Supabase startup is documented.
-- [ ] `.env.example` lists required local values without secrets.
-- [ ] The app can connect to the local database in development.
-- [ ] The setup does not require hosted Supabase for local development.
-- [ ] Provider boundaries remain documented as the required integration path.
+- [x] Local Supabase startup is documented.
+- [x] `.env.example` lists required local values without secrets.
+- [x] The app can connect to the local database in development.
+- [x] The setup does not require hosted Supabase for local development.
+- [x] Provider boundaries remain documented as the required integration path.
 
 ---
 
@@ -65,10 +65,10 @@ Add Drizzle configuration and a first harmless migration path that proves app-ow
 
 ### Acceptance Criteria
 
-- [ ] Drizzle can generate/apply migrations against local Supabase.
-- [ ] Migration commands are documented.
-- [ ] RLS policy handling is documented for future user-owned tables.
-- [ ] The scaffold does not add real domain tables unless needed to prove the migration path.
+- [x] Drizzle can generate/apply migrations against local Supabase.
+- [x] Migration commands are documented.
+- [x] RLS policy handling is documented for future user-owned tables.
+- [x] The scaffold does not add real domain tables unless needed to prove the migration path.
 
 ---
 
@@ -82,10 +82,10 @@ Add the tRPC/TanStack Query foundation and a minimal health-style procedure that
 
 ### Acceptance Criteria
 
-- [ ] The app has a working typed server/client API path.
-- [ ] The API foundation is documented as calling module services for real workflows.
-- [ ] No domain behavior is embedded directly in route components.
-- [ ] Verification commands cover the API foundation.
+- [x] The app has a working typed server/client API path.
+- [x] The API foundation is documented as calling module services for real workflows.
+- [x] No domain behavior is embedded directly in route components.
+- [x] Verification commands cover the API foundation.
 
 ---
 
@@ -99,9 +99,9 @@ Add the testing harness that future slices will use for domain rules, module wor
 
 ### Acceptance Criteria
 
-- [ ] Unit tests can run.
-- [ ] Integration-style tests have a documented path.
-- [ ] Browser/UI test tooling is ready or explicitly staged for the first UI slice.
-- [ ] `docs/testing.md` matches the actual command names.
-- [ ] CI-ready command set is documented, even if CI is added later.
+- [x] Unit tests can run.
+- [x] Integration-style tests have a documented path.
+- [x] Browser/UI test tooling is ready or explicitly staged for the first UI slice.
+- [x] `docs/testing.md` matches the actual command names.
+- [x] CI-ready command set is documented, even if CI is added later.
 
