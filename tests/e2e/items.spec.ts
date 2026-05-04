@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
@@ -17,6 +17,24 @@ async function signInLocalUser(page: Page) {
     .getByRole("dialog", { name: "Property accountability only" })
     .getByRole("button", { name: "I understand" })
     .click();
+}
+
+async function expectDialogContained(page: Page, dialog: Locator) {
+  const [box, viewport, scrollState] = await Promise.all([
+    dialog.boundingBox(),
+    page.viewportSize(),
+    dialog.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+      scrollHeight: element.scrollHeight,
+    })),
+  ]);
+
+  expect(box?.height ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) - 16);
+
+  if (scrollState.scrollHeight > scrollState.clientHeight) {
+    expect(scrollState.overflowY).toMatch(/auto|scroll/);
+  }
 }
 
 test("users can search items globally and open item detail on mobile", async ({
@@ -112,8 +130,15 @@ test("users can create and see an item requirement from item detail", async ({
   const completionDialog = page.getByRole("dialog", {
     name: "Complete requirement",
   });
+  await expectDialogContained(page, completionDialog);
   await completionDialog.getByLabel("Completion date").fill("2026-01-15");
   await completionDialog.getByLabel("Notes").fill("PMCS annotated in binder.");
+  await completionDialog
+    .getByRole("button", { name: "Record completion" })
+    .scrollIntoViewIfNeeded();
+  await expect(
+    completionDialog.getByRole("button", { name: "Record completion" }),
+  ).toBeVisible();
   await completionDialog
     .getByRole("button", { name: "Record completion" })
     .click();

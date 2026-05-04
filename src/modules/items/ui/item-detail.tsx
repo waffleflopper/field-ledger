@@ -190,7 +190,7 @@ function MoveItemDialog({
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent scrollable>
         <DialogHeader>
           <DialogTitle>Move item</DialogTitle>
           <DialogDescription>

@@ -29,6 +29,9 @@ Phone:
 - Items/Search
 - Hand Receipts
 - More
+- More sheet groups secondary record surfaces separately from account surfaces,
+  keeps Active 2062s visible in the Records group, and scrolls within the
+  viewport when content grows.
 
 Tablet/desktop:
 
@@ -115,6 +118,17 @@ enforcement.
   upload entry points are unavailable.
 - 2062 UI keeps active assignments and coverage history visible, but create,
   close, and remove-item-link controls are unavailable.
+
+## Responsive Form Pattern
+
+Form-heavy dialogs should stay within the phone viewport and scroll internally
+when their fields exceed available height. Primary form actions must remain
+reachable by scrolling the dialog, not by scrolling hidden page content behind
+the overlay.
+
+Step-based workflows should avoid tall stacked progress rails on phone. Use
+compact horizontal rails or equivalent compressed progress indicators, with
+full-width primary buttons where thumb reach matters.
 
 ## Key Workflows
 

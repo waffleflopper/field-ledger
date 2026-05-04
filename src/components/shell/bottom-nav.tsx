@@ -64,6 +64,27 @@ function MoreSheetLink({ item }: { item: ShellNavItem }) {
   );
 }
 
+function MoreSheetSection({
+  items,
+  title,
+}: {
+  items: ShellNavItem[];
+  title: string;
+}) {
+  return (
+    <section className="space-y-2">
+      <h3 className="px-1 font-mono text-[0.68rem] font-semibold uppercase text-muted-foreground">
+        {title}
+      </h3>
+      <div className="grid gap-2">
+        {items.map((item) => (
+          <MoreSheetLink item={item} key={item.href} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
   const moreItems = [...secondaryNavItems, ...footerNavItems];
@@ -101,11 +122,14 @@ export function BottomNav() {
                 Additional Field Ledger surfaces.
               </SheetDescription>
             </SheetHeader>
-            <div className="grid gap-2">
-              {moreItems.map((item) => (
-                <MoreSheetLink item={item} key={item.href} />
-              ))}
-              <form action="/auth/signout" method="post">
+            <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1">
+              <MoreSheetSection items={secondaryNavItems} title="Records" />
+              <MoreSheetSection items={footerNavItems} title="Account" />
+              <form
+                action="/auth/signout"
+                className="border-t pt-2"
+                method="post"
+              >
                 <Button
                   className="w-full justify-start"
                   type="submit"

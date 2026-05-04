@@ -323,7 +323,7 @@ function AdjustRequirementNextDueDialog({
         <CalendarClock aria-hidden="true" className="size-4" />
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Adjust next due</DialogTitle>
             <DialogDescription>
@@ -558,7 +558,7 @@ function EditRequirementDialog({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Edit requirement</DialogTitle>
             <DialogDescription>
@@ -805,7 +805,7 @@ function CompleteRequirementDialog({
         Complete
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Complete requirement</DialogTitle>
             <DialogDescription>

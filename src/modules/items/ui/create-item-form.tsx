@@ -174,7 +174,7 @@ export function CreateItemForm({
           Add item
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent scrollable>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Add property item</DialogTitle>

@@ -63,14 +63,14 @@ function StepRail({ currentStep }: { currentStep: Step }) {
   const currentIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
-    <ol className="grid gap-2 sm:grid-cols-4">
+    <ol className="grid auto-cols-[minmax(7rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-1 sm:grid-flow-row sm:grid-cols-4 sm:overflow-visible sm:pb-0">
       {steps.map((step, index) => {
         const isCurrent = step.id === currentStep;
         const isComplete = index < currentIndex;
 
         return (
           <li
-            className="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-xs"
+            className="flex min-w-0 items-center gap-2 rounded-md border bg-card px-3 py-2 text-xs"
             key={step.id}
           >
             <span
@@ -89,8 +89,8 @@ function StepRail({ currentStep }: { currentStep: Step }) {
             <span
               className={
                 isCurrent
-                  ? "font-semibold text-foreground"
-                  : "text-muted-foreground"
+                  ? "truncate font-semibold text-foreground"
+                  : "truncate text-muted-foreground"
               }
             >
               {step.label}
@@ -430,8 +430,9 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
               setNewContactDisplayName("");
             }}
           />
-          <div className="flex justify-end">
+          <div className="flex">
             <Button
+              className="w-full sm:w-auto"
               disabled={
                 isDisabled ||
                 (!selectedContactId && !newContactDisplayName.trim())
@@ -484,8 +485,9 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
                 Upload a document, then select it here.
               </p>
             ) : null}
-            <div className="flex justify-between gap-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
               <Button
+                className="w-full sm:w-auto"
                 onClick={() => goNext("contact")}
                 type="button"
                 variant="outline"
@@ -493,6 +495,7 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
                 Back
               </Button>
               <Button
+                className="w-full sm:w-auto"
                 disabled={isDisabled || !selectedDocumentId}
                 onClick={() => goNext("items")}
                 type="button"
@@ -519,8 +522,9 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
             selectedItemIds={validSelectedItemIds}
             setSelectedItemIds={setSelectedItemIds}
           />
-          <div className="flex justify-between gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
             <Button
+              className="w-full sm:w-auto"
               onClick={() => goNext("document")}
               type="button"
               variant="outline"
@@ -528,6 +532,7 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
               Back
             </Button>
             <Button
+              className="w-full sm:w-auto"
               disabled={isDisabled || validSelectedItemIds.length === 0}
               onClick={() => goNext("summary")}
               type="button"
@@ -602,6 +607,7 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
             <Button
+              className="w-full sm:w-auto"
               onClick={() => goNext("items")}
               type="button"
               variant="outline"
@@ -609,6 +615,7 @@ export function Upload2062Flow({ handReceiptId }: { handReceiptId: string }) {
               Back
             </Button>
             <Button
+              className="w-full sm:w-auto"
               disabled={isDisabled || createAssignment.isPending}
               onClick={submit}
               type="button"

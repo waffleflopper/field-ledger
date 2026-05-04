@@ -50,6 +50,8 @@ test("mobile shell uses bottom navigation and exposes More surfaces", async ({
 
   await page.getByRole("button", { name: "More" }).click();
   await expect(page.getByRole("dialog", { name: "More" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Records" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
   await page.getByRole("link", { name: "Active 2062s" }).click();
   await expect(page).toHaveURL(/\/app\/active-2062s$/);
   await expect(

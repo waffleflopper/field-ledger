@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
@@ -33,6 +33,24 @@ function dateOnlyFromOffset(daysFromToday: number) {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+async function expectDialogContained(page: Page, dialog: Locator) {
+  const [box, viewport, scrollState] = await Promise.all([
+    dialog.boundingBox(),
+    page.viewportSize(),
+    dialog.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+      scrollHeight: element.scrollHeight,
+    })),
+  ]);
+
+  expect(box?.height ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) - 16);
+
+  if (scrollState.scrollHeight > scrollState.clientHeight) {
+    expect(scrollState.overflowY).toMatch(/auto|scroll/);
+  }
 }
 
 test("users can create and see an active hand receipt on mobile", async ({
@@ -138,6 +156,7 @@ test("users can open and edit item details from a hand receipt", async ({
   const createDialog = page.getByRole("dialog", {
     name: "Add property item",
   });
+  await expectDialogContained(page, createDialog);
   await createDialog.getByLabel("Nomenclature").fill("M4 carbine");
   await createDialog.getByLabel("ECN").fill("ECN-101");
   await createDialog.getByLabel("Location").fill("Arms room");
