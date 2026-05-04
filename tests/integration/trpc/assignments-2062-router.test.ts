@@ -404,4 +404,115 @@ describe("assignments2062Router", () => {
       }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
+
+  it("lists active formal 2062 assignments without manual signed-to records", async () => {
+    const { caller, assignmentItemLinkRepository, assignmentRepository } =
+      createCaller();
+
+    await caller.assignments2062.createWithItems({
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      itemIds: [
+        "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        "77777777-7777-4777-9777-777777777777",
+      ],
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const createdAssignment = assignmentRepository.assignments[0];
+    const createdLink = assignmentItemLinkRepository.links[0];
+
+    if (!createdAssignment || !createdLink) {
+      throw new Error("Missing created assignment fixture.");
+    }
+
+    assignmentRepository.assignments[0] = {
+      ...createdAssignment,
+      contactName: "SPC Rivera",
+      documentFilename: "signed-2062.pdf",
+    };
+    assignmentRepository.assignments.push({
+      ...createdAssignment,
+      id: "11111111-1111-4111-8111-111111111111",
+      status: "closed",
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+    assignmentItemLinkRepository.links.push({
+      ...createdLink,
+      id: "22222222-2222-4222-8222-222222222222",
+      assignmentId: "11111111-1111-4111-8111-111111111111",
+      itemId: "99999999-9999-4999-9999-999999999998",
+      status: "closed",
+      closedAt: new Date("2026-04-02T12:00:00.000Z"),
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+
+    await expect(caller.assignments2062.list()).resolves.toEqual([
+      expect.objectContaining({
+        id: createdAssignment.id,
+        contactName: "SPC Rivera",
+        handReceiptName: "Primary receipt",
+        itemCount: 2,
+        status: "active",
+      }),
+    ]);
+  });
+
+  it("returns current and historical item coverage through the typed procedure", async () => {
+    const { caller, assignmentItemLinkRepository, assignmentRepository } =
+      createCaller();
+
+    await caller.assignments2062.create({
+      itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const activeAssignment = assignmentRepository.assignments[0];
+    const activeLink = assignmentItemLinkRepository.links[0];
+
+    if (!activeAssignment || !activeLink) {
+      throw new Error("Missing active assignment fixture.");
+    }
+
+    assignmentRepository.assignments[0] = {
+      ...activeAssignment,
+      contactName: "SPC Rivera",
+      documentFilename: "signed-2062.pdf",
+    };
+    assignmentRepository.assignments.push({
+      ...activeAssignment,
+      id: "33333333-3333-4333-8333-333333333333",
+      status: "closed",
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+    assignmentItemLinkRepository.links.push({
+      ...activeLink,
+      id: "44444444-4444-4444-8444-444444444444",
+      assignmentId: "33333333-3333-4333-8333-333333333333",
+      status: "closed",
+      closedAt: new Date("2026-04-02T12:00:00.000Z"),
+      createdAt: new Date("2026-04-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-02T12:00:00.000Z"),
+    });
+
+    await expect(
+      caller.assignments2062.getItemCoverage({
+        itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      }),
+    ).resolves.toMatchObject({
+      current: {
+        id: activeAssignment.id,
+        contactName: "SPC Rivera",
+        itemCount: 1,
+      },
+      history: [
+        {
+          assignmentId: "33333333-3333-4333-8333-333333333333",
+          linkId: "44444444-4444-4444-8444-444444444444",
+        },
+      ],
+    });
+  });
 });

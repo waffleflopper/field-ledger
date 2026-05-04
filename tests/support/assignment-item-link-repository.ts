@@ -58,6 +58,26 @@ export class InMemoryAssignmentItemLinkRepository implements AssignmentItemLinkR
     );
   }
 
+  async findByItemId(
+    accountId: string,
+    itemId: string,
+    options: { status?: AssignmentStatus } = {},
+  ) {
+    return this.links
+      .filter((link) => link.accountId === accountId && link.itemId === itemId)
+      .filter(
+        (link) =>
+          options.status === undefined || link.status === options.status,
+      )
+      .sort((left, right) => {
+        const leftTime = left.closedAt?.getTime() ?? left.updatedAt.getTime();
+        const rightTime =
+          right.closedAt?.getTime() ?? right.updatedAt.getTime();
+
+        return rightTime - leftTime;
+      });
+  }
+
   async findByAssignmentId(
     accountId: string,
     assignmentId: string,

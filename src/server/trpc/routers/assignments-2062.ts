@@ -5,6 +5,9 @@ import {
   Active2062CoverageConflictError,
   createAssignment,
   createAssignmentWithItems,
+  getHandReceiptAssignments,
+  getItemCoverage,
+  listActiveAssignments,
 } from "@/modules/assignments-2062";
 import type {
   AppUnitOfWork,
@@ -125,6 +128,36 @@ async function runInUnitOfWork<T>(
 }
 
 export const assignments2062Router = createTRPCRouter({
+  list: protectedProcedure.query(({ ctx }) =>
+    listActiveAssignments({
+      account: ctx.account,
+      assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
+      assignmentRepository: ctx.assignmentRepository,
+      handReceiptRepository: ctx.handReceiptRepository,
+    }),
+  ),
+  getItemCoverage: protectedProcedure
+    .input(z.object({ itemId: z.uuid() }))
+    .query(({ ctx, input }) =>
+      getItemCoverage({
+        account: ctx.account,
+        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
+        assignmentRepository: ctx.assignmentRepository,
+        handReceiptRepository: ctx.handReceiptRepository,
+        itemId: input.itemId,
+      }),
+    ),
+  getHandReceiptAssignments: protectedProcedure
+    .input(z.object({ handReceiptId: z.uuid() }))
+    .query(({ ctx, input }) =>
+      getHandReceiptAssignments({
+        account: ctx.account,
+        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
+        assignmentRepository: ctx.assignmentRepository,
+        handReceiptId: input.handReceiptId,
+        handReceiptRepository: ctx.handReceiptRepository,
+      }),
+    ),
   create: protectedProcedure
     .input(createAssignmentInput)
     .mutation(({ ctx, input }) =>

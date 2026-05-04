@@ -48,6 +48,38 @@ export type Active2062Coverage = {
   documentFilename: string;
 };
 
+export type ActiveAssignmentSummary = {
+  id: string;
+  handReceiptId: string;
+  handReceiptName: string;
+  contactId: string;
+  contactName: string;
+  documentId: string;
+  documentFilename: string;
+  itemCount: number;
+  status: "active";
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type HistoricalAssignmentLink = {
+  linkId: string;
+  assignmentId: string;
+  handReceiptId: string;
+  handReceiptName: string;
+  contactId: string;
+  contactName: string;
+  documentId: string;
+  documentFilename: string;
+  closedAt: Date;
+  createdAt: Date;
+};
+
+export type ItemCoverageResult = {
+  current: ActiveAssignmentSummary | null;
+  history: HistoricalAssignmentLink[];
+};
+
 export type CreateAssignmentInput =
   | {
       itemId: string;

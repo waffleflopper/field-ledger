@@ -14,6 +14,11 @@ export interface AssignmentItemLinkRepository {
     accountId: string,
     itemId: string,
   ): Promise<AssignmentItemLinkRecord | null>;
+  findByItemId(
+    accountId: string,
+    itemId: string,
+    options?: { status?: AssignmentStatus },
+  ): Promise<AssignmentItemLinkRecord[]>;
   findByAssignmentId(
     accountId: string,
     assignmentId: string,
@@ -37,6 +42,9 @@ export function createUnavailableAssignmentItemLinkRepository(): AssignmentItemL
       throw new Error("An authenticated database session is required.");
     },
     async findActiveByItemId() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findByItemId() {
       throw new Error("An authenticated database session is required.");
     },
     async findByAssignmentId() {

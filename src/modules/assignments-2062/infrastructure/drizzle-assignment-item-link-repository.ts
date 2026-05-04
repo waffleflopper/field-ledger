@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { assignmentItemLinks } from "@/db/schema";
 import type {
@@ -78,6 +78,30 @@ function createAssignmentItemLinkRepository(
       );
 
       return row ? toLinkRecord(row) : null;
+    },
+    async findByItemId(accountId, itemId, options = {}) {
+      const filters = [
+        eq(assignmentItemLinks.accountId, accountId),
+        eq(assignmentItemLinks.itemId, itemId),
+      ];
+
+      if (options.status) {
+        filters.push(eq(assignmentItemLinks.status, options.status));
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(assignmentItemLinks)
+          .where(and(...filters))
+          .orderBy(
+            desc(assignmentItemLinks.closedAt),
+            desc(assignmentItemLinks.updatedAt),
+            desc(assignmentItemLinks.createdAt),
+          ),
+      );
+
+      return rows.map(toLinkRecord);
     },
     async findByAssignmentId(accountId, assignmentId, options = {}) {
       const filters = [

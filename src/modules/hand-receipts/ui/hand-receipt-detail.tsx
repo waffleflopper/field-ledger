@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   CalendarDays,
   ClipboardList,
-  FileUp,
   History,
   Pencil,
   RotateCcw,
@@ -23,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ActivityList } from "@/modules/audit/ui/activity-list";
+import { HandReceipt2062Context } from "@/modules/assignments-2062/ui/hand-receipt-2062-context";
 import { DocumentList } from "@/modules/documents/ui/document-list";
 import { DocumentUpload } from "@/modules/documents/ui/document-upload";
 import type { HandReceiptRecord } from "@/modules/hand-receipts";
@@ -428,34 +428,6 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
               <div className="flex flex-wrap gap-2">
                 {!isViewingArchivedItems ? (
                   <>
-                    <Button
-                      asChild={!isReadOnly && handReceipt.status === "active"}
-                      disabled={isReadOnly || handReceipt.status !== "active"}
-                      size="sm"
-                      title={
-                        isReadOnly
-                          ? "2062 creation is paused while this account is read-only."
-                          : handReceipt.status !== "active"
-                            ? "Archived hand receipts cannot receive new 2062 assignments."
-                            : "Upload a 2062 for multiple items"
-                      }
-                      type="button"
-                      variant="outline"
-                    >
-                      {!isReadOnly && handReceipt.status === "active" ? (
-                        <Link
-                          href={`/app/hand-receipts/${handReceiptId}/upload-2062`}
-                        >
-                          <FileUp aria-hidden="true" className="size-4" />
-                          Upload 2062
-                        </Link>
-                      ) : (
-                        <>
-                          <FileUp aria-hidden="true" className="size-4" />
-                          Upload 2062
-                        </>
-                      )}
-                    </Button>
                     <CreateItemForm
                       canCreate={!isReadOnly && handReceipt.status === "active"}
                       disabledReason={createItemDisabledReason}
@@ -534,6 +506,11 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
             )}
           </section>
           <div className="space-y-3">
+            <HandReceipt2062Context
+              handReceiptId={handReceiptId}
+              isReadOnly={isReadOnly}
+              isReceiptActive={handReceipt.status === "active"}
+            />
             <DocumentUpload
               disabled={isReadOnly || handReceipt.status !== "active"}
               handReceiptId={handReceiptId}
