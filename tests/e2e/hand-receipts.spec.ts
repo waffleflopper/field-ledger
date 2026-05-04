@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { expectDialogContained } from "./helpers/dialog";
+
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
   const email = `hand-receipts-${suffix}@example.test`;
@@ -138,6 +140,7 @@ test("users can open and edit item details from a hand receipt", async ({
   const createDialog = page.getByRole("dialog", {
     name: "Add property item",
   });
+  await expectDialogContained(page, createDialog);
   await createDialog.getByLabel("Nomenclature").fill("M4 carbine");
   await createDialog.getByLabel("ECN").fill("ECN-101");
   await createDialog.getByLabel("Location").fill("Arms room");
@@ -259,7 +262,7 @@ test("users can create multi-item formal 2062 coverage from hand receipt detail"
   });
   await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(1));
   await expect(
-    removeDialog.getByText("Close date cannot be in the future."),
+    removeDialog.getByText("Remove date cannot be in the future."),
   ).toBeVisible();
   await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(-1));
   await removeDialog.getByRole("button", { name: "Remove item" }).click();

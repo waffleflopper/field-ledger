@@ -50,6 +50,8 @@ test("mobile shell uses bottom navigation and exposes More surfaces", async ({
 
   await page.getByRole("button", { name: "More" }).click();
   await expect(page.getByRole("dialog", { name: "More" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Records" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
   await page.getByRole("link", { name: "Active 2062s" }).click();
   await expect(page).toHaveURL(/\/app\/active-2062s$/);
   await expect(
@@ -93,7 +95,7 @@ test("desktop shell uses a collapsible sidebar for app navigation", async ({
     .toBeLessThanOrEqual(48);
 });
 
-test("signed-in users can open the Activity route empty state", async ({
+test("signed-in users can open the Activity route with onboarding activity", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -105,10 +107,10 @@ test("signed-in users can open the Activity route empty state", async ({
   await expect(
     page.getByRole("heading", { name: "Activity", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("Onboarding completed")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "No activity yet" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Events will appear here as you use Field Ledger."),
+    page.getByRole("list", { name: "Activity events" }).getByText("Account", {
+      exact: true,
+    }),
   ).toBeVisible();
 });

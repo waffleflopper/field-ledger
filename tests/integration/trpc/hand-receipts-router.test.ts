@@ -226,6 +226,51 @@ describe("handReceiptsRouter", () => {
     });
   });
 
+  it("maps read-only hand receipt creation to FORBIDDEN while keeping reads available", async () => {
+    const repository = new InMemoryHandReceiptRepository([
+      {
+        id: "78d65dcc-c47b-475c-9c5b-6cb1fbfd0f42",
+        accountId: "account-1",
+        name: "Readable receipt",
+        notes: null,
+        handReceiptNumber: null,
+        holderName: null,
+        unitName: null,
+        uic: null,
+        effectiveDate: null,
+        status: "active",
+        createdAt: new Date("2026-04-30T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-30T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+    const caller = createCaller({
+      account: createAccount({
+        accessState: "paused_read_only",
+        subscriptionTier: "pro",
+      }),
+      handReceiptRepository: repository,
+      auditRepository,
+    });
+
+    await expect(caller.handReceipts.list()).resolves.toMatchObject([
+      {
+        id: "78d65dcc-c47b-475c-9c5b-6cb1fbfd0f42",
+        name: "Readable receipt",
+      },
+    ]);
+    await expect(
+      caller.handReceipts.create({
+        name: "Blocked receipt",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    expect(auditRepository.events).toEqual([]);
+    expect(repository.handReceipts).toHaveLength(1);
+  });
+
   it("returns a single hand receipt through the typed detail procedure", async () => {
     const handReceiptId = "2c4d5d97-1610-493d-baa5-8bc80b2dce01";
     const repository = new InMemoryHandReceiptRepository([
@@ -329,6 +374,7 @@ describe("handReceiptsRouter", () => {
         targetType: "hand_receipt",
         targetId: handReceiptId,
         metadata: {
+          name: "Updated receipt",
           changedFields: ["name", "notes", "holderName"],
         },
       },

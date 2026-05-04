@@ -353,8 +353,8 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
 
       {isReadOnly ? (
         <p className="rounded-lg border bg-secondary px-4 py-3 text-sm text-muted-foreground">
-          This account is read-only. Detail records remain available, but edits
-          are paused until access is restored.
+          Detail records remain available, but edits and lifecycle changes are
+          paused until access is restored.
         </p>
       ) : null}
 
@@ -431,12 +431,12 @@ export function HandReceiptDetail({ handReceiptId }: HandReceiptDetailProps) {
                     <CreateItemForm
                       canCreate={!isReadOnly && handReceipt.status === "active"}
                       disabledReason={createItemDisabledReason}
-                      onSubmit={(input) =>
-                        createItemMutation.mutateAsync({
+                      onSubmit={(input) => {
+                        return createItemMutation.mutateAsync({
                           handReceiptId,
                           ...input,
-                        })
-                      }
+                        });
+                      }}
                     />
                   </>
                 ) : null}

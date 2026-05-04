@@ -25,11 +25,11 @@ Create the audit event foundation and an app-owned audit logger boundary that fu
 
 ### Acceptance Criteria
 
-- [ ] Audit events are account-owned and protected by RLS.
-- [ ] The audit logger can record actor, action, target, timestamp, and useful metadata.
-- [ ] The logger is available to application services without coupling them to UI routes.
-- [ ] Tests prove audit events can be written and isolated by account.
-- [ ] Docs explain which workflows must emit audit events.
+- [x] Audit events are account-owned and protected by RLS.
+- [x] The audit logger can record actor, action, target, timestamp, and useful metadata.
+- [x] The logger is available to application services without coupling them to UI routes.
+- [x] Tests prove audit events can be written and isolated by account.
+- [x] Docs explain which workflows must emit audit events.
 
 ---
 
@@ -43,10 +43,10 @@ Add simple activity UI surfaces in the app shell, starting with dashboard/recent
 
 ### Acceptance Criteria
 
-- [ ] Recent activity is visible in a low-priority dashboard area.
-- [ ] A broader activity surface exists or is clearly staged in the app shell.
-- [ ] Activity labels are user-readable and do not expose raw implementation details.
-- [ ] Activity remains secondary to dashboard requirements and quick actions.
+- [x] Recent activity is visible in a low-priority dashboard area.
+- [x] A broader activity surface exists or is clearly staged in the app shell.
+- [x] Activity labels are user-readable and do not expose raw implementation details.
+- [x] Activity remains secondary to dashboard requirements and quick actions.
 
 ---
 
@@ -60,12 +60,12 @@ Implement hand receipt creation and listing, including optional metadata support
 
 ### Acceptance Criteria
 
-- [ ] User can create a hand receipt with required name.
-- [ ] Optional metadata can be stored without being required.
-- [ ] Base/Pro/trial hand receipt creation rules are enforced through the capability layer.
-- [ ] Read-only/paused accounts cannot create hand receipts.
-- [ ] Hand receipt creation emits an audit event.
-- [ ] The list builds into `/app/hand-receipts`.
+- [x] User can create a hand receipt with required name.
+- [x] Optional metadata can be stored without being required.
+- [x] Base/Pro/trial hand receipt creation rules are enforced through the capability layer.
+- [x] Read-only/paused accounts cannot create hand receipts.
+- [x] Hand receipt creation emits an audit event.
+- [x] The list builds into `/app/hand-receipts`.
 
 ---
 
@@ -79,11 +79,11 @@ Add hand receipt detail and edit behavior, including the mock-derived detail rou
 
 ### Acceptance Criteria
 
-- [ ] User can view a hand receipt detail page.
-- [ ] User can edit required and optional metadata.
-- [ ] Updates emit audit events.
-- [ ] Detail UI leaves room for item list, upload 2062 action, and activity without implementing those workflows prematurely.
-- [ ] Paused/read-only accounts cannot edit.
+- [x] User can view a hand receipt detail page.
+- [x] User can edit required and optional metadata.
+- [x] Updates emit audit events.
+- [x] Detail UI leaves room for item list, upload 2062 action, and activity without implementing those workflows prematurely.
+- [x] Paused/read-only accounts cannot edit.
 
 ---
 
@@ -97,10 +97,10 @@ Implement hand receipt archive and restore, including warnings and default filte
 
 ### Acceptance Criteria
 
-- [ ] Active hand receipts can be archived.
-- [ ] Archived hand receipts are hidden from normal lists/search surfaces by default.
-- [ ] Archived hand receipts can be restored.
-- [ ] Archive and restore emit audit events.
-- [ ] Read-only/paused accounts cannot archive or restore.
-- [ ] Docs capture any unresolved future behavior around active 2062s/reminders at hand receipt archive time.
+- [x] Active hand receipts can be archived.
+- [x] Archived hand receipts are hidden from normal lists/search surfaces by default.
+- [x] Archived hand receipts can be restored.
+- [x] Archive and restore emit audit events.
+- [x] Read-only/paused accounts cannot archive or restore.
+- [x] Docs capture any unresolved future behavior around active 2062s/reminders at hand receipt archive time.
 

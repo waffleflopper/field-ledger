@@ -29,8 +29,8 @@ export function AssignmentList({
               <ReceiptText aria-hidden="true" className="size-4" />
             </span>
             <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-normal">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h2 className="min-w-0 max-w-full truncate text-sm font-semibold tracking-normal">
                   {assignment.contactName}
                 </h2>
                 <span className="rounded-sm border bg-secondary px-2 py-1 font-mono text-[0.68rem] uppercase text-muted-foreground">

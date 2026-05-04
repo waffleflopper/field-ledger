@@ -11,6 +11,41 @@ import { DocumentUpload } from "@/modules/documents/ui/document-upload";
 import type { ItemRecord } from "@/modules/items";
 import { trpc } from "@/trpc/react";
 
+function Upload2062Actions({
+  canSubmit,
+  hasActiveCoverage,
+  isPending,
+  itemId,
+  onSubmit,
+}: {
+  canSubmit: boolean;
+  hasActiveCoverage: boolean;
+  isPending: boolean;
+  itemId: string;
+  onSubmit: () => void;
+}) {
+  return (
+    <section className="space-y-3 rounded-lg border bg-card p-4">
+      <Button
+        className="w-full"
+        disabled={!canSubmit || hasActiveCoverage}
+        onClick={onSubmit}
+        type="button"
+      >
+        {isPending ? (
+          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        ) : (
+          <CheckCircle2 aria-hidden="true" className="size-4" />
+        )}
+        {isPending ? "Creating 2062" : "Create 2062"}
+      </Button>
+      <Button asChild className="w-full" type="button" variant="outline">
+        <Link href={`/app/items/${itemId}`}>Cancel</Link>
+      </Button>
+    </section>
+  );
+}
+
 export function Upload2062Form({
   isReadOnly,
   item,
@@ -203,6 +238,24 @@ export function Upload2062Form({
               </p>
             ) : null}
           </section>
+
+          <div className="space-y-3 lg:hidden">
+            {formError ? (
+              <p
+                className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {formError}
+              </p>
+            ) : null}
+            <Upload2062Actions
+              canSubmit={Boolean(canSubmit)}
+              hasActiveCoverage={Boolean(item.active2062Coverage)}
+              isPending={createAssignment.isPending}
+              itemId={item.id}
+              onSubmit={submit}
+            />
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -215,7 +268,7 @@ export function Upload2062Form({
               })
             }
           />
-          <section className="space-y-3 rounded-lg border bg-card p-4">
+          <div className="hidden space-y-3 lg:block">
             {formError ? (
               <p
                 className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -224,23 +277,14 @@ export function Upload2062Form({
                 {formError}
               </p>
             ) : null}
-            <Button
-              className="w-full"
-              disabled={!canSubmit || Boolean(item.active2062Coverage)}
-              onClick={submit}
-              type="button"
-            >
-              {createAssignment.isPending ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <CheckCircle2 aria-hidden="true" className="size-4" />
-              )}
-              {createAssignment.isPending ? "Creating 2062" : "Create 2062"}
-            </Button>
-            <Button asChild className="w-full" type="button" variant="outline">
-              <Link href={`/app/items/${item.id}`}>Cancel</Link>
-            </Button>
-          </section>
+            <Upload2062Actions
+              canSubmit={Boolean(canSubmit)}
+              hasActiveCoverage={Boolean(item.active2062Coverage)}
+              isPending={createAssignment.isPending}
+              itemId={item.id}
+              onSubmit={submit}
+            />
+          </div>
         </div>
       </div>
     </section>

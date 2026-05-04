@@ -25,11 +25,11 @@ Audit and enforce paused/read-only account behavior across all MVP workflows.
 
 ### Acceptance Criteria
 
-- [ ] Paused accounts can view their existing data.
-- [ ] Paused accounts cannot create, edit, archive, restore, complete, upload, link, close, or move records.
-- [ ] Dashboard does not present reminders as active operational work for paused accounts.
-- [ ] UI messaging explains account paused/read-only state simply.
-- [ ] Tests cover representative blocked workflows.
+- [x] Paused accounts can view their existing data.
+- [x] Paused accounts cannot create, edit, archive, restore, complete, upload, link, close, or move records.
+- [x] Dashboard does not present reminders as active operational work for paused accounts.
+- [x] UI messaging explains account paused/read-only state simply.
+- [x] Tests cover representative blocked workflows.
 
 ---
 
@@ -43,11 +43,11 @@ Verify RLS coverage and account isolation for all MVP user-owned tables and work
 
 ### Acceptance Criteria
 
-- [ ] Every account-owned table has RLS enabled.
-- [ ] Policies prevent cross-account reads.
-- [ ] Policies prevent cross-account writes.
-- [ ] Service-role or privileged access, if any, is documented and isolated.
-- [ ] RLS tests cover core domain tables.
+- [x] Every account-owned table has RLS enabled.
+- [x] Policies prevent cross-account reads.
+- [x] Policies prevent cross-account writes.
+- [x] Service-role or privileged access, if any, is documented and isolated.
+- [x] RLS tests cover core domain tables.
 
 ---
 
@@ -61,12 +61,12 @@ Audit MVP workflows for missing audit events and make activity surfaces coherent
 
 ### Acceptance Criteria
 
-- [ ] Hand receipt workflows emit expected events.
-- [ ] Item workflows emit expected events.
-- [ ] Contact/location changes emit expected events where meaningful.
-- [ ] Requirement workflows emit expected events.
-- [ ] 2062/document workflows emit expected events.
-- [ ] Activity UI shows useful labels and context.
+- [x] Hand receipt workflows emit expected events.
+- [x] Item workflows emit expected events.
+- [x] Contact/location changes emit expected events where meaningful.
+- [x] Requirement workflows emit expected events.
+- [x] 2062/document workflows emit expected events.
+- [x] Activity UI shows useful labels and context.
 
 ---
 
@@ -80,12 +80,12 @@ Review and refine MVP screens against the mock-derived UI spec and responsive re
 
 ### Acceptance Criteria
 
-- [ ] Phone navigation and core workflows are thumb-friendly.
-- [ ] Tablet/desktop sidebar collapse works reliably.
-- [ ] Desktop/tablet layouts use space intelligently instead of stretching phone views.
-- [ ] Dashboard priority is preserved.
-- [ ] Text does not overflow or overlap in core screens.
-- [ ] Active 2062 access is discoverable on mobile and desktop.
+- [x] Phone navigation and core workflows are thumb-friendly.
+- [x] Tablet/desktop sidebar collapse works reliably.
+- [x] Desktop/tablet layouts use space intelligently instead of stretching phone views.
+- [x] Dashboard priority is preserved.
+- [x] Text does not overflow or overlap in core screens.
+- [x] Active 2062 access is discoverable on mobile and desktop.
 
 ---
 
@@ -99,9 +99,9 @@ Run the full verification pass and reconcile docs/ADRs with the implemented MVP.
 
 ### Acceptance Criteria
 
-- [ ] Lint, typecheck, unit tests, integration tests, and focused browser tests pass.
-- [ ] `AGENTS.md` reflects actual commands and workflow.
-- [ ] Domain, architecture, UI, testing, and roadmap docs match MVP behavior.
-- [ ] ADRs capture any major decisions made during implementation.
-- [ ] Deferred post-MVP ideas remain explicitly documented and out of MVP.
+- [x] Lint, typecheck, unit tests, integration tests, and focused browser tests pass.
+- [x] `AGENTS.md` reflects actual commands and workflow.
+- [x] Domain, architecture, UI, testing, and roadmap docs match MVP behavior.
+- [x] ADRs capture any major decisions made during implementation.
+- [x] Deferred post-MVP ideas remain explicitly documented and out of MVP.
 

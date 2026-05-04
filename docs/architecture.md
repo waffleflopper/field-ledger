@@ -8,6 +8,7 @@ Use a domain-first structure:
 
 ```text
 src/modules/accounts/
+src/modules/app-foundation/
 src/modules/audit/
 src/modules/billing/
 src/modules/contacts/
@@ -17,10 +18,12 @@ src/modules/items/
 src/modules/locations/
 src/modules/requirements/
 src/modules/assignments-2062/
-src/modules/import-export/
+src/modules/provider-boundaries/
 ```
 
-The exact folder names can evolve during scaffold, but the dependency rule should not.
+`import-export` remains a documented post-MVP boundary, but it does not have an
+MVP implementation module yet. The exact folder names can evolve during
+scaffold, but the dependency rule should not.
 
 ## Dependency Rule
 
@@ -139,6 +142,24 @@ belongs in domain modules; shell pages are only composition surfaces.
   application-set current auth/account context. New account-owned repositories
   should include a repository-level RLS regression test proving they cannot read
   or write another account's rows through the app adapter.
+
+## Cross-Account Relationship Protection
+
+Account-owned relationship columns must prevent records from pointing at another
+owner account's records. Field Ledger uses two database patterns for this:
+
+- RESTRICTIVE RLS policies add extra insert/update checks to the writing table.
+  `items` uses this pattern for `signed_to_contact_id` in migration `0014` and
+  `location_id` in migration `0015`; item hand receipt ownership is also
+  checked in the item owner insert/update policies from migration `0013`.
+- Composite foreign keys include `account_id` on both sides of the relationship.
+  `assignments` and `assignment_item_links` use this pattern in migration `0023`
+  for hand receipt, contact, document, assignment, and item links.
+
+Both patterns are valid for MVP account isolation. RESTRICTIVE policies reject
+the write through RLS, while composite foreign keys reject it through schema
+constraints. RLS tests should prove the relationship cannot cross accounts
+regardless of which enforcement pattern a table uses.
 
 ## RLS Session Context
 

@@ -29,6 +29,9 @@ Phone:
 - Items/Search
 - Hand Receipts
 - More
+- More sheet groups secondary record surfaces separately from account surfaces,
+  keeps Active 2062s visible in the Records group, and scrolls within the
+  viewport when content grows.
 
 Tablet/desktop:
 
@@ -90,6 +93,53 @@ Due windows:
 - due soon: today through 14 days
 - upcoming: 15 through 30 days
 - beyond 30 days: hidden by default
+
+Paused/read-only accounts keep dashboard review access, but operational
+requirement sections should not ask the user to complete active work. Use a
+plain read-only notice instead of due-work calls to action.
+
+## Read-Only UI Pattern
+
+Use `billing.capabilities` as the UI source of truth for access gating. UI
+gating explains the application-service rule; it does not replace server-side
+enforcement.
+
+- Detail pages should show an inline read-only banner near the page heading.
+- Write buttons should be disabled or hidden where the action cannot start.
+- Disabled controls should keep plain reasons near the control or in the
+  native `title` where the existing component pattern uses titles.
+- Existing records, archived history, search results, documents, 2062 context,
+  and activity remain reviewable.
+- `DashboardReadOnlyNotice` suppresses active requirement work tiles for
+  read-only accounts.
+- Requirement UI remains visible as review context, but create, edit, complete,
+  pause, resume, and due-date adjustment controls are unavailable.
+- Document UI keeps existing document review/download paths available, but
+  upload entry points are unavailable.
+- 2062 UI keeps active assignments and coverage history visible, but create,
+  close, and remove-item-link controls are unavailable.
+
+## Responsive Form Pattern
+
+Form-heavy dialogs should stay within the phone viewport and scroll internally
+when their fields exceed available height. Primary form actions must remain
+reachable by scrolling the dialog, not by scrolling hidden page content behind
+the overlay.
+
+Step-based workflows should avoid tall stacked progress rails on phone. Use
+compact horizontal rails or equivalent compressed progress indicators, with
+full-width primary buttons where thumb reach matters.
+
+## Error, Blocked, and Empty States
+
+Error blocks should state what could not be loaded or saved, show the plain
+service error when available, provide a non-empty fallback, and offer Retry when
+the user can safely try the same read again.
+
+Blocked-state copy should name the actual product state: read-only account,
+archived item or receipt, active 2062 coverage, or missing data. Empty states
+should describe what is absent and offer only navigation or actions available to
+the current account.
 
 ## Key Workflows
 

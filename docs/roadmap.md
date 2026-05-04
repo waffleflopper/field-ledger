@@ -78,8 +78,14 @@
 - CSV/XLSX import/export
 - report exports
 - read-only offline cache
+- offline editing, if later justified
 - Stripe checkout/webhooks
+- customer portal and subscription automation
 - email reminders
+- push reminders
 - OCR exploration
 - item photos
+- tags/categories
+- organization/team collaboration
 - requirement templates
+- advanced activity filtering/export

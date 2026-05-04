@@ -35,13 +35,17 @@ export class InMemoryAccountRepository implements AccountRepository {
       return null;
     }
 
+    const completedNow = !account.onboardingCompletedAt;
     const updatedAccount = {
       ...account,
       onboardingCompletedAt: account.onboardingCompletedAt ?? completedAt,
     };
 
     this.accounts.set(account.userId, updatedAccount);
-    return updatedAccount;
+    return {
+      account: updatedAccount,
+      completedNow,
+    };
   }
 
   async incrementAndGetNextItemSequence(accountId: string) {

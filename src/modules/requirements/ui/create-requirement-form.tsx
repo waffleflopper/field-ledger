@@ -161,7 +161,7 @@ export function CreateRequirementForm({
           Add requirement
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent scrollable>
         <DialogHeader>
           <DialogTitle>Add requirement</DialogTitle>
           <DialogDescription>

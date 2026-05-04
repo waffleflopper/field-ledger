@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { expectDialogContained } from "./helpers/dialog";
+
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
   const email = `items-${suffix}@example.test`;
@@ -91,7 +93,7 @@ test("users can create and see an item requirement from item detail", async ({
   await page.getByRole("link", { name: "Open Requirement radio" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Requirements" }),
+    page.getByRole("heading", { name: "Requirements", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Add requirement" }).click();
   const createRequirementDialog = page.getByRole("dialog", {
@@ -112,8 +114,15 @@ test("users can create and see an item requirement from item detail", async ({
   const completionDialog = page.getByRole("dialog", {
     name: "Complete requirement",
   });
+  await expectDialogContained(page, completionDialog);
   await completionDialog.getByLabel("Completion date").fill("2026-01-15");
   await completionDialog.getByLabel("Notes").fill("PMCS annotated in binder.");
+  await completionDialog
+    .getByRole("button", { name: "Record completion" })
+    .scrollIntoViewIfNeeded();
+  await expect(
+    completionDialog.getByRole("button", { name: "Record completion" }),
+  ).toBeVisible();
   await completionDialog
     .getByRole("button", { name: "Record completion" })
     .click();
@@ -197,6 +206,17 @@ test("users can create single-item formal 2062 coverage from item detail", async
   await expect(page.getByText("signed-2062.pdf")).toBeVisible();
   await expect(page.getByText("No 2062")).toBeHidden();
   await expect(page.getByText("Item linked to 2062")).toBeVisible();
+
+  const coveredItemUrl = page.url();
+  await page.goto(`${coveredItemUrl}/upload-2062`);
+  await expect(
+    page.getByRole("heading", {
+      name: "This item already has active 2062 coverage",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Close the existing assignment before creating a new one."),
+  ).toBeVisible();
 });
 
 test("item workflows warn and block around active 2062 coverage", async ({
@@ -259,7 +279,9 @@ test("item workflows warn and block around active 2062 coverage", async ({
     archiveDialog.getByText("Archiving will close the active 2062 link"),
   ).toBeVisible();
   await expect(
-    archiveDialog.getByText("The linked document and item history stay preserved."),
+    archiveDialog.getByText(
+      "The linked document and item history stay preserved.",
+    ),
   ).toBeVisible();
   await expect(
     archiveDialog.getByText(

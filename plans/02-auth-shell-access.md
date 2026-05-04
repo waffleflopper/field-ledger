@@ -28,11 +28,11 @@ Add Better Auth sign-in using email/password support for the scaffold stage. Cre
 
 ### Acceptance Criteria
 
-- [ ] A user can sign in and sign out locally.
-- [ ] Authenticated `/app/...` routes require a session.
-- [ ] Public/auth routes remain outside the app shell.
-- [ ] App code uses an internal session boundary rather than raw provider calls everywhere.
-- [ ] Tests or verification steps prove protected route behavior.
+- [x] A user can sign in and sign out locally.
+- [x] Authenticated `/app/...` routes require a session.
+- [x] Public/auth routes remain outside the app shell.
+- [x] App code uses an internal session boundary rather than raw provider calls everywhere.
+- [x] Tests or verification steps prove protected route behavior.
 
 ---
 
@@ -46,11 +46,11 @@ Create the account model and first-run account initialization behavior, includin
 
 ### Acceptance Criteria
 
-- [ ] New signed-in users get an account record.
-- [ ] Trial state is initialized consistently.
-- [ ] Access state can distinguish trialing, active, and paused/read-only.
-- [ ] User-owned account data is protected by RLS.
-- [ ] Account initialization is idempotent (safe to run more than once).
+- [x] New signed-in users get an account record.
+- [x] Trial state is initialized consistently.
+- [x] Access state can distinguish trialing, active, and paused/read-only.
+- [x] User-owned account data is protected by RLS.
+- [x] Account initialization is idempotent (safe to run more than once).
 
 ---
 
@@ -64,12 +64,12 @@ Add the access/capability layer that answers questions such as whether the accou
 
 ### Acceptance Criteria
 
-- [ ] Trial accounts receive Pro-like capabilities.
-- [ ] Base tier capability limit is 3 active hand receipts.
-- [ ] Pro tier capability allows unlimited hand receipts.
-- [ ] Expired trial with no active plan becomes read-only.
-- [ ] UI/server workflows can ask capabilities without knowing billing-provider details.
-- [ ] No fake checkout, fake invoice, or fake webhook system is introduced.
+- [x] Trial accounts receive Pro-like capabilities.
+- [x] Base tier capability limit is 3 active hand receipts.
+- [x] Pro tier capability allows unlimited hand receipts.
+- [x] Expired trial with no active plan becomes read-only.
+- [x] UI/server workflows can ask capabilities without knowing billing-provider details.
+- [x] No fake checkout, fake invoice, or fake webhook system is introduced.
 
 ---
 
@@ -83,12 +83,12 @@ Implement the mock-derived app shell with authenticated `/app/...` routing, phon
 
 ### Acceptance Criteria
 
-- [ ] Phone layout uses bottom navigation: Dashboard, Items, Hand Receipts, More.
-- [ ] Tablet/desktop layout uses a collapsible left sidebar.
-- [ ] Dashboard is the default authenticated home.
-- [ ] The initial route map exists with appropriate placeholder states.
-- [ ] Placeholder content does not implement fake product workflows.
-- [ ] Browser/UI verification covers mobile and desktop shell behavior.
+- [x] Phone layout uses bottom navigation: Dashboard, Items, Hand Receipts, More.
+- [x] Tablet/desktop layout uses a collapsible left sidebar.
+- [x] Dashboard is the default authenticated home.
+- [x] The initial route map exists with appropriate placeholder states.
+- [x] Placeholder content does not implement fake product workflows.
+- [x] Browser/UI verification covers mobile and desktop shell behavior.
 
 ---
 
@@ -106,7 +106,7 @@ Add lightweight first-run onboarding that communicates the product boundary and 
 
 ### Acceptance Criteria
 
-- [ ] The app states the lightweight compliance boundary: property accountability only, no classified/PHI/sensitive operational data.
-- [ ] The onboarding flow is minimal and does not become a long tour.
-- [ ] Onboarding routes build into the real shell/auth flow.
-- [ ] The flow respects paused/read-only access state.
+- [x] The app states the lightweight compliance boundary: property accountability only, no classified/PHI/sensitive operational data.
+- [x] The onboarding flow is minimal and does not become a long tour.
+- [x] Onboarding routes build into the real shell/auth flow.
+- [x] The flow respects paused/read-only access state.

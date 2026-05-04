@@ -27,12 +27,12 @@ Implement the document module, private file storage boundary, and metadata persi
 
 ### Acceptance Criteria
 
-- [ ] User can upload an accepted document type for future 2062 use.
-- [ ] Document metadata is stored account-owned.
-- [ ] Files are private.
-- [ ] Closing/archive workflows do not delete documents.
-- [ ] Upload emits an audit event.
-- [ ] Read-only/paused accounts cannot upload.
+- [x] User can upload an accepted document type for future 2062 use.
+- [x] Document metadata is stored account-owned.
+- [x] Files are private.
+- [x] Closing/archive workflows do not delete documents.
+- [x] Upload emits an audit event.
+- [x] Read-only/paused accounts cannot upload.
 
 ---
 
@@ -46,13 +46,13 @@ Implement `/app/items/[itemId]/upload-2062` as a focused one-item assignment flo
 
 ### Acceptance Criteria
 
-- [ ] Flow starts from item detail.
-- [ ] The item is preselected.
-- [ ] User selects or creates a required contact.
-- [ ] User uploads a required document.
-- [ ] If item has manual signed-to contact, contact defaults to that person.
-- [ ] Creating the 2062 clears/replaces manual signed-to state.
-- [ ] Assignment and item-link creation emit audit events.
+- [x] Flow starts from item detail.
+- [x] The item is preselected.
+- [x] User selects or creates a required contact.
+- [x] User uploads a required document.
+- [x] If item has manual signed-to contact, contact defaults to that person.
+- [x] Creating the 2062 clears/replaces manual signed-to state.
+- [x] Assignment and item-link creation emit audit events.
 
 ---
 
@@ -88,11 +88,11 @@ Add a simple Active 2062s list accessible from mobile More/dashboard context and
 
 ### Acceptance Criteria
 
-- [ ] Active 2062s list includes formal 2062 assignments only.
-- [ ] Manual signed-to records do not appear as Active 2062s.
-- [ ] Each row/card shows contact, item count, hand receipt context, date/status, and a way to open the assignment context.
-- [ ] Mobile access is discoverable without making it a primary bottom nav item.
-- [ ] Desktop access fits the sidebar/navigation model.
+- [x] Active 2062s list includes formal 2062 assignments only.
+- [x] Manual signed-to records do not appear as Active 2062s.
+- [x] Each row/card shows contact, item count, hand receipt context, date/status, and a way to open the assignment context.
+- [x] Mobile access is discoverable without making it a primary bottom nav item.
+- [x] Desktop access fits the sidebar/navigation model.
 
 ---
 
@@ -128,7 +128,7 @@ Tie active 2062 constraints into item move/archive behavior.
 
 ### Acceptance Criteria
 
-- [ ] Item with active 2062 cannot move to another hand receipt until the active 2062 item link is closed.
-- [ ] Archiving an item with active 2062 is allowed with warning and closes that item link.
-- [ ] If archiving closes the last active link on a 2062, the user is prompted to close the assignment.
-- [ ] All state changes emit audit events.
+- [x] Item with active 2062 cannot move to another hand receipt until the active 2062 item link is closed.
+- [x] Archiving an item with active 2062 is allowed with warning and closes that item link.
+- [x] If archiving closes the last active link on a 2062, the user is prompted to close the assignment.
+- [x] All state changes emit audit events.

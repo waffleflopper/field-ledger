@@ -9,9 +9,12 @@ export const accountsRouter = createTRPCRouter({
     getOnboardingStatus({ account: ctx.account }),
   ),
   completeOnboarding: protectedProcedure.mutation(({ ctx }) =>
-    completeOnboarding({
-      account: ctx.account,
-      repository: ctx.accountRepository,
-    }),
+    ctx.unitOfWork.run((repositories) =>
+      completeOnboarding({
+        account: ctx.account,
+        repository: repositories.accountRepository,
+        auditRepository: repositories.auditRepository,
+      }),
+    ),
   ),
 });

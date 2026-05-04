@@ -24,16 +24,20 @@ MVP means the app is personally useful for managing real hand receipt data. It d
 ## Out of Scope
 
 - Real Stripe checkout/webhooks.
+- Real billing automation such as invoices, customer portal, or subscription
+  lifecycle webhooks.
 - Public marketing site.
 - Organization/team collaboration.
 - CSV/XLSX import/export implementation.
 - Offline read cache.
+- Offline editing.
 - Push/email reminders.
 - OCR.
 - Item photos.
 - Dedicated Reports area.
 - Requirement templates.
 - Tags/categories.
+- Advanced activity filtering, audit export, or admin audit tooling.
 
 ## MVP UI Standard
 

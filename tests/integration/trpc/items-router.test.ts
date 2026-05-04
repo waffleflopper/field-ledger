@@ -764,6 +764,76 @@ describe("itemsRouter", () => {
     expect(auditRepository.events).toEqual([]);
   });
 
+  it("maps read-only manual signed-to changes to FORBIDDEN", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const contactRepository = new InMemoryContactRepository([
+      {
+        id: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        accountId: "account-1",
+        displayName: "SSG Rivera",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Read-only signed radio",
+        ecn: "ECN-703",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: null,
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      account: createAccount({
+        accessState: "paused_read_only",
+        subscriptionTier: "pro",
+      }),
+      auditRepository,
+      contactRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.assignSignedTo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.items.assignSignedToWithNewContact({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        contactDisplayName: "CPL Nguyen",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.items.clearSignedTo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    expect(contactRepository.contacts).toHaveLength(1);
+    expect(itemRepository.items[0]).toMatchObject({
+      signedToContactId: null,
+    });
+    expect(auditRepository.events).toEqual([]);
+  });
+
   it("blocks moves with active 2062 coverage and exposes move preflight state", async () => {
     const assignmentItemLinkRepository =
       new InMemoryAssignmentItemLinkRepository([
@@ -1068,8 +1138,9 @@ describe("itemsRouter", () => {
         updatedAt: new Date("2026-04-29T12:00:00.000Z"),
       },
     ]);
-    const originalFindById =
-      assignmentItemLinkRepository.findById.bind(assignmentItemLinkRepository);
+    const originalFindById = assignmentItemLinkRepository.findById.bind(
+      assignmentItemLinkRepository,
+    );
     assignmentItemLinkRepository.findById = async (...args) => {
       const link = await originalFindById(...args);
 

@@ -129,6 +129,24 @@ function dueTone(nextDueDate: string) {
   };
 }
 
+function emptyRequirementsDescription({
+  isReadOnly,
+  isItemActive,
+}: {
+  isReadOnly: boolean;
+  isItemActive: boolean;
+}) {
+  if (isReadOnly) {
+    return "Requirement work is paused while this account is read-only.";
+  }
+
+  if (!isItemActive) {
+    return "This item is archived. Requirements were cleared when the item was archived.";
+  }
+
+  return "Add the first recurring obligation for this item when there is a maintenance, inspection, calibration, or replacement cadence to track.";
+}
+
 export function RequirementsList({
   itemId,
   isReadOnly,
@@ -147,9 +165,26 @@ export function RequirementsList({
 
   if (requirementsQuery.error) {
     return (
-      <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-        {requirementsQuery.error.message}
-      </p>
+      <div
+        className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+        role="alert"
+      >
+        <div className="space-y-1">
+          <p className="font-medium">Requirements could not be loaded</p>
+          <p className="leading-6">
+            {requirementsQuery.error.message ||
+              "Refresh this requirement list before making changes."}
+          </p>
+        </div>
+        <Button
+          onClick={() => void requirementsQuery.refetch()}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          Retry
+        </Button>
+      </div>
     );
   }
 
@@ -164,13 +199,11 @@ export function RequirementsList({
             className="mt-0.5 size-4 text-muted-foreground"
           />
           <div className="space-y-1">
-            <p className="text-sm font-semibold tracking-normal">
+            <h3 className="text-sm font-semibold tracking-normal">
               No active requirements
-            </p>
+            </h3>
             <p className="text-sm leading-6 text-muted-foreground">
-              {isReadOnly || !isItemActive
-                ? "No active requirement work is tied to this item."
-                : "Add the first recurring obligation for this item when there is a maintenance, inspection, calibration, or replacement cadence to track."}
+              {emptyRequirementsDescription({ isReadOnly, isItemActive })}
             </p>
           </div>
         </div>
@@ -323,7 +356,7 @@ function AdjustRequirementNextDueDialog({
         <CalendarClock aria-hidden="true" className="size-4" />
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Adjust next due</DialogTitle>
             <DialogDescription>
@@ -445,7 +478,7 @@ function RequirementPauseResumeButton({
         {isPaused ? "Resume" : "Pause"}
       </Button>
       {error ? (
-        <p className="max-w-56 text-xs font-medium text-destructive">{error}</p>
+        <p className="text-sm font-medium text-destructive">{error}</p>
       ) : null}
     </div>
   );
@@ -558,7 +591,7 @@ function EditRequirementDialog({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Edit requirement</DialogTitle>
             <DialogDescription>
@@ -805,7 +838,7 @@ function CompleteRequirementDialog({
         Complete
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent scrollable>
           <DialogHeader>
             <DialogTitle>Complete requirement</DialogTitle>
             <DialogDescription>
@@ -893,9 +926,16 @@ function RequirementCompletionHistory({
 
   if (historyQuery.error) {
     return (
-      <p className="mt-1 text-xs font-medium text-destructive">
-        {historyQuery.error.message}
-      </p>
+      <div
+        className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        role="alert"
+      >
+        <p className="font-medium">Completion history could not be loaded</p>
+        <p className="mt-1 leading-6">
+          {historyQuery.error.message ||
+            "Refresh this completion history before making changes."}
+        </p>
+      </div>
     );
   }
 

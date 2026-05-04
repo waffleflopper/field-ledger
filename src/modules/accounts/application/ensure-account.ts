@@ -1,4 +1,5 @@
 import { deriveAccountCapabilities } from "@/modules/billing";
+import { recordAuditEvent, type AuditRepository } from "@/modules/audit";
 
 export type AccessState = "trialing" | "active" | "paused_read_only";
 export type SubscriptionTier = "base" | "pro";
@@ -15,13 +16,18 @@ export type AccountRecord = {
   updatedAt?: Date;
 };
 
+export type MarkOnboardingCompletedResult = {
+  account: AccountRecord;
+  completedNow: boolean;
+};
+
 export type AccountRepository = {
   findByUserId(userId: string): Promise<AccountRecord | null>;
   create(account: AccountRecord): Promise<AccountRecord | null>;
   markOnboardingCompleted(
     accountId: string,
     completedAt: Date,
-  ): Promise<AccountRecord | null>;
+  ): Promise<MarkOnboardingCompletedResult | null>;
   incrementAndGetNextItemSequence(accountId: string): Promise<number>;
 };
 
@@ -82,6 +88,7 @@ type GetOnboardingStatusInput = {
 type CompleteOnboardingInput = {
   account: AccountRecord;
   repository: AccountRepository;
+  auditRepository: AuditRepository;
   completedAt?: Date;
   now?: Date;
 };
@@ -104,6 +111,7 @@ export function getOnboardingStatus({
 export async function completeOnboarding({
   account,
   repository,
+  auditRepository,
   completedAt = new Date(),
   now,
 }: CompleteOnboardingInput) {
@@ -111,14 +119,31 @@ export async function completeOnboarding({
     return getOnboardingStatus({ account, now });
   }
 
-  const updatedAccount = await repository.markOnboardingCompleted(
+  const completion = await repository.markOnboardingCompleted(
     account.id,
     completedAt,
   );
 
-  if (!updatedAccount) {
+  if (!completion) {
     throw new Error("Unable to complete owner account onboarding.");
   }
 
-  return getOnboardingStatus({ account: updatedAccount, now });
+  if (completion.completedNow) {
+    await recordAuditEvent({
+      accountId: account.id,
+      actorId: account.userId,
+      action: "account.onboarding_completed",
+      target: {
+        type: "account",
+        id: account.id,
+      },
+      metadata: {
+        acknowledgedBoundaryNotice: true,
+      },
+      occurredAt: completedAt,
+      repository: auditRepository,
+    });
+  }
+
+  return getOnboardingStatus({ account: completion.account, now });
 }

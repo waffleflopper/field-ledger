@@ -39,6 +39,56 @@ UI workflows should use the typed tRPC boundary, currently
 `billing.capabilities`, so client code does not need to know how access state or
 tier data is stored.
 
+## Read-Only Enforcement Pattern
+
+Read-only behavior is enforced in three layers:
+
+1. Application services derive capabilities and block writes when
+   `isReadOnly` is true.
+2. tRPC routers translate read-only write attempts to `FORBIDDEN` responses
+   with the canonical message `This account is read-only.`
+3. Module UI queries `billing.capabilities` and disables, hides, or explains
+   write actions while preserving record review.
+
+Core operational reads remain available for paused/read-only accounts. This
+includes hand receipts, items, contacts, locations, search results,
+requirements and completion history, document metadata and downloads, active
+2062 assignments, closed 2062 coverage history, and activity. Expired trials
+with no active plan resolve to the same read-only capability behavior
+dynamically.
+
+Read-only write blocking applies to the remaining MVP operational workflows:
+
+- Requirements: create, edit, complete, pause, resume, and next-due adjustment
+  actions are blocked while list and completion-history reads remain available.
+- Documents: upload initiation and upload completion are blocked while existing
+  document list, metadata, and download reads remain available.
+- Formal 2062s: assignment creation, whole-assignment close, and individual
+  item-link removal are blocked while active assignment and item coverage reads
+  remain available.
+
+## Capability Helpers
+
+- `isAccountReadOnly`: checks whether an account is in read-only capability
+  mode.
+- `getActiveHandReceiptLimit`: returns the current active hand receipt limit, or
+  unlimited when the value is `null`.
+- `canCreateHandReceipt`: allows creation only when the account is writable and
+  the active hand receipt limit has room.
+- `canRestoreHandReceipt`: uses the same writable account and active limit rule
+  as hand receipt creation.
+- `canArchiveHandReceipt`: blocks lifecycle archive actions for read-only
+  accounts.
+- `canMoveItem`: blocks item moves for read-only accounts.
+- `canCreateRequirement`: blocks requirement creation for read-only accounts.
+- `canEditRequirement`: blocks requirement edit and lifecycle actions for
+  read-only accounts.
+- `canUploadDocument`: blocks private document upload for read-only accounts.
+- `canClose2062Assignment`: blocks whole-assignment close actions for read-only
+  accounts.
+- `canRemove2062ItemLink`: blocks individual 2062 item-link removal for
+  read-only accounts.
+
 ## Provider Boundary
 
 This slice does not add Stripe checkout, invoices, webhooks, a customer portal,

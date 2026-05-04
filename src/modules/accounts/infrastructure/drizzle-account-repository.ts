@@ -44,7 +44,10 @@ function createAccountRepository(db: AccountExecutor): AccountRepository {
         .returning();
 
       if (updatedAccount) {
-        return updatedAccount;
+        return {
+          account: updatedAccount,
+          completedNow: true,
+        };
       }
 
       const [existingAccount] = await db
@@ -53,7 +56,14 @@ function createAccountRepository(db: AccountExecutor): AccountRepository {
         .where(eq(accounts.id, accountId))
         .limit(1);
 
-      return existingAccount ?? null;
+      if (!existingAccount) {
+        return null;
+      }
+
+      return {
+        account: existingAccount,
+        completedNow: false,
+      };
     },
     async incrementAndGetNextItemSequence(accountId) {
       const [updatedAccount] = await db

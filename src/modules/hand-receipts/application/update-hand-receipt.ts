@@ -113,6 +113,7 @@ export async function updateHandReceipt({
       id: handReceiptId,
     },
     metadata: {
+      name: updated.name,
       changedFields: changedFieldNames,
     },
     occurredAt: now,

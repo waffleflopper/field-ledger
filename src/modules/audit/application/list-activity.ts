@@ -51,6 +51,18 @@ function formatTargetLabel(event: AuditEventRecord) {
     return metadataName(event.metadata) ?? "Requirement";
   }
 
+  if (event.targetType === "contact") {
+    return metadataString(event.metadata, "displayName") ?? "Contact";
+  }
+
+  if (event.targetType === "document") {
+    return metadataString(event.metadata, "filename") ?? "Document";
+  }
+
+  if (event.targetType === "location") {
+    return metadataName(event.metadata) ?? "Location";
+  }
+
   if (event.targetType === "assignment") {
     const contactName = metadataString(event.metadata, "contactName");
     const documentFilename = metadataString(event.metadata, "documentFilename");
