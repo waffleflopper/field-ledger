@@ -24,6 +24,10 @@ const ownerTwoAssignmentId = "271c82d4-b3bc-4f82-af72-f15f614b1a9b";
 const ownerOneLinkId = "092b4804-6c02-4968-a78a-4667a298e37c";
 const ownerTwoLinkId = "8310d384-4e92-4e12-ac71-e25353fa36b5";
 const ownerOneInsertAssignmentId = "15d0422a-9912-45cf-927e-6a49df7a7105";
+const ownerOneCrossAccountContactAssignmentId =
+  "a63117c5-74a0-4ac9-b87f-a2444ac778f1";
+const ownerOneCrossAccountDocumentAssignmentId =
+  "733a8df6-77b9-4cb8-80f7-acfe7ca49f9d";
 const ownerOneInsertLinkId = "5f483d29-f0c3-4867-bd2e-47b67e16fb5b";
 const ownerTwoBlockedLinkId = "1c5e5430-2e21-45b2-bbd9-b58113b7c4b8";
 const ownerOneConstraintItemId = "e048fd65-5df6-4cc9-b71a-5041668284f5";
@@ -176,7 +180,7 @@ describe("assignments-2062 RLS", () => {
 
   afterAll(async () => {
     await sql`delete from assignment_item_links where id in (${ownerOneLinkId}, ${ownerTwoLinkId}, ${ownerOneInsertLinkId}, ${ownerOneConstraintLinkId}, ${ownerOneCrossReceiptLinkId})`;
-    await sql`delete from assignments where id in (${ownerOneAssignmentId}, ${ownerTwoAssignmentId}, ${ownerOneInsertAssignmentId}, ${ownerOneConstraintAssignmentId})`;
+    await sql`delete from assignments where id in (${ownerOneAssignmentId}, ${ownerTwoAssignmentId}, ${ownerOneInsertAssignmentId}, ${ownerOneCrossAccountContactAssignmentId}, ${ownerOneCrossAccountDocumentAssignmentId}, ${ownerOneConstraintAssignmentId})`;
     await sql`delete from items where id in (${ownerOneItemId}, ${ownerTwoItemId}, ${ownerOneInsertItemId}, ${ownerOneConstraintItemId}, ${ownerOneCrossReceiptItemId})`;
     await sql`delete from documents where id in (${ownerOneDocumentId}, ${ownerTwoDocumentId})`;
     await sql`delete from contacts where id in (${ownerOneContactId}, ${ownerTwoContactId})`;
@@ -255,6 +259,50 @@ describe("assignments-2062 RLS", () => {
           )`,
       ),
     ).rejects.toThrow();
+  });
+
+  it("prevents an assignment from linking another account's contact", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into assignments (
+            id,
+            account_id,
+            hand_receipt_id,
+            contact_id,
+            document_id
+          ) values (
+            ${ownerOneCrossAccountContactAssignmentId},
+            ${ownerOneAccountId},
+            ${ownerOneHandReceiptId},
+            ${ownerTwoContactId},
+            ${ownerOneDocumentId}
+          )`,
+      ),
+    ).rejects.toThrow(/foreign key constraint/);
+  });
+
+  it("prevents an assignment from linking another account's document", async () => {
+    await expect(
+      asAuthenticatedOwner(
+        ownerOneId,
+        async (transaction) =>
+          transaction`insert into assignments (
+            id,
+            account_id,
+            hand_receipt_id,
+            contact_id,
+            document_id
+          ) values (
+            ${ownerOneCrossAccountDocumentAssignmentId},
+            ${ownerOneAccountId},
+            ${ownerOneHandReceiptId},
+            ${ownerOneContactId},
+            ${ownerTwoDocumentId}
+          )`,
+      ),
+    ).rejects.toThrow(/foreign key constraint/);
   });
 
   it("prevents an owner from inserting item links for another account", async () => {

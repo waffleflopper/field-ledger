@@ -80,13 +80,14 @@ database rules that restrict which rows a user can access.
 Every account-owned table should have tests proving one account cannot read or
 write another account's rows.
 
-Hand receipt and item RLS tests cover owner-scoped select, insert, and update
-behavior. Item RLS also proves a row cannot be linked to another account's hand
-receipt. Archive and restore are update behaviors, so RLS coverage must prove
-status changes cannot cross account boundaries while application tests prove
-lifecycle rules and read-only blocking.
-Application-service tests still cover read-only capability blocking because RLS
-protects row ownership, not product access state.
+RLS tests cover owner-scoped select, insert, and update behavior for the
+account-owned MVP tables that support those operations. Relationship tests also
+prove rows cannot point at records from another account. Archive, restore,
+pause, and close are update behaviors, so RLS coverage proves status changes
+cannot cross account boundaries while application tests prove lifecycle rules
+and read-only blocking. Application-service tests still cover read-only
+capability blocking because RLS protects row ownership, not product access
+state.
 
 Command:
 
@@ -98,11 +99,26 @@ The account foundation includes the first RLS-protected production table, so
 `pnpm test:rls` now runs real tests instead of using scaffold
 `--passWithNoTests` behavior.
 
-Current account RLS proof:
+Current table-level RLS proof:
 
 - `tests/rls/accounts/accounts-rls.test.ts`
+- `tests/rls/audit/audit-events-rls.test.ts`
 - `tests/rls/hand-receipts/hand-receipts-rls.test.ts`
 - `tests/rls/items/items-rls.test.ts`
+- `tests/rls/contacts/contacts-rls.test.ts`
+- `tests/rls/locations/locations-rls.test.ts`
+- `tests/rls/requirements/requirements-rls.test.ts`
+- `tests/rls/requirements/requirement-completions-rls.test.ts`
+- `tests/rls/documents/documents-rls.test.ts`
+- `tests/rls/assignments-2062/assignments-2062-rls.test.ts`
+
+Current repository-level RLS proof:
+
+- `tests/rls/audit/audit-repository-rls.test.ts`
+- `tests/rls/hand-receipts/hand-receipt-repository-rls.test.ts`
+- `tests/rls/requirements/requirements-repository-rls.test.ts`
+- `tests/rls/requirements/requirement-completion-repository-rls.test.ts`
+- `tests/rls/documents/document-repository-rls.test.ts`
 
 ## Browser/UI Tests
 
