@@ -108,5 +108,9 @@ test("signed-in users can open the Activity route with onboarding activity", asy
     page.getByRole("heading", { name: "Activity", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Onboarding completed")).toBeVisible();
-  await expect(page.getByText("Account", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Activity events" }).getByText("Account", {
+      exact: true,
+    }),
+  ).toBeVisible();
 });

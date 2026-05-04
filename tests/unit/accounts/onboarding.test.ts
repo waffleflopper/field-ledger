@@ -94,5 +94,18 @@ describe("account onboarding", () => {
       completedAt,
     });
     expect(auditRepository.events).toHaveLength(1);
+
+    await expect(
+      completeOnboarding({
+        account: trialAccount,
+        completedAt: new Date("2026-05-02T12:00:00.000Z"),
+        repository,
+        auditRepository,
+      }),
+    ).resolves.toMatchObject({
+      completed: true,
+      completedAt,
+    });
+    expect(auditRepository.events).toHaveLength(1);
   });
 });

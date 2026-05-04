@@ -1,4 +1,6 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+import { expectDialogContained } from "./helpers/dialog";
 
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
@@ -29,24 +31,6 @@ async function expectNoHorizontalOverflow(page: Page) {
       ),
     )
     .toBeLessThanOrEqual(0);
-}
-
-async function expectDialogContained(page: Page, dialog: Locator) {
-  const [box, viewport, scrollState] = await Promise.all([
-    dialog.boundingBox(),
-    page.viewportSize(),
-    dialog.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      overflowY: getComputedStyle(element).overflowY,
-      scrollHeight: element.scrollHeight,
-    })),
-  ]);
-
-  expect(box?.height ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) - 16);
-
-  if (scrollState.scrollHeight > scrollState.clientHeight) {
-    expect(scrollState.overflowY).toMatch(/auto|scroll/);
-  }
 }
 
 test("tablet shell, item detail, and upload 2062 flow stay usable", async ({

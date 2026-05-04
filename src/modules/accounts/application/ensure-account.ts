@@ -16,13 +16,18 @@ export type AccountRecord = {
   updatedAt?: Date;
 };
 
+export type MarkOnboardingCompletedResult = {
+  account: AccountRecord;
+  completedNow: boolean;
+};
+
 export type AccountRepository = {
   findByUserId(userId: string): Promise<AccountRecord | null>;
   create(account: AccountRecord): Promise<AccountRecord | null>;
   markOnboardingCompleted(
     accountId: string,
     completedAt: Date,
-  ): Promise<AccountRecord | null>;
+  ): Promise<MarkOnboardingCompletedResult | null>;
   incrementAndGetNextItemSequence(accountId: string): Promise<number>;
 };
 
@@ -114,29 +119,31 @@ export async function completeOnboarding({
     return getOnboardingStatus({ account, now });
   }
 
-  const updatedAccount = await repository.markOnboardingCompleted(
+  const completion = await repository.markOnboardingCompleted(
     account.id,
     completedAt,
   );
 
-  if (!updatedAccount) {
+  if (!completion) {
     throw new Error("Unable to complete owner account onboarding.");
   }
 
-  await recordAuditEvent({
-    accountId: account.id,
-    actorId: account.userId,
-    action: "account.onboarding_completed",
-    target: {
-      type: "account",
-      id: account.id,
-    },
-    metadata: {
-      acknowledgedBoundaryNotice: true,
-    },
-    occurredAt: completedAt,
-    repository: auditRepository,
-  });
+  if (completion.completedNow) {
+    await recordAuditEvent({
+      accountId: account.id,
+      actorId: account.userId,
+      action: "account.onboarding_completed",
+      target: {
+        type: "account",
+        id: account.id,
+      },
+      metadata: {
+        acknowledgedBoundaryNotice: true,
+      },
+      occurredAt: completedAt,
+      repository: auditRepository,
+    });
+  }
 
-  return getOnboardingStatus({ account: updatedAccount, now });
+  return getOnboardingStatus({ account: completion.account, now });
 }

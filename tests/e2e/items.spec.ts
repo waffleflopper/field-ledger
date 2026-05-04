@@ -1,4 +1,6 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+import { expectDialogContained } from "./helpers/dialog";
 
 async function signInLocalUser(page: Page) {
   const suffix = `${Date.now()}-${test.info().workerIndex}-${Math.random().toString(36).slice(2)}`;
@@ -17,24 +19,6 @@ async function signInLocalUser(page: Page) {
     .getByRole("dialog", { name: "Property accountability only" })
     .getByRole("button", { name: "I understand" })
     .click();
-}
-
-async function expectDialogContained(page: Page, dialog: Locator) {
-  const [box, viewport, scrollState] = await Promise.all([
-    dialog.boundingBox(),
-    page.viewportSize(),
-    dialog.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      overflowY: getComputedStyle(element).overflowY,
-      scrollHeight: element.scrollHeight,
-    })),
-  ]);
-
-  expect(box?.height ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) - 16);
-
-  if (scrollState.scrollHeight > scrollState.clientHeight) {
-    expect(scrollState.overflowY).toMatch(/auto|scroll/);
-  }
 }
 
 test("users can search items globally and open item detail on mobile", async ({

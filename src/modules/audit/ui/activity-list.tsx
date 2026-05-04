@@ -53,7 +53,10 @@ export function ActivityList({
   }
 
   return (
-    <ol className="overflow-hidden rounded-lg border bg-card text-card-foreground">
+    <ol
+      aria-label="Activity events"
+      className="overflow-hidden rounded-lg border bg-card text-card-foreground"
+    >
       {activity.map((event) => (
         <li
           className={

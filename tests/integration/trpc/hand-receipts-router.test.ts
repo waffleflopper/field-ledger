@@ -371,6 +371,7 @@ describe("handReceiptsRouter", () => {
         targetType: "hand_receipt",
         targetId: handReceiptId,
         metadata: {
+          name: "Updated receipt",
           changedFields: ["name", "notes", "holderName"],
         },
       },
