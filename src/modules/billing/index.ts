@@ -1,9 +1,11 @@
 export {
   canArchiveHandReceipt,
+  canClose2062Assignment,
   canCreateHandReceipt,
   canCreateRequirement,
   canEditRequirement,
   canMoveItem,
+  canRemove2062ItemLink,
   canRestoreHandReceipt,
   canUploadDocument,
   getActiveHandReceiptLimit,

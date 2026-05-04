@@ -194,6 +194,29 @@ function createAssignmentItemLinkRepository(
 
       return rows.map(toLinkRecord);
     },
+    async findByAssignmentIds(accountId, assignmentIds, options = {}) {
+      if (assignmentIds.length === 0) {
+        return [];
+      }
+
+      const filters = [
+        eq(assignmentItemLinks.accountId, accountId),
+        inArray(assignmentItemLinks.assignmentId, assignmentIds),
+      ];
+
+      if (options.status) {
+        filters.push(eq(assignmentItemLinks.status, options.status));
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select()
+          .from(assignmentItemLinks)
+          .where(and(...filters)),
+      );
+
+      return rows.map(toLinkRecord);
+    },
     async countActiveByAssignmentIds(accountId, assignmentIds) {
       if (assignmentIds.length === 0) {
         return new Map();

@@ -8,6 +8,7 @@ export type { AuditRepository } from "./application/audit-repository";
 export type {
   AuditAction,
   AuditEventRecord,
+  AuditMetadata,
   NewAuditEventRecord,
   RecentActivityItem,
 } from "./application/types";

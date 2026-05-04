@@ -4,6 +4,10 @@ import { z } from "zod";
 import {
   AccountReadOnlyError,
   Active2062CoverageConflictError,
+  AssignmentAlreadyClosedError,
+  closeAssignment,
+  CloseDateFutureError,
+  CloseDateInvalidError,
   ContactDisplayNameRequiredError,
   ContactNotFoundError,
   createAssignment,
@@ -15,10 +19,13 @@ import {
   getItemCoverage,
   HandReceiptNotActiveError,
   HandReceiptNotFoundError,
+  ItemLinkAlreadyClosedError,
+  ItemLinkNotFoundError,
   ItemNotActiveError,
   ItemNotFoundError,
   ItemReceiptMismatchError,
   listActiveAssignments,
+  removeAssignmentItemLink,
 } from "@/modules/assignments-2062";
 import type {
   AppUnitOfWork,
@@ -63,6 +70,16 @@ const createAssignmentWithItemsInput = z
     path: ["contactId"],
   });
 
+const closeAssignmentInput = z.object({
+  assignmentId: z.uuid(),
+  closedOn: z.string().optional(),
+});
+
+const removeItemLinkInput = z.object({
+  itemLinkId: z.uuid(),
+  closedOn: z.string().optional(),
+});
+
 function toTRPCError(
   error: unknown,
   context: { accountId: string; operation: string; userId: string },
@@ -101,8 +118,10 @@ function toTRPCError(
 function isConflictError(error: unknown) {
   return (
     error instanceof Active2062CoverageConflictError ||
+    error instanceof AssignmentAlreadyClosedError ||
     error instanceof DocumentReceiptMismatchError ||
     error instanceof HandReceiptNotActiveError ||
+    error instanceof ItemLinkAlreadyClosedError ||
     error instanceof ItemNotActiveError ||
     error instanceof ItemReceiptMismatchError
   );
@@ -113,6 +132,7 @@ function isNotFoundError(error: unknown) {
     error instanceof ContactNotFoundError ||
     error instanceof DocumentNotFoundError ||
     error instanceof HandReceiptNotFoundError ||
+    error instanceof ItemLinkNotFoundError ||
     error instanceof ItemNotFoundError
   );
 }
@@ -120,6 +140,8 @@ function isNotFoundError(error: unknown) {
 function isBadRequestError(error: unknown) {
   return (
     error instanceof ContactDisplayNameRequiredError ||
+    error instanceof CloseDateFutureError ||
+    error instanceof CloseDateInvalidError ||
     error instanceof EmptyItemSelectionError
   );
 }
@@ -156,6 +178,7 @@ export const assignments2062Router = createTRPCRouter({
         assignmentItemLinkRepository: repositories.assignmentItemLinkRepository,
         assignmentRepository: repositories.assignmentRepository,
         handReceiptRepository: repositories.handReceiptRepository,
+        itemRepository: repositories.itemRepository,
       }),
     ),
   ),
@@ -169,6 +192,7 @@ export const assignments2062Router = createTRPCRouter({
             repositories.assignmentItemLinkRepository,
           assignmentRepository: repositories.assignmentRepository,
           handReceiptRepository: repositories.handReceiptRepository,
+          itemRepository: repositories.itemRepository,
           itemId: input.itemId,
         }),
       ),
@@ -187,6 +211,7 @@ export const assignments2062Router = createTRPCRouter({
             assignmentRepository: repositories.assignmentRepository,
             handReceiptId: input.handReceiptId,
             handReceiptRepository: repositories.handReceiptRepository,
+            itemRepository: repositories.itemRepository,
           }),
       ),
     ),
@@ -248,6 +273,49 @@ export const assignments2062Router = createTRPCRouter({
           contactRepository: repositories.contactRepository,
           documentRepository: repositories.documentRepository,
           handReceiptRepository: repositories.handReceiptRepository,
+          itemRepository: repositories.itemRepository,
+        }),
+      ),
+    ),
+  close: protectedProcedure
+    .input(closeAssignmentInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "assignments2062.close", async (repositories) => {
+        const result = await closeAssignment({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          assignmentId: input.assignmentId,
+          ...(input.closedOn !== undefined ? { closedOn: input.closedOn } : {}),
+          assignmentRepository: repositories.assignmentRepository,
+          assignmentItemLinkRepository:
+            repositories.assignmentItemLinkRepository,
+          auditRepository: repositories.auditRepository,
+          itemRepository: repositories.itemRepository,
+        });
+
+        if (!result) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Assignment was not found.",
+          });
+        }
+
+        return result;
+      }),
+    ),
+  removeItemLink: protectedProcedure
+    .input(removeItemLinkInput)
+    .mutation(({ ctx, input }) =>
+      runInUnitOfWork(ctx, "assignments2062.removeItemLink", (repositories) =>
+        removeAssignmentItemLink({
+          account: ctx.account,
+          actorId: ctx.session.userId,
+          itemLinkId: input.itemLinkId,
+          ...(input.closedOn !== undefined ? { closedOn: input.closedOn } : {}),
+          assignmentRepository: repositories.assignmentRepository,
+          assignmentItemLinkRepository:
+            repositories.assignmentItemLinkRepository,
+          auditRepository: repositories.auditRepository,
           itemRepository: repositories.itemRepository,
         }),
       ),

@@ -24,6 +24,13 @@ export type AssignmentItemLinkRecord = {
   updatedAt: Date;
 };
 
+export type ActiveAssignmentItemSummary = {
+  linkId: string;
+  itemId: string;
+  nomenclature: string;
+  identifier: string;
+};
+
 export type CoverageHistoryEntry = {
   linkId: string;
   assignmentId: string;
@@ -73,6 +80,7 @@ export type ActiveAssignmentSummary = {
   documentId: string;
   documentFilename: string;
   itemCount: number;
+  activeItems: ActiveAssignmentItemSummary[];
   status: "active";
   createdAt: Date;
   updatedAt: Date;
@@ -146,10 +154,31 @@ export class Active2062CoverageConflictError extends Error {
   }
 }
 
+export class AssignmentAlreadyClosedError extends Error {
+  constructor() {
+    super("Assignment is already closed.");
+    this.name = "AssignmentAlreadyClosedError";
+  }
+}
+
 export class ContactDisplayNameRequiredError extends Error {
   constructor() {
     super("Contact display name is required.");
     this.name = "ContactDisplayNameRequiredError";
+  }
+}
+
+export class CloseDateFutureError extends Error {
+  constructor() {
+    super("Close date cannot be in the future.");
+    this.name = "CloseDateFutureError";
+  }
+}
+
+export class CloseDateInvalidError extends Error {
+  constructor() {
+    super("Close date must use YYYY-MM-DD format.");
+    this.name = "CloseDateInvalidError";
   }
 }
 
@@ -192,6 +221,20 @@ export class HandReceiptNotFoundError extends Error {
   constructor() {
     super("Hand receipt was not found.");
     this.name = "HandReceiptNotFoundError";
+  }
+}
+
+export class ItemLinkAlreadyClosedError extends Error {
+  constructor() {
+    super("Item link is already closed.");
+    this.name = "ItemLinkAlreadyClosedError";
+  }
+}
+
+export class ItemLinkNotFoundError extends Error {
+  constructor() {
+    super("Item link was not found.");
+    this.name = "ItemLinkNotFoundError";
   }
 }
 

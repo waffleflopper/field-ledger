@@ -1,8 +1,15 @@
 import type {
+  AuditMetadata,
   AuditEventRecord,
   AuditRepository,
   NewAuditEventRecord,
 } from "@/modules/audit";
+
+function metadataString(metadata: AuditMetadata, key: string) {
+  const value = metadata?.[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
 
 export class InMemoryAuditRepository implements AuditRepository {
   events: AuditEventRecord[] = [];
@@ -49,8 +56,11 @@ export class InMemoryAuditRepository implements AuditRepository {
       .filter(
         (event) =>
           event.accountId === accountId &&
-          event.targetType === target.targetType &&
-          event.targetId === target.targetId,
+          ((event.targetType === target.targetType &&
+            event.targetId === target.targetId) ||
+            (target.targetType === "hand_receipt" &&
+              metadataString(event.metadata, "handReceiptId") ===
+                target.targetId)),
       )
       .sort(
         (left, right) => right.occurredAt.getTime() - left.occurredAt.getTime(),

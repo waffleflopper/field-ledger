@@ -24,6 +24,17 @@ async function expectHandReceiptDetail(page: Page, name: string) {
   await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
+function dateOnlyFromOffset(daysFromToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 test("users can create and see an active hand receipt on mobile", async ({
   page,
 }) => {
@@ -186,6 +197,7 @@ test("users can create multi-item formal 2062 coverage from hand receipt detail"
   for (const [nomenclature, ecn] of [
     ["Multi radio", "ECN-MULTI-1"],
     ["Multi generator", "ECN-MULTI-2"],
+    ["Multi closing kit", "ECN-MULTI-3"],
   ] as const) {
     await page.getByRole("button", { name: "Add item" }).click();
     const createDialog = page.getByRole("dialog", {
@@ -239,13 +251,72 @@ test("users can create multi-item formal 2062 coverage from hand receipt detail"
   await expect(page.getByText("SPC Multi")).toHaveCount(3);
   await expect(page.getByText("2 items covered")).toBeVisible();
 
+  await page
+    .getByRole("button", { name: "Remove Multi radio from 2062" })
+    .click();
+  const removeDialog = page.getByRole("dialog", {
+    name: "Remove item from 2062?",
+  });
+  await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(1));
+  await expect(
+    removeDialog.getByText("Close date cannot be in the future."),
+  ).toBeVisible();
+  await removeDialog.getByLabel("Remove date").fill(dateOnlyFromOffset(-1));
+  await removeDialog.getByRole("button", { name: "Remove item" }).click();
+  await expect(page.getByText("1 item covered")).toBeVisible();
+  await expect(page.getByText("Item removed from 2062")).toBeVisible();
+
+  await page.getByRole("button", { name: "Close" }).click();
+  const closeDialog = page.getByRole("dialog", {
+    name: "Close this 2062 assignment?",
+  });
+  const closeDateInput = closeDialog.getByLabel("Close date");
+  await expect(closeDateInput).toHaveValue(
+    (await closeDateInput.getAttribute("max")) ?? "",
+  );
+  await closeDateInput.fill(dateOnlyFromOffset(-1));
+  await closeDialog.getByRole("button", { name: "Close assignment" }).click();
+  await expect(
+    page.getByText("No active 2062 assignments for this hand receipt."),
+  ).toBeVisible();
+  await expect(page.getByText("2062 assignment closed")).toBeVisible();
+
+  await page.getByRole("link", { name: "Upload 2062" }).click();
+  await page.getByLabel("Contact name").fill("SPC Last");
+  await page.getByRole("button", { name: "Create SPC Last" }).click();
+  await page.getByRole("button", { name: "Continue to document" }).click();
+  await page.getByLabel("Select document").selectOption({
+    label: "multi-2062.pdf",
+  });
+  await page.getByRole("button", { name: "Continue to items" }).click();
+  await page.getByLabel("Narrow items").fill("closing");
+  await page.getByLabel("Multi closing kit").check();
+  await page.getByRole("button", { name: "Review 1 item" }).click();
+  await page.getByRole("button", { name: "Create assignment" }).click();
+  await expect(page.getByText("1 item covered")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Remove Multi closing kit from 2062" })
+    .click();
+  const finalRemoveDialog = page.getByRole("dialog", {
+    name: "Remove item from 2062?",
+  });
+  await expect(
+    finalRemoveDialog.getByText(
+      "This is the last active item, so the assignment will close too.",
+    ),
+  ).toBeVisible();
+  await finalRemoveDialog.getByRole("button", { name: "Remove item" }).click();
+  await expect(
+    page.getByText("No active 2062 assignments for this hand receipt."),
+  ).toBeVisible();
+
   await page.goto("/app/active-2062s");
   await expect(
     page.getByRole("heading", { name: "Active 2062s" }),
   ).toBeVisible();
-  await expect(page.getByText("SPC Multi")).toBeVisible();
-  await expect(page.getByText("Multi 2062 receipt")).toBeVisible();
-  await expect(page.getByText("2 items")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "No active 2062s" }),
+  ).toBeVisible();
 });
 
 test("hand receipt upload 2062 flow uses desktop width without horizontal overflow", async ({

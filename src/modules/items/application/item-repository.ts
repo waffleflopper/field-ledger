@@ -14,6 +14,7 @@ export interface ItemRepository {
     options?: { status?: ItemStatus; handReceiptId?: string },
   ): Promise<ItemRecord[]>;
   findById(accountId: string, itemId: string): Promise<ItemRecord | null>;
+  findManyByIds(accountId: string, itemIds: string[]): Promise<ItemRecord[]>;
   findByHandReceiptId(
     accountId: string,
     handReceiptId: string,
@@ -49,6 +50,9 @@ export function createUnavailableItemRepository(): ItemRepository {
       throw new Error("An authenticated database session is required.");
     },
     async findById() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async findManyByIds() {
       throw new Error("An authenticated database session is required.");
     },
     async findByHandReceiptId() {

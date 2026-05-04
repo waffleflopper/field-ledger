@@ -64,6 +64,14 @@ export class InMemoryItemRepository implements ItemRepository {
     );
   }
 
+  async findManyByIds(accountId: string, itemIds: string[]) {
+    const itemIdSet = new Set(itemIds);
+
+    return this.items.filter(
+      (item) => item.accountId === accountId && itemIdSet.has(item.id),
+    );
+  }
+
   async findByHandReceiptId(
     accountId: string,
     handReceiptId: string,

@@ -9,6 +9,7 @@ import {
 import { InMemoryAssignmentItemLinkRepository } from "../../support/assignment-item-link-repository";
 import { InMemoryAssignmentRepository } from "../../support/assignment-repository";
 import { InMemoryHandReceiptRepository } from "../../support/hand-receipt-repository";
+import { InMemoryItemRepository } from "../../support/item-repository";
 
 const older = new Date("2026-05-01T12:00:00.000Z");
 const newer = new Date("2026-05-02T12:00:00.000Z");
@@ -120,11 +121,59 @@ function createRepositories() {
       updatedAt: older,
     },
   ]);
+  const itemRepository = new InMemoryItemRepository([
+    {
+      id: "item-1",
+      accountId: account.id,
+      handReceiptId: "receipt-1",
+      nomenclature: "Radio",
+      ecn: "ECN-1",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+    {
+      id: "item-2",
+      accountId: account.id,
+      handReceiptId: "receipt-1",
+      nomenclature: "Generator",
+      ecn: null,
+      serialNumber: "SER-2",
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+    {
+      id: "item-3",
+      accountId: account.id,
+      handReceiptId: "receipt-2",
+      nomenclature: "Truck",
+      ecn: "ECN-3",
+      serialNumber: null,
+      generatedId: null,
+      notes: null,
+      status: "active",
+      signedToContactId: null,
+      signedToContactName: null,
+      createdAt: older,
+      updatedAt: older,
+    },
+  ]);
 
   return {
     assignmentItemLinkRepository,
     assignmentRepository,
     handReceiptRepository,
+    itemRepository,
   };
 }
 
@@ -189,14 +238,20 @@ describe("2062 list and coverage queries", () => {
     let handReceiptFinds = 0;
     let handReceiptBatchFinds = 0;
     let linkFinds = 0;
-    let linkBatchCounts = 0;
+    let linkBatchFinds = 0;
+    let itemFinds = 0;
+    let itemBatchFinds = 0;
     const originalFindManyByIds =
       repositories.handReceiptRepository.findManyByIds.bind(
         repositories.handReceiptRepository,
       );
-    const originalCountActiveByAssignmentIds =
-      repositories.assignmentItemLinkRepository.countActiveByAssignmentIds.bind(
+    const originalFindByAssignmentIds =
+      repositories.assignmentItemLinkRepository.findByAssignmentIds.bind(
         repositories.assignmentItemLinkRepository,
+      );
+    const originalFindManyItemsByIds =
+      repositories.itemRepository.findManyByIds.bind(
+        repositories.itemRepository,
       );
 
     repositories.handReceiptRepository.findById = async () => {
@@ -211,19 +266,45 @@ describe("2062 list and coverage queries", () => {
       linkFinds += 1;
       return [];
     };
-    repositories.assignmentItemLinkRepository.countActiveByAssignmentIds =
-      async (...args) => {
-        linkBatchCounts += 1;
-        return originalCountActiveByAssignmentIds(...args);
-      };
+    repositories.assignmentItemLinkRepository.findByAssignmentIds = async (
+      ...args
+    ) => {
+      linkBatchFinds += 1;
+      return originalFindByAssignmentIds(...args);
+    };
+    repositories.itemRepository.findById = async () => {
+      itemFinds += 1;
+      return null;
+    };
+    repositories.itemRepository.findManyByIds = async (...args) => {
+      itemBatchFinds += 1;
+      return originalFindManyItemsByIds(...args);
+    };
 
     const summaries = await listActiveAssignments({ account, ...repositories });
 
     expect(summaries).toHaveLength(2);
     expect(handReceiptFinds).toBe(0);
     expect(linkFinds).toBe(0);
+    expect(itemFinds).toBe(0);
     expect(handReceiptBatchFinds).toBe(1);
-    expect(linkBatchCounts).toBe(1);
+    expect(linkBatchFinds).toBe(1);
+    expect(itemBatchFinds).toBe(1);
+  });
+
+  it("keeps current coverage counts aligned with returned active items", async () => {
+    const repositories = createRepositories();
+    repositories.itemRepository.items =
+      repositories.itemRepository.items.filter((item) => item.id !== "item-2");
+
+    await expect(
+      getItemCoverage({ account, itemId: "item-1", ...repositories }),
+    ).resolves.toMatchObject({
+      current: {
+        activeItems: [expect.objectContaining({ itemId: "item-1" })],
+        itemCount: 1,
+      },
+    });
   });
 
   it("separates current and historical 2062 coverage for an item", async () => {

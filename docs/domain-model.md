@@ -248,7 +248,14 @@ Rules:
 - Uploading a 2062 for a manually signed-to item converts it to formal 2062 coverage.
 - Closing a 2062 clears current signed-to state for linked items.
 - Individual item links can be closed when one item is returned.
-- Past return/close dates are allowed; future dates are blocked or warned.
+- Closing a whole 2062 assignment closes all active item links, clears current
+  signed-to state for those items, and preserves the document plus closed link
+  history.
+- Closing one item link releases only that item. If at least one other active
+  item link remains, the assignment stays active.
+- Removing the final active item link closes the assignment so empty active
+  assignments do not linger.
+- Past return/close dates are allowed; future dates are blocked.
 
 ## Requirements
 

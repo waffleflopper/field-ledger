@@ -32,6 +32,12 @@ function metadataName(metadata: AuditMetadata) {
   return typeof name === "string" && name.trim() ? name.trim() : null;
 }
 
+function metadataString(metadata: AuditMetadata, key: string) {
+  const value = metadata?.[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 function formatTargetLabel(event: AuditEventRecord) {
   if (event.targetType === "hand_receipt") {
     return metadataName(event.metadata) ?? "Hand receipt";
@@ -43,6 +49,18 @@ function formatTargetLabel(event: AuditEventRecord) {
 
   if (event.targetType === "requirement") {
     return metadataName(event.metadata) ?? "Requirement";
+  }
+
+  if (event.targetType === "assignment") {
+    const contactName = metadataString(event.metadata, "contactName");
+    const documentFilename = metadataString(event.metadata, "documentFilename");
+
+    return (
+      contactName ??
+      documentFilename ??
+      metadataName(event.metadata) ??
+      "2062 assignment"
+    );
   }
 
   if (event.targetType === "account") {

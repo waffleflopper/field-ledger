@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 
 import { auditEvents } from "@/db/schema";
 import type { AuditRepository } from "@/modules/audit/application/audit-repository";
@@ -61,17 +61,24 @@ function createAuditRepository(run: AuditOperation): AuditRepository {
     },
     async listByTarget(accountId, target, options = {}) {
       const limit = normalizeRecentActivityLimit(options.limit);
+      const targetFilter =
+        target.targetType === "hand_receipt"
+          ? or(
+              and(
+                eq(auditEvents.targetType, target.targetType),
+                eq(auditEvents.targetId, target.targetId),
+              ),
+              sql`${auditEvents.metadata}->>'handReceiptId' = ${target.targetId}`,
+            )
+          : and(
+              eq(auditEvents.targetType, target.targetType),
+              eq(auditEvents.targetId, target.targetId),
+            );
       const rows = await run((transaction) =>
         transaction
           .select()
           .from(auditEvents)
-          .where(
-            and(
-              eq(auditEvents.accountId, accountId),
-              eq(auditEvents.targetType, target.targetType),
-              eq(auditEvents.targetId, target.targetId),
-            ),
-          )
+          .where(and(eq(auditEvents.accountId, accountId), targetFilter))
           .orderBy(desc(auditEvents.occurredAt))
           .limit(limit),
       );

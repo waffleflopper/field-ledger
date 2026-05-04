@@ -459,6 +459,182 @@ describe("assignments2062Router", () => {
     ]);
   });
 
+  it("closes a 2062 assignment through the typed procedure", async () => {
+    const {
+      caller,
+      assignmentRepository,
+      assignmentItemLinkRepository,
+      auditRepository,
+      itemRepository,
+    } = createCaller();
+
+    await caller.assignments2062.createWithItems({
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      itemIds: [
+        "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        "77777777-7777-4777-9777-777777777777",
+      ],
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const assignment = assignmentRepository.assignments[0];
+
+    if (!assignment) {
+      throw new Error("Missing assignment fixture.");
+    }
+    assignmentRepository.assignments[0] = {
+      ...assignment,
+      contactName: "SPC Rivera",
+      documentFilename: "signed-2062.pdf",
+    };
+
+    const result = await caller.assignments2062.close({
+      assignmentId: assignment.id,
+      closedOn: "2026-05-01",
+    });
+
+    expect(result.assignment).toMatchObject({
+      id: assignment.id,
+      status: "closed",
+      contactName: "SPC Rivera",
+      documentFilename: "signed-2062.pdf",
+    });
+    expect(assignmentItemLinkRepository.links).toEqual([
+      expect.objectContaining({ status: "closed" }),
+      expect.objectContaining({ status: "closed" }),
+    ]);
+    await expect(
+      itemRepository.findById(
+        "account-1",
+        "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      ),
+    ).resolves.toMatchObject({ signedToContactId: null });
+    expect(auditRepository.events.map((event) => event.action)).toContain(
+      "assignment.closed",
+    );
+  });
+
+  it("removes one item link while leaving other active links in place", async () => {
+    const { caller, assignmentRepository, assignmentItemLinkRepository } =
+      createCaller();
+
+    await caller.assignments2062.createWithItems({
+      handReceiptId: "88888888-8888-4888-8888-888888888888",
+      itemIds: [
+        "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+        "77777777-7777-4777-9777-777777777777",
+      ],
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const link = assignmentItemLinkRepository.links[0];
+
+    if (!link) {
+      throw new Error("Missing item link fixture.");
+    }
+
+    const result = await caller.assignments2062.removeItemLink({
+      itemLinkId: link.id,
+      closedOn: "2026-05-01",
+    });
+
+    expect(result).toMatchObject({
+      assignmentClosed: false,
+      link: expect.objectContaining({ id: link.id, status: "closed" }),
+    });
+    expect(assignmentRepository.assignments[0]).toMatchObject({
+      status: "active",
+    });
+    expect(assignmentItemLinkRepository.links).toEqual([
+      expect.objectContaining({ id: link.id, status: "closed" }),
+      expect.objectContaining({ status: "active" }),
+    ]);
+  });
+
+  it("auto-closes the assignment when the final item link is removed", async () => {
+    const { caller, assignmentRepository, assignmentItemLinkRepository } =
+      createCaller();
+
+    await caller.assignments2062.create({
+      itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const link = assignmentItemLinkRepository.links[0];
+
+    if (!link) {
+      throw new Error("Missing item link fixture.");
+    }
+
+    await expect(
+      caller.assignments2062.removeItemLink({ itemLinkId: link.id }),
+    ).resolves.toMatchObject({
+      assignmentClosed: true,
+      assignment: expect.objectContaining({ status: "closed" }),
+    });
+    expect(assignmentRepository.assignments[0]).toMatchObject({
+      status: "closed",
+    });
+  });
+
+  it("maps close and remove guard failures to typed tRPC errors", async () => {
+    const { caller, assignmentRepository, assignmentItemLinkRepository } =
+      createCaller();
+
+    await caller.assignments2062.create({
+      itemId: "dddddddd-dddd-4ddd-9ddd-dddddddddddd",
+      contactId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
+    });
+    const assignment = assignmentRepository.assignments[0];
+    const link = assignmentItemLinkRepository.links[0];
+
+    if (!assignment || !link) {
+      throw new Error("Missing assignment fixture.");
+    }
+
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: assignment.id,
+        closedOn: "2999-05-03",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: assignment.id,
+        closedOn: "",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    await expect(
+      caller.assignments2062.removeItemLink({
+        itemLinkId: link.id,
+        closedOn: "",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    await caller.assignments2062.close({ assignmentId: assignment.id });
+
+    await expect(
+      caller.assignments2062.close({ assignmentId: assignment.id }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    await expect(
+      caller.assignments2062.removeItemLink({ itemLinkId: link.id }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("maps missing assignment close to NOT_FOUND", async () => {
+    const { caller } = createCaller();
+
+    await expect(
+      caller.assignments2062.close({
+        assignmentId: "99999999-9999-4999-9999-999999999999",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("returns current and historical item coverage through the typed procedure", async () => {
     const { caller, assignmentItemLinkRepository, assignmentRepository } =
       createCaller();

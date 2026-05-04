@@ -1,4 +1,13 @@
-import { and, count, desc, eq, or, sql, type SQLWrapper } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  inArray,
+  or,
+  sql,
+  type SQLWrapper,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import {
@@ -249,6 +258,51 @@ function createItemRepository(run: ItemOperation): ItemRepository {
       );
 
       return row ? toItemRecordFromJoinedRow(row) : null;
+    },
+    async findManyByIds(accountId, itemIds) {
+      if (itemIds.length === 0) {
+        return [];
+      }
+
+      const rows = await run((transaction) =>
+        transaction
+          .select({
+            item: items,
+            contact: signedToContacts,
+            location: locations,
+            active2062Assignment: assignments,
+            active2062Contact: active2062Contacts,
+            active2062Document: documents,
+          })
+          .from(items)
+          .leftJoin(
+            signedToContacts,
+            eq(items.signedToContactId, signedToContacts.id),
+          )
+          .leftJoin(locations, eq(items.locationId, locations.id))
+          .leftJoin(
+            assignmentItemLinks,
+            and(
+              eq(assignmentItemLinks.itemId, items.id),
+              eq(assignmentItemLinks.accountId, items.accountId),
+              eq(assignmentItemLinks.status, "active"),
+            ),
+          )
+          .leftJoin(
+            assignments,
+            eq(assignmentItemLinks.assignmentId, assignments.id),
+          )
+          .leftJoin(
+            active2062Contacts,
+            eq(assignments.contactId, active2062Contacts.id),
+          )
+          .leftJoin(documents, eq(assignments.documentId, documents.id))
+          .where(
+            and(eq(items.accountId, accountId), inArray(items.id, itemIds)),
+          ),
+      );
+
+      return rows.map(toItemRecordFromJoinedRow);
     },
     async findByHandReceiptId(accountId, handReceiptId, options = {}) {
       return findByAccountId(accountId, {

@@ -2,8 +2,10 @@ import type { AuditAction, KnownAuditAction } from "./types";
 
 const auditActionLabels: Record<KnownAuditAction, string> = {
   "account.onboarding_completed": "Onboarding completed",
+  "assignment.closed": "2062 assignment closed",
   "assignment.created": "2062 assignment created",
   "assignment_item_link.created": "Item linked to 2062",
+  "assignment_item_link.removed": "Item removed from 2062",
   "contact.created": "Contact created",
   "document.uploaded": "Document uploaded",
   "hand_receipt.archived": "Hand receipt archived",
