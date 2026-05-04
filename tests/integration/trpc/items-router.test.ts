@@ -694,7 +694,7 @@ describe("itemsRouter", () => {
     ]);
   });
 
-  it("blocks manual signed-to and archive mutations when active 2062 coverage exists", async () => {
+  it("blocks manual signed-to changes when active 2062 coverage exists", async () => {
     const auditRepository = new InMemoryAuditRepository();
     const assignmentItemLinkRepository =
       new InMemoryAssignmentItemLinkRepository([
@@ -760,15 +760,342 @@ describe("itemsRouter", () => {
       message:
         "Cannot change manual signed-to state while active 2062 coverage exists.",
     });
+    expect(contactRepository.contacts).toHaveLength(1);
+    expect(auditRepository.events).toEqual([]);
+  });
+
+  it("blocks moves with active 2062 coverage and exposes move preflight state", async () => {
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const auditRepository = new InMemoryAuditRepository();
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Covered move radio",
+        ecn: "ECN-703",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      auditRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.hasActive2062Coverage({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      }),
+    ).resolves.toEqual({ hasActiveCoverage: true });
+    await expect(
+      caller.items.move({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        targetHandReceiptId: "14ad8e43-8ca5-484d-b10c-7cf436647040",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Cannot move item with active 2062 coverage.",
+    });
+    expect(itemRepository.items[0]?.handReceiptId).toBe(
+      "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+    );
+    expect(auditRepository.events).toEqual([]);
+  });
+
+  it("archives covered items by closing only that active 2062 link", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const assignmentRepository = new InMemoryAssignmentRepository([
+      {
+        id: "26975a26-42c7-4307-b883-d676482f1545",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        contactName: "SSG Rivera",
+        documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+        documentFilename: "signed-2062.pdf",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+        {
+          id: "941cbef0-b703-4327-8440-2ad719dcb098",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "53cc548f-1493-406b-ae47-7037dd1ca610",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Covered radio",
+        ecn: "ECN-704",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+      {
+        id: "53cc548f-1493-406b-ae47-7037dd1ca610",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Still covered radio",
+        ecn: "ECN-705",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+      auditRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.getActive2062CoverageInfo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      }),
+    ).resolves.toEqual({
+      hasActiveCoverage: true,
+      assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+      isLastActiveLink: false,
+    });
+    await expect(
+      caller.items.archive({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
+    ).resolves.toMatchObject({
+      id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      status: "archived",
+      signedToContactId: null,
+    });
+
+    expect(assignmentRepository.assignments[0]).toMatchObject({
+      status: "active",
+      documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+    });
+    expect(assignmentItemLinkRepository.links).toMatchObject([
+      {
+        id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+        status: "closed",
+      },
+      {
+        id: "941cbef0-b703-4327-8440-2ad719dcb098",
+        status: "active",
+      },
+    ]);
+    expect(itemRepository.items[1]).toMatchObject({
+      id: "53cc548f-1493-406b-ae47-7037dd1ca610",
+      status: "active",
+      signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+    });
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "item.archived",
+      "assignment_item_link.removed",
+    ]);
+    expect(auditRepository.events[1]?.metadata).toMatchObject({
+      reason: "item_archived",
+      documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+      documentFilename: "signed-2062.pdf",
+    });
+  });
+
+  it("closes the 2062 assignment when archived item was the final active link", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const assignmentRepository = new InMemoryAssignmentRepository([
+      {
+        id: "26975a26-42c7-4307-b883-d676482f1545",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        contactName: "SSG Rivera",
+        documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+        documentFilename: "signed-2062.pdf",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Final covered radio",
+        ecn: "ECN-706",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+      auditRepository,
+      itemRepository,
+    });
+
+    await expect(
+      caller.items.getActive2062CoverageInfo({
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+      }),
+    ).resolves.toEqual({
+      hasActiveCoverage: true,
+      assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+      isLastActiveLink: true,
+    });
+    await expect(
+      caller.items.archive({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
+    ).resolves.toMatchObject({
+      status: "archived",
+      signedToContactId: null,
+    });
+
+    expect(assignmentRepository.assignments[0]?.status).toBe("closed");
+    expect(auditRepository.events.map((event) => event.action)).toEqual([
+      "item.archived",
+      "assignment_item_link.removed",
+      "assignment.closed",
+    ]);
+    expect(auditRepository.events[2]?.metadata).toMatchObject({
+      reason: "last_item_archived",
+      documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+    });
+  });
+
+  it("maps covered item archive link closure races to conflict", async () => {
+    const auditRepository = new InMemoryAuditRepository();
+    const assignmentRepository = new InMemoryAssignmentRepository([
+      {
+        id: "26975a26-42c7-4307-b883-d676482f1545",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        contactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        contactName: "SSG Rivera",
+        documentId: "86f8e191-bb5c-48ca-9868-4f2b8e0480ea",
+        documentFilename: "signed-2062.pdf",
+        status: "active",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const assignmentItemLinkRepository =
+      new InMemoryAssignmentItemLinkRepository([
+        {
+          id: "3dbd4b63-4d13-4e91-b27c-3f2211cd8494",
+          accountId: "account-1",
+          assignmentId: "26975a26-42c7-4307-b883-d676482f1545",
+          itemId: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+          status: "active",
+          closedAt: null,
+          createdAt: new Date("2026-05-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+        },
+      ]);
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Race covered radio",
+        ecn: "ECN-707",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "2e6e25b2-7ffd-4fb5-82ac-d61a52b7f6a3",
+        createdAt: new Date("2026-04-29T12:00:00.000Z"),
+        updatedAt: new Date("2026-04-29T12:00:00.000Z"),
+      },
+    ]);
+    const originalFindById =
+      assignmentItemLinkRepository.findById.bind(assignmentItemLinkRepository);
+    assignmentItemLinkRepository.findById = async (...args) => {
+      const link = await originalFindById(...args);
+
+      if (!link) {
+        return null;
+      }
+
+      return {
+        ...link,
+        status: "closed",
+        closedAt: new Date("2026-05-02T12:00:00.000Z"),
+      };
+    };
+    const caller = createCaller({
+      assignmentItemLinkRepository,
+      assignmentRepository,
+      auditRepository,
+      itemRepository,
+    });
+
     await expect(
       caller.items.archive({ id: "6f5f7e36-bb0a-47ec-8d2a-13f29d7ef94c" }),
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message:
-        "Cannot archive item with active 2062 coverage until the active link is closed.",
+      message: "Item link is already closed.",
     });
-    expect(contactRepository.contacts).toHaveLength(1);
-    expect(auditRepository.events).toEqual([]);
   });
 
   it("rejects cross-account item moves as not found", async () => {

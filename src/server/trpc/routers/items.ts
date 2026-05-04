@@ -1,7 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { hasActive2062Coverage } from "@/modules/assignments-2062";
+import {
+  getActive2062CoverageInfo,
+  hasActive2062Coverage,
+  ItemLinkAlreadyClosedError,
+  ItemLinkNotFoundError,
+  removeAssignmentItemLink,
+} from "@/modules/assignments-2062";
 import {
   assignSignedTo,
   assignSignedToWithNewContact,
@@ -123,6 +129,20 @@ function toTRPCError(
   const message =
     error instanceof Error ? error.message : "Unable to update item.";
 
+  if (error instanceof ItemLinkNotFoundError) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message,
+    });
+  }
+
+  if (error instanceof ItemLinkAlreadyClosedError) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message,
+    });
+  }
+
   switch (message) {
     case "This account is read-only.":
       throw new TRPCError({
@@ -154,7 +174,6 @@ function toTRPCError(
     case "Cannot move item from an archived hand receipt.":
     case "Cannot move item to an archived hand receipt.":
     case "Cannot move item with active 2062 coverage.":
-    case "Cannot archive item with active 2062 coverage until the active link is closed.":
     case "Cannot change manual signed-to state while active 2062 coverage exists.":
       throw new TRPCError({
         code: "CONFLICT",
@@ -250,6 +269,36 @@ export const itemsRouter = createTRPCRouter({
 
       return item;
     }),
+  hasActive2062Coverage: protectedProcedure
+    .input(itemIdInput)
+    .query(async ({ ctx, input }) => {
+      const activeCoverage = await hasActive2062Coverage({
+        accountId: ctx.account.id,
+        itemId: input.id,
+        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
+      });
+
+      return { hasActiveCoverage: activeCoverage };
+    }),
+  getActive2062CoverageInfo: protectedProcedure
+    .input(itemIdInput)
+    .query(async ({ ctx, input }) => {
+      const activeCoverage = await getActive2062CoverageInfo({
+        accountId: ctx.account.id,
+        itemId: input.id,
+        assignmentItemLinkRepository: ctx.assignmentItemLinkRepository,
+      });
+
+      if (!activeCoverage) {
+        return { hasActiveCoverage: false as const };
+      }
+
+      return {
+        hasActiveCoverage: true as const,
+        assignmentId: activeCoverage.assignmentId,
+        isLastActiveLink: activeCoverage.isLastActiveLink,
+      };
+    }),
   checkDuplicateIdentifier: protectedProcedure
     .input(checkDuplicateIdentifierInput)
     .query(({ ctx, input }) =>
@@ -339,12 +388,25 @@ export const itemsRouter = createTRPCRouter({
             itemId: input.id,
             auditRepository: repositories.auditRepository,
             itemRepository: repositories.itemRepository,
-            hasActive2062Coverage: ({ accountId, itemId }) =>
-              hasActive2062Coverage({
+            getActive2062CoverageInfo: ({ accountId, itemId }) =>
+              getActive2062CoverageInfo({
                 accountId,
                 itemId,
                 assignmentItemLinkRepository:
                   repositories.assignmentItemLinkRepository,
+              }),
+            closeActive2062ItemLink: ({ itemLinkId, now }) =>
+              removeAssignmentItemLink({
+                account: ctx.account,
+                actorId: ctx.session.userId,
+                itemLinkId,
+                closeReason: "item_archived",
+                assignmentRepository: repositories.assignmentRepository,
+                assignmentItemLinkRepository:
+                  repositories.assignmentItemLinkRepository,
+                auditRepository: repositories.auditRepository,
+                itemRepository: repositories.itemRepository,
+                now,
               }),
           }),
       );

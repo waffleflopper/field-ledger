@@ -6,6 +6,7 @@ import {
   Archive,
   ArrowLeft,
   ArrowRightLeft,
+  AlertTriangle,
   ClipboardList,
   Hash,
   History,
@@ -166,6 +167,9 @@ function MoveItemDialog({
   isOpen,
   item,
   isMoving,
+  isMoveBlocked,
+  moveCoverageError,
+  isMoveCoverageLoading,
   moveTargets,
   onMove,
   onOpenChange,
@@ -175,6 +179,9 @@ function MoveItemDialog({
   isOpen: boolean;
   item: ItemRecord;
   isMoving: boolean;
+  isMoveBlocked: boolean;
+  moveCoverageError: string | null;
+  isMoveCoverageLoading: boolean;
   moveTargets: HandReceiptRecord[];
   onMove: () => void;
   onOpenChange: (isOpen: boolean) => void;
@@ -191,28 +198,64 @@ function MoveItemDialog({
             record, identifiers, and activity history stay preserved.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="target-hand-receipt">Target hand receipt</Label>
-          {moveTargets.length > 0 ? (
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              id="target-hand-receipt"
-              onChange={(event) => onTargetChange(event.target.value)}
-              value={targetHandReceiptId}
-            >
-              <option value="">Select active receipt</option>
-              {moveTargets.map((receipt) => (
-                <option key={receipt.id} value={receipt.id}>
-                  {receipt.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
-              Create another active hand receipt before moving this item.
-            </p>
-          )}
-        </div>
+        {isMoveCoverageLoading ? (
+          <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
+            Checking active 2062 coverage...
+          </p>
+        ) : moveCoverageError ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-sm text-destructive">
+            <div className="flex items-start gap-2">
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <div className="space-y-1">
+                <p className="font-medium">Coverage check failed</p>
+                <p className="leading-6">{moveCoverageError}</p>
+              </div>
+            </div>
+          </div>
+        ) : isMoveBlocked ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-sm text-destructive">
+            <div className="flex items-start gap-2">
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <div className="space-y-1">
+                <p className="font-medium">Move blocked by active 2062</p>
+                <p className="leading-6">
+                  Close this item&apos;s active 2062 link before moving it to
+                  another hand receipt. Use the 2062 Coverage section on this
+                  item to review the active assignment.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="target-hand-receipt">Target hand receipt</Label>
+            {moveTargets.length > 0 ? (
+              <select
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                id="target-hand-receipt"
+                onChange={(event) => onTargetChange(event.target.value)}
+                value={targetHandReceiptId}
+              >
+                <option value="">Select active receipt</option>
+                {moveTargets.map((receipt) => (
+                  <option key={receipt.id} value={receipt.id}>
+                    {receipt.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
+                Create another active hand receipt before moving this item.
+              </p>
+            )}
+          </div>
+        )}
         <DialogFooter>
           <Button
             disabled={isMoving}
@@ -223,7 +266,13 @@ function MoveItemDialog({
             Cancel
           </Button>
           <Button
-            disabled={!targetHandReceiptId || isMoving}
+            disabled={
+              !targetHandReceiptId ||
+              isMoving ||
+              isMoveCoverageLoading ||
+              Boolean(moveCoverageError) ||
+              isMoveBlocked
+            }
             onClick={onMove}
             type="button"
           >
@@ -257,6 +306,14 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
     status: "active",
   });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery();
+  const moveCoverageQuery = trpc.items.hasActive2062Coverage.useQuery(
+    { id: itemId },
+    { enabled: isMoveDialogOpen },
+  );
+  const archiveCoverageQuery = trpc.items.getActive2062CoverageInfo.useQuery(
+    { id: itemId },
+    { enabled: isArchiveDialogOpen },
+  );
   const item = itemQuery.data;
   const handReceipt = handReceiptQuery.data;
   const moveTargets =
@@ -264,6 +321,10 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       (receipt) => receipt.id !== item?.handReceiptId,
     ) ?? [];
   const isReadOnly = capabilitiesQuery.data?.isReadOnly ?? false;
+  const archiveCoverage = archiveCoverageQuery.data;
+  const archiveHasActive2062 =
+    archiveCoverage?.hasActiveCoverage === true;
+  const archiveCoverageError = archiveCoverageQuery.error?.message ?? null;
   const archiveMutation = trpc.items.archive.useMutation({
     onSuccess: async (archived) => {
       setIsArchiveDialogOpen(false);
@@ -359,6 +420,10 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         targetType: "item",
         targetId: itemId,
       }),
+      utilities.assignments2062.getItemCoverage.invalidate({ itemId }),
+      utilities.assignments2062.list.invalidate(),
+      utilities.items.hasActive2062Coverage.invalidate({ id: itemId }),
+      utilities.items.getActive2062CoverageInfo.invalidate({ id: itemId }),
     ]);
   }
 
@@ -446,6 +511,9 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
       ) : null}
 
       <MoveItemDialog
+        isMoveBlocked={moveCoverageQuery.data?.hasActiveCoverage ?? false}
+        moveCoverageError={moveCoverageQuery.error?.message ?? null}
+        isMoveCoverageLoading={moveCoverageQuery.isFetching}
         isMoving={moveMutation.isPending}
         isOpen={isMoveDialogOpen}
         item={item}
@@ -471,6 +539,44 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
               preserved and can be restored later.
             </DialogDescription>
           </DialogHeader>
+          {archiveCoverageQuery.isFetching ? (
+            <p className="rounded-lg border bg-secondary px-3 py-2 text-sm text-muted-foreground">
+              Checking active 2062 coverage...
+            </p>
+          ) : archiveCoverageError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-sm text-destructive">
+              <div className="flex items-start gap-2">
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 shrink-0"
+                />
+                <div className="space-y-1">
+                  <p className="font-medium">Coverage check failed</p>
+                  <p className="leading-6">{archiveCoverageError}</p>
+                </div>
+              </div>
+            </div>
+          ) : archiveHasActive2062 ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-sm text-destructive">
+              <div className="flex items-start gap-2">
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 shrink-0"
+                />
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    Archiving will close the active 2062 link
+                  </p>
+                  <p className="leading-6">
+                    The linked document and item history stay preserved.
+                    {archiveCoverage?.isLastActiveLink
+                      ? " This is the last active item on the 2062, so the assignment will close."
+                      : " Other active items on the same 2062 stay covered."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <DialogFooter>
             <Button
               disabled={archiveMutation.isPending}
@@ -481,13 +587,21 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
               Cancel
             </Button>
             <Button
-              disabled={archiveMutation.isPending}
+              disabled={
+                archiveMutation.isPending ||
+                archiveCoverageQuery.isFetching ||
+                Boolean(archiveCoverageError)
+              }
               onClick={() => archiveMutation.mutate({ id: item.id })}
               type="button"
               variant="destructive"
             >
               <Archive aria-hidden="true" className="size-4" />
-              {archiveMutation.isPending ? "Archiving" : "Archive"}
+              {archiveMutation.isPending
+                ? "Archiving"
+                : archiveHasActive2062
+                  ? "Archive and close link"
+                  : "Archive"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -532,7 +646,10 @@ export function ItemDetail({ handReceiptId, itemId }: ItemDetailProps) {
         <DetailSummary
           isReadOnly={isReadOnly}
           item={item}
-          onArchive={() => setIsArchiveDialogOpen(true)}
+          onArchive={() => {
+            setLifecycleError(null);
+            setIsArchiveDialogOpen(true);
+          }}
           onEdit={() => setIsEditing(true)}
           onMove={() => {
             setLifecycleError(null);

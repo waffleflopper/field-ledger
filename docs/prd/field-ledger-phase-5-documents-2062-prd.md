@@ -74,8 +74,8 @@ Finally, item workflows will enforce active 2062 meaning. An item with active
 link is closed. Archiving an item with active 2062 coverage is allowed only as
 a deliberate accountability action that warns the user and closes the item
 link. If archiving closes the last active item link on an assignment, the user
-should be prompted to close the assignment. All meaningful state changes emit
-audit/activity events.
+is warned before confirmation and the assignment closes explicitly. All
+meaningful state changes emit audit/activity events.
 
 ## User Stories
 
@@ -224,8 +224,8 @@ audit/activity events.
   the active link is closed.
 - Allow archiving an item with active 2062 coverage only as a deliberate action
   that warns the user and closes that item link.
-- If archiving closes the final active item link on a 2062 assignment, prompt
-  the user to close the assignment.
+- If archiving closes the final active item link on a 2062 assignment, warn the
+  user before confirmation and close the assignment explicitly.
 - Keep routes thin: routes compose module UI and call typed procedures; document
   storage rules and 2062 assignment rules live in module application services.
 - Protect document, 2062 assignment, and 2062 item-link tables with RLS.

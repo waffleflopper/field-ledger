@@ -32,13 +32,17 @@ Future requirement work should treat hand receipt status as a workflow input and
 decide whether suppressed reminders remain visible in historical or detail-only
 contexts.
 
-## Future 2062 Boundary
+## 2062 Boundary
 
-Active 2062 behavior at archive time is intentionally deferred to the 2062
-implementation phase. This slice does not create, close, relink, or warn on
-formal 2062 assignments.
+Item archive behavior now handles active 2062 coverage in the item workflow:
+the user receives a warning, the item is archived, only that item's active
+2062 link is closed, and the linked document plus closed-link history are
+preserved. If that item was the final active link on the assignment, the
+assignment closes.
 
-Future 2062 work should decide whether a hand receipt with active 2062s can be
-archived directly, requires a confirmation warning, or requires active 2062s to
-be closed first. Until that workflow exists, archive only changes the hand
-receipt lifecycle state and preserves audit history.
+Hand receipt archive behavior for receipts with active 2062 assignments remains
+outside this item-workflow slice. Future hand receipt archive work should decide
+whether a hand receipt with active 2062s can be archived directly, requires a
+confirmation warning, or requires active 2062s to be closed first. Until that
+workflow exists, hand receipt archive only changes the hand receipt lifecycle
+state and preserves audit history.

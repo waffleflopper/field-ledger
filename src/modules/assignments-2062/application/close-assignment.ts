@@ -35,6 +35,7 @@ type RemoveItemLinkInput = {
   actorId: string;
   itemLinkId: string;
   closedOn?: string;
+  closeReason?: "item_archived" | "user_removed";
   assignmentRepository: AssignmentRepository;
   assignmentItemLinkRepository: AssignmentItemLinkRepository;
   auditRepository: AuditRepository;
@@ -200,6 +201,7 @@ export async function removeAssignmentItemLink({
   actorId,
   itemLinkId,
   closedOn,
+  closeReason = "user_removed",
   assignmentRepository,
   assignmentItemLinkRepository,
   auditRepository,
@@ -259,6 +261,7 @@ export async function removeAssignmentItemLink({
       name: updatedItem.nomenclature,
       assignmentId: assignment.id,
       closedOn: closeDate,
+      reason: closeReason,
       handReceiptId: assignment.handReceiptId,
       contactId: assignment.contactId,
       contactName: assignment.contactName ?? null,
@@ -307,7 +310,10 @@ export async function removeAssignmentItemLink({
         contactName: assignment.contactName ?? null,
         documentId: assignment.documentId,
         documentFilename: assignment.documentFilename ?? null,
-        reason: "last_item_link_removed",
+        reason:
+          closeReason === "item_archived"
+            ? "last_item_archived"
+            : "last_item_link_removed",
       },
       occurredAt: now,
       repository: auditRepository,

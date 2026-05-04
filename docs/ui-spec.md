@@ -128,6 +128,15 @@ Due windows:
 - Allow past return date and block future return dates.
 - Preserve item history and document.
 
+### Move Or Archive Covered Items
+
+- Move dialog blocks items with active 2062 coverage and explains that the
+  active item link must be closed before moving to another hand receipt.
+- Archive dialog warns when an item has active 2062 coverage.
+- Confirmed archive closes only that item's active 2062 link, preserves the
+  document and history, and tells the user when the archived item is the final
+  active link on the assignment.
+
 ## UI Constraints
 
 - Item UI must work well with no item photo.

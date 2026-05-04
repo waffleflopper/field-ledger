@@ -147,12 +147,16 @@ Rules:
 - Search results show hand receipt context and the strongest available
   identifier matches so users can confirm the correct property record before
   opening detail.
-- Item with active 2062 coverage cannot move to another hand receipt until the
+- An item with active 2062 coverage cannot move to another hand receipt until the
   active 2062 link is closed.
+- Archiving an item with active 2062 coverage is a deliberate accountability
+  action. The app warns the user, archives the item, closes only that item's
+  active 2062 link, clears current signed-to state for that item, and preserves
+  the linked document, closed link history, and item activity history.
+- If archiving closes the final active item link on a 2062 assignment, the
+  assignment closes so empty active assignments do not linger.
 - When item requirements exist, archived items should suppress day-to-day
   requirement reminders while remaining available for historical review.
-- Items with active 2062 coverage cannot be archived until the active 2062 link
-  is closed by the 2062 workflow.
 
 ## Contacts
 

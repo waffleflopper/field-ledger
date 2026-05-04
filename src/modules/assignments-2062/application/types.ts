@@ -71,6 +71,8 @@ export type Active2062Coverage = {
   documentFilename: string;
 };
 
+export type { Active2062CoverageInfo } from "./has-active-2062-coverage";
+
 export type ActiveAssignmentSummary = {
   id: string;
   handReceiptId: string;

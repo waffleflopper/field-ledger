@@ -117,23 +117,47 @@ describe("archiveItem", () => {
     expect(auditRepository.events).toEqual([]);
   });
 
-  it("blocks archive while active 2062 coverage exists", async () => {
+  it("archives an item with active 2062 coverage and closes that item link", async () => {
     const auditRepository = new InMemoryAuditRepository();
+    const itemRepository = createRepository();
+    const closedLinks: string[] = [];
 
-    await expect(
-      archiveItem({
-        account: createAccount(),
-        actorId: "owner-1",
-        itemId: "active-item",
-        itemRepository: createRepository(),
-        auditRepository,
-        hasActive2062Coverage: ({ accountId, itemId }) =>
-          accountId === "account-1" && itemId === "active-item",
-      }),
-    ).rejects.toThrow(
-      "Cannot archive item with active 2062 coverage until the active link is closed.",
-    );
-    expect(auditRepository.events).toEqual([]);
+    const archived = await archiveItem({
+      account: createAccount(),
+      actorId: "owner-1",
+      itemId: "active-item",
+      itemRepository,
+      auditRepository,
+      getActive2062CoverageInfo: ({ accountId, itemId }) =>
+        accountId === "account-1" && itemId === "active-item"
+          ? {
+              hasActiveCoverage: true,
+              itemLinkId: "link-1",
+              assignmentId: "assignment-1",
+              isLastActiveLink: true,
+            }
+          : null,
+      closeActive2062ItemLink: async ({ itemLinkId }) => {
+        closedLinks.push(itemLinkId);
+        await itemRepository.update("account-1", "active-item", {
+          signedToContactId: null,
+        });
+      },
+    });
+
+    expect(archived).toMatchObject({
+      id: "active-item",
+      status: "archived",
+      signedToContactId: null,
+    });
+    expect(closedLinks).toEqual(["link-1"]);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "item.archived",
+        targetType: "item",
+        targetId: "active-item",
+      },
+    ]);
   });
 });
 
