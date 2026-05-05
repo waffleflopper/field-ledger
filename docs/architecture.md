@@ -12,6 +12,7 @@ src/modules/app-foundation/
 src/modules/audit/
 src/modules/billing/
 src/modules/contacts/
+src/modules/dashboard/
 src/modules/documents/
 src/modules/hand-receipts/
 src/modules/items/
