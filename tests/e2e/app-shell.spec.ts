@@ -52,6 +52,7 @@ test("mobile shell uses bottom navigation and exposes More surfaces", async ({
   await expect(page.getByRole("dialog", { name: "More" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Records" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Theme:/ })).toBeVisible();
   await page.getByRole("link", { name: "Active 2062s" }).click();
   await expect(page).toHaveURL(/\/app\/active-2062s$/);
   await expect(
@@ -93,6 +94,47 @@ test("desktop shell uses a collapsible sidebar for app navigation", async ({
       return signOutBox?.width ?? 0;
     })
     .toBeLessThanOrEqual(48);
+  await expect
+    .poll(async () => {
+      const themeBox = await page.getByTestId("mode-toggle").boundingBox();
+
+      return themeBox?.width ?? 0;
+    })
+    .toBeLessThanOrEqual(48);
+});
+
+test("users can choose light, dark, and system theme modes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await signInLocalUser(page);
+
+  await page.getByRole("button", { name: /Theme:/ }).click();
+  await page.getByRole("menuitemradio", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBe("dark");
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  await page.getByRole("button", { name: /Theme:/ }).click();
+  await page.getByRole("menuitemradio", { name: "Light" }).click();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBe("light");
+
+  await page.getByRole("button", { name: /Theme:/ }).click();
+  await page.getByRole("menuitemradio", { name: "System" }).click();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBe("system");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
 test("signed-in users can open the Activity route with onboarding activity", async ({
