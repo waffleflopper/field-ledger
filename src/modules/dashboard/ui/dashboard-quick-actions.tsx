@@ -1,19 +1,29 @@
-import { PackagePlus, ReceiptText } from "lucide-react";
+import { ClipboardList, PackagePlus, ReceiptText, Search } from "lucide-react";
 import Link from "next/link";
 
 const actionIconClasses =
   "flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-primary";
 
-const writeActions = [
+const dashboardActions = [
   {
     href: "/app/hand-receipts",
     icon: PackagePlus,
     label: "Add item",
   },
   {
-    href: "/app/hand-receipts",
+    href: "/app/items",
+    icon: Search,
+    label: "Search items",
+  },
+  {
     icon: ReceiptText,
-    label: "Upload 2062",
+    href: "/app/active-2062s",
+    label: "Review 2062s",
+  },
+  {
+    href: "/app/hand-receipts?view=archived",
+    icon: ClipboardList,
+    label: "Review archived receipts",
   },
 ];
 
@@ -26,7 +36,7 @@ export function DashboardQuickActions({ isReadOnly }: { isReadOnly: boolean }) {
     <section className="space-y-2">
       <h2 className="text-base font-semibold tracking-normal">Quick Actions</h2>
       <div className="grid gap-2 sm:grid-cols-2">
-        {writeActions.map(({ href, icon: Icon, label }) => (
+        {dashboardActions.map(({ href, icon: Icon, label }) => (
           <Link
             className="flex min-h-14 items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-card-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={href}

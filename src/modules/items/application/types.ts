@@ -106,19 +106,32 @@ export type ItemSearchResult = {
   matchedFields: SearchableItemField[];
 };
 
-export type DashboardSignedOutRow = {
+type DashboardSignedOutRowBase = {
   itemId: string;
   nomenclature: string;
   identifier: string;
   handReceiptId: string;
   handReceiptName: string;
   signedToName: string;
-  coverageType: "manual" | "da2062";
-  assignmentId: string | null;
-  documentFilename: string | null;
 };
 
+export type DashboardManualSignedOutRow = DashboardSignedOutRowBase & {
+  coverageType: "manual";
+  assignmentId: null;
+  documentFilename: null;
+};
+
+export type Dashboard2062SignedOutRow = DashboardSignedOutRowBase & {
+  coverageType: "da2062";
+  assignmentId: string;
+  documentFilename: string;
+};
+
+export type DashboardSignedOutRow =
+  | DashboardManualSignedOutRow
+  | Dashboard2062SignedOutRow;
+
 export type DashboardSignedOutResult = {
-  manualItems: DashboardSignedOutRow[];
-  coveredItems: DashboardSignedOutRow[];
+  manualItems: DashboardManualSignedOutRow[];
+  coveredItems: Dashboard2062SignedOutRow[];
 };

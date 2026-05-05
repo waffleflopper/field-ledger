@@ -18,9 +18,6 @@ export default async function DashboardPage() {
   return (
     <section className="space-y-6">
       <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-          Authenticated home
-        </p>
         <h1 className="text-2xl font-semibold tracking-normal md:text-3xl">
           Dashboard
         </h1>

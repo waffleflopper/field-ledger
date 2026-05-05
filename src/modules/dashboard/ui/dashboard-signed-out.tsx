@@ -138,7 +138,9 @@ export function DashboardSignedOut(props: DashboardSignedOutProps) {
           </Link>
         ) : null}
       </div>
-      {props.isReadOnly ? <DashboardSignedOutReadOnlyNotice /> : null}
+      {props.isReadOnly && hasSignedOut ? (
+        <DashboardSignedOutReadOnlyNotice />
+      ) : null}
       {hasSignedOut ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {props.coveredItems.length > 0 ? (

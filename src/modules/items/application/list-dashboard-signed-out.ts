@@ -2,8 +2,9 @@ import type { HandReceiptRepository } from "@/modules/hand-receipts";
 
 import type { ItemRepository } from "./item-repository";
 import type {
+  Dashboard2062SignedOutRow,
+  DashboardManualSignedOutRow,
   DashboardSignedOutResult,
-  DashboardSignedOutRow,
   ItemRecord,
 } from "./types";
 
@@ -23,7 +24,7 @@ function getItemIdentifier(item: ItemRecord) {
 function mapManualItem(
   item: ItemRecord,
   handReceiptNameById: Map<string, string>,
-): DashboardSignedOutRow {
+): DashboardManualSignedOutRow {
   return {
     itemId: item.id,
     nomenclature: item.nomenclature,
@@ -41,8 +42,14 @@ function mapManualItem(
 function mapCoveredItem(
   item: ItemRecord,
   handReceiptNameById: Map<string, string>,
-): DashboardSignedOutRow {
+): Dashboard2062SignedOutRow {
   const coverage = item.active2062Coverage;
+
+  if (!coverage) {
+    throw new Error(
+      "Active 2062 coverage is required for covered dashboard rows.",
+    );
+  }
 
   return {
     itemId: item.id,
@@ -51,10 +58,10 @@ function mapCoveredItem(
     handReceiptId: item.handReceiptId,
     handReceiptName:
       handReceiptNameById.get(item.handReceiptId) ?? "Unknown hand receipt",
-    signedToName: coverage?.contactName ?? "Unknown contact",
+    signedToName: coverage.contactName,
     coverageType: "da2062",
-    assignmentId: coverage?.assignmentId ?? null,
-    documentFilename: coverage?.documentFilename ?? null,
+    assignmentId: coverage.assignmentId,
+    documentFilename: coverage.documentFilename,
   };
 }
 
