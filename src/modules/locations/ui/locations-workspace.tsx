@@ -88,12 +88,7 @@ export function LocationsWorkspace({
         </p>
       ) : null}
 
-      {locationsQuery.isLoading ? (
-        <div className="space-y-2">
-          <div className="h-16 rounded-lg border bg-card" />
-          <div className="h-16 rounded-lg border bg-card" />
-        </div>
-      ) : locations.length > 0 ? (
+      {locations.length > 0 ? (
         <LocationList locations={locations} />
       ) : (
         <LocationEmptyState canCreate={canCreate} />

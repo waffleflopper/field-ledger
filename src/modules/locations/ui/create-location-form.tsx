@@ -33,6 +33,19 @@ export function CreateLocationForm({
   const [submitting, setSubmitting] = useState(false);
   const nameId = useId();
 
+  function resetForm() {
+    setName("");
+    setError(null);
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      resetForm();
+    }
+
+    setOpen(nextOpen);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -48,8 +61,7 @@ export function CreateLocationForm({
 
     try {
       await onSubmit({ name: trimmedName });
-      setName("");
-      setOpen(false);
+      handleOpenChange(false);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -62,7 +74,7 @@ export function CreateLocationForm({
   }
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
         <Button disabled={!canCreate} title={disabledReason ?? undefined}>
           <Plus aria-hidden="true" data-icon="inline-start" />
@@ -115,7 +127,7 @@ export function CreateLocationForm({
           <DialogFooter>
             <Button
               disabled={submitting}
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               type="button"
               variant="outline"
             >
