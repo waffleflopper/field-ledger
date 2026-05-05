@@ -39,6 +39,25 @@ UI workflows should use the typed tRPC boundary, currently
 `billing.capabilities`, so client code does not need to know how access state or
 tier data is stored.
 
+`billing.status` is the display query for `/app/billing`. It returns the same
+capability result plus the account trial window so the UI can explain the
+current state without duplicating capability rules or reading billing storage
+directly. `billing.capabilities` remains the enforcement query for operational
+feature gating.
+
+## MVP Account Surfaces
+
+`/app/billing` is a read-only account-access surface. It shows the current access
+state, subscription tier when present, active/read-only trial status, and hand
+receipt capability context. It must not add Stripe checkout, invoices, customer
+portal links, webhooks, or fake billing automation.
+
+`/app/settings` exposes the signed-in owner email, access/read-only state,
+session sign-out, and product-boundary messaging. The settings surface reminds
+users that Field Ledger is personal property-accountability assistance, not an
+official Army system of record, and that classified information, PHI, and
+sensitive operational details do not belong in the app.
+
 ## Read-Only Enforcement Pattern
 
 Read-only behavior is enforced in three layers:
