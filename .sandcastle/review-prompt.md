@@ -57,14 +57,8 @@ Review the code changes on branch `{{BRANCH}}` and improve code clarity, consist
 If you find improvements to make:
 
 1. Make the changes directly on this branch
-2. Run `pnpm verify:sandcastle`
+2. Run `pnpm verify`
 3. Commit describing the refinements
-
-Do not run `pnpm install`, `npm install`, `corepack install`, or any other dependency install/refresh command inside the sandbox.
-
-Do not run `pnpm test`, `pnpm test:*`, `pnpm exec vitest`, `pnpm exec playwright`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests unless the review finding explicitly depends on those surfaces and the needed dependencies/services already work without install repair.
-
-If a targeted check is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, report it as a verification limitation. Do not try to repair sandbox dependencies.
 
 If the code is already clean and well-structured, do nothing.
 
