@@ -68,6 +68,18 @@ Implementation note:
 
 Public/future routes can live outside `/app`, such as `/`, `/pricing`, `/login`, `/privacy`, and `/terms`.
 
+## Shared Record Routes
+
+`/app/contacts` is the standalone account-wide contact surface for reusable
+assignee names. It lets active accounts review and create display-name-only
+contacts, while paused/read-only accounts keep review access and cannot create
+new contacts.
+
+`/app/locations` is the standalone account-wide location surface for reusable
+place names. Both contacts and locations stay scoped to personal
+property-accountability context; they are not team, organization, or external
+address book workflows.
+
 ## Mock-Derived Screens
 
 The mock includes:
