@@ -16,6 +16,7 @@ import {
   clearSignedTo,
   createItem,
   getItem,
+  listDashboardSignedOut,
   listActiveItemsByHandReceipt,
   listArchivedItemsByHandReceipt,
   listItems,
@@ -28,6 +29,7 @@ import type {
   AppUnitOfWork,
   AppUnitOfWorkRepositories,
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
+import { deriveAccountCapabilities } from "@/modules/billing";
 import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 
 const optionalText = z
@@ -218,6 +220,18 @@ async function runInUnitOfWork<T>(
 }
 
 export const itemsRouter = createTRPCRouter({
+  dashboardSignedOut: protectedProcedure.query(({ ctx }) => {
+    const capabilities = deriveAccountCapabilities(ctx.account);
+
+    return listDashboardSignedOut({
+      accountId: ctx.account.id,
+      handReceiptRepository: ctx.handReceiptRepository,
+      itemRepository: ctx.itemRepository,
+    }).then((signedOut) => ({
+      isReadOnly: capabilities.isReadOnly,
+      ...signedOut,
+    }));
+  }),
   list: protectedProcedure.input(listItemsInput).query(({ ctx, input }) =>
     listItems({
       accountId: ctx.account.id,

@@ -109,6 +109,10 @@ test("dashboard shows requirement work in priority order on mobile", async ({
     page.getByRole("link").filter({ hasText: "Beyond window PMCS" }),
   ).toBeHidden();
   await expect(page.getByText("Dashboard receipt")).toHaveCount(3);
+  await expect(page.getByRole("link", { name: "Add item" })).toHaveAttribute(
+    "href",
+    "/app/hand-receipts",
+  );
 
   const sectionOrder = await page
     .getByRole("heading", { name: /^(Overdue|Due Soon|Upcoming)$/ })
@@ -122,6 +126,10 @@ test("dashboard shows requirement work in priority order on mobile", async ({
   await expect(
     page.getByRole("heading", { name: "Dashboard radio" }),
   ).toBeVisible();
+
+  await page.goto("/app/dashboard");
+  await page.getByRole("link", { name: "Add item" }).click();
+  await expect(page).toHaveURL(/\/app\/hand-receipts$/);
 });
 
 test("dashboard requirements use desktop width without horizontal overflow", async ({

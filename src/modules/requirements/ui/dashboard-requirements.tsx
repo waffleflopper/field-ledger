@@ -165,14 +165,7 @@ export function DashboardRequirements(props: DashboardRequirementsProps) {
 
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="text-base font-semibold tracking-normal">
-          Requirements
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Overdue, due soon, then upcoming item work.
-        </p>
-      </div>
+      <h2 className="text-base font-semibold tracking-normal">Requirements</h2>
       {props.isReadOnly ? (
         <DashboardReadOnlyNotice />
       ) : hasRequirements ? (

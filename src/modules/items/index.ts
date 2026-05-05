@@ -5,6 +5,7 @@ export * from "./application/create-item";
 export * from "./application/generated-id";
 export * from "./application/get-item";
 export * from "./application/item-repository";
+export * from "./application/list-dashboard-signed-out";
 export * from "./application/list-items";
 export * from "./application/move-item";
 export * from "./application/search-fields";
