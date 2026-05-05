@@ -17,6 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/trpc/react";
 
+function getFeedbackPageUrl() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
 export function FeedbackDialog({
   triggerClassName,
   triggerLabel = "Feedback",
@@ -54,7 +58,7 @@ export function FeedbackDialog({
 
     submitFeedback.mutate({
       message: trimmedMessage,
-      pageUrl: window.location.href,
+      pageUrl: getFeedbackPageUrl(),
     });
   }
 
