@@ -105,3 +105,20 @@ export type ItemSearchResult = {
   } | null;
   matchedFields: SearchableItemField[];
 };
+
+export type DashboardSignedOutRow = {
+  itemId: string;
+  nomenclature: string;
+  identifier: string;
+  handReceiptId: string;
+  handReceiptName: string;
+  signedToName: string;
+  coverageType: "manual" | "da2062";
+  assignmentId: string | null;
+  documentFilename: string | null;
+};
+
+export type DashboardSignedOutResult = {
+  manualItems: DashboardSignedOutRow[];
+  coveredItems: DashboardSignedOutRow[];
+};

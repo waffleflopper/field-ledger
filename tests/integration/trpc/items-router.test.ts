@@ -132,6 +132,45 @@ function createCaller({
 }
 
 describe("itemsRouter", () => {
+  it("returns signed-out dashboard rows for read-only accounts", async () => {
+    const itemRepository = new InMemoryItemRepository([
+      {
+        id: "6339644c-268c-4291-a625-dbe449d1fcf6",
+        accountId: "account-1",
+        handReceiptId: "7db2eba2-c7d5-4ca6-a0d5-7c1e763c7082",
+        nomenclature: "Dashboard radio",
+        ecn: "DASH-001",
+        serialNumber: null,
+        generatedId: null,
+        notes: null,
+        status: "active",
+        signedToContactId: "a3ef961e-1e78-4970-a2f8-17802b6d552d",
+        signedToContactName: "SSG Miller",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+
+    await expect(
+      createCaller({
+        account: createAccount({
+          accessState: "paused_read_only",
+          subscriptionTier: "pro",
+        }),
+        itemRepository,
+      }).items.dashboardSignedOut(),
+    ).resolves.toMatchObject({
+      isReadOnly: true,
+      manualItems: [
+        {
+          itemId: "6339644c-268c-4291-a625-dbe449d1fcf6",
+          signedToName: "SSG Miller",
+        },
+      ],
+      coveredItems: [],
+    });
+  });
+
   it("creates an item inside a hand receipt and returns it from that receipt list", async () => {
     const itemRepository = new InMemoryItemRepository();
     const caller = createCaller({ itemRepository });
