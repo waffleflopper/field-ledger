@@ -34,6 +34,7 @@ export function ContactsWorkspace({
     initialData: initialCapabilities,
   });
   const contacts = contactsQuery.data ?? [];
+  const hasContacts = contacts.length > 0;
   const capabilities = capabilitiesQuery.data ?? initialCapabilities;
   const disabledReason = getCreateDisabledReason(capabilities);
   const canCreate = disabledReason === null;
@@ -111,7 +112,7 @@ export function ContactsWorkspace({
           <div className="h-16 rounded-lg border bg-card" />
           <div className="h-16 rounded-lg border bg-card" />
         </div>
-      ) : contactsQuery.error ? (
+      ) : contactsQuery.error && !hasContacts ? (
         <div
           className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
@@ -122,23 +123,43 @@ export function ContactsWorkspace({
           />
           <p>{contactsQuery.error.message}</p>
         </div>
-      ) : contacts.length > 0 ? (
-        <ContactList
-          canManage={canCreate}
-          contacts={contacts}
-          disabledReason={disabledReason}
-          onArchive={async (contact) => {
-            await archiveMutation.mutateAsync({ id: contact.id });
-          }}
-          onUpdate={async (contact, input) => {
-            await updateMutation.mutateAsync({
-              id: contact.id,
-              displayName: input.displayName,
-            });
-          }}
-        />
       ) : (
-        <ContactEmptyState canCreate={canCreate} />
+        <div className="space-y-3">
+          {contactsQuery.error ? (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              role="status"
+            >
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <p>
+                Showing the last loaded contacts. Refresh failed:{" "}
+                {contactsQuery.error.message}
+              </p>
+            </div>
+          ) : null}
+
+          {hasContacts ? (
+            <ContactList
+              canManage={canCreate}
+              contacts={contacts}
+              disabledReason={disabledReason}
+              onArchive={async (contact) => {
+                await archiveMutation.mutateAsync({ id: contact.id });
+              }}
+              onUpdate={async (contact, input) => {
+                await updateMutation.mutateAsync({
+                  id: contact.id,
+                  displayName: input.displayName,
+                });
+              }}
+            />
+          ) : (
+            <ContactEmptyState canCreate={canCreate} />
+          )}
+        </div>
       )}
     </section>
   );

@@ -33,6 +33,7 @@ export function LocationsWorkspace({
     initialData: initialCapabilities,
   });
   const locations = locationsQuery.data ?? [];
+  const hasLocations = locations.length > 0;
   const capabilities = capabilitiesQuery.data ?? initialCapabilities;
   const disabledReason = getCreateDisabledReason(capabilities);
   const canCreate = disabledReason === null;
@@ -104,23 +105,60 @@ export function LocationsWorkspace({
         </p>
       ) : null}
 
-      {locations.length > 0 ? (
-        <LocationList
-          canManage={canCreate}
-          disabledReason={disabledReason}
-          locations={locations}
-          onArchive={async (location) => {
-            await archiveMutation.mutateAsync({ id: location.id });
-          }}
-          onUpdate={async (location, input) => {
-            await updateMutation.mutateAsync({
-              id: location.id,
-              name: input.name,
-            });
-          }}
-        />
+      {locationsQuery.isLoading ? (
+        <div className="space-y-2">
+          <div className="h-16 rounded-lg border bg-card" />
+          <div className="h-16 rounded-lg border bg-card" />
+          <div className="h-16 rounded-lg border bg-card" />
+        </div>
+      ) : locationsQuery.error && !hasLocations ? (
+        <div
+          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0"
+          />
+          <p>{locationsQuery.error.message}</p>
+        </div>
       ) : (
-        <LocationEmptyState canCreate={canCreate} />
+        <div className="space-y-3">
+          {locationsQuery.error ? (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              role="status"
+            >
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <p>
+                Showing the last loaded locations. Refresh failed:{" "}
+                {locationsQuery.error.message}
+              </p>
+            </div>
+          ) : null}
+
+          {hasLocations ? (
+            <LocationList
+              canManage={canCreate}
+              disabledReason={disabledReason}
+              locations={locations}
+              onArchive={async (location) => {
+                await archiveMutation.mutateAsync({ id: location.id });
+              }}
+              onUpdate={async (location, input) => {
+                await updateMutation.mutateAsync({
+                  id: location.id,
+                  name: input.name,
+                });
+              }}
+            />
+          ) : (
+            <LocationEmptyState canCreate={canCreate} />
+          )}
+        </div>
       )}
     </section>
   );
