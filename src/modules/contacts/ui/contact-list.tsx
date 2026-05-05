@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, CalendarDays, MapPin, Pencil } from "lucide-react";
+import { Archive, CalendarDays, Pencil, UserRound } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { LocationRecord } from "@/modules/locations/application/types";
+import type { ContactRecord } from "@/modules/contacts";
 
 function formatCreatedDate(date: Date) {
   return new Intl.DateTimeFormat("en", {
@@ -25,45 +25,45 @@ function formatCreatedDate(date: Date) {
   }).format(date);
 }
 
-type LocationListProps = {
-  locations: LocationRecord[];
+type ContactListProps = {
+  contacts: ContactRecord[];
   canManage: boolean;
   disabledReason: string | null;
-  onArchive: (location: LocationRecord) => Promise<void>;
+  onArchive: (contact: ContactRecord) => Promise<void>;
   onUpdate: (
-    location: LocationRecord,
-    input: { name: string },
+    contact: ContactRecord,
+    input: { displayName: string },
   ) => Promise<void>;
 };
 
-type LocationActionsProps = {
+type ContactActionsProps = {
   canManage: boolean;
+  contact: ContactRecord;
   disabledReason: string | null;
-  location: LocationRecord;
-  onArchive: (location: LocationRecord) => Promise<void>;
+  onArchive: (contact: ContactRecord) => Promise<void>;
   onUpdate: (
-    location: LocationRecord,
-    input: { name: string },
+    contact: ContactRecord,
+    input: { displayName: string },
   ) => Promise<void>;
 };
 
-function LocationActions({
+function ContactActions({
   canManage,
+  contact,
   disabledReason,
-  location,
   onArchive,
   onUpdate,
-}: LocationActionsProps) {
-  const nameId = useId();
+}: ContactActionsProps) {
+  const displayNameId = useId();
   const [editOpen, setEditOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [name, setName] = useState(location.name);
+  const [displayName, setDisplayName] = useState(contact.displayName);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   function handleEditOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
-      setName(location.name);
+      setDisplayName(contact.displayName);
       setError(null);
     }
 
@@ -74,23 +74,23 @@ function LocationActions({
     event.preventDefault();
     setError(null);
 
-    const trimmedName = name.trim();
+    const trimmedDisplayName = displayName.trim();
 
-    if (!trimmedName) {
-      setError("Location name is required.");
+    if (!trimmedDisplayName) {
+      setError("Contact display name is required.");
       return;
     }
 
     setPending(true);
 
     try {
-      await onUpdate(location, { name: trimmedName });
+      await onUpdate(contact, { displayName: trimmedDisplayName });
       setEditOpen(false);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Location was not updated.",
+          : "Contact was not updated.",
       );
     } finally {
       setPending(false);
@@ -102,13 +102,13 @@ function LocationActions({
     setPending(true);
 
     try {
-      await onArchive(location);
+      await onArchive(contact);
       setArchiveOpen(false);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Location was not archived.",
+          : "Contact was not archived.",
       );
     } finally {
       setPending(false);
@@ -122,31 +122,31 @@ function LocationActions({
           <Button
             disabled={!canManage}
             size="icon"
-            title={disabledReason ?? "Edit location"}
+            title={disabledReason ?? "Edit contact"}
             type="button"
             variant="outline"
           >
             <Pencil aria-hidden="true" className="size-4" />
-            <span className="sr-only">Edit {location.name}</span>
+            <span className="sr-only">Edit {contact.displayName}</span>
           </Button>
         </DialogTrigger>
         <DialogContent>
           <form className="space-y-4" onSubmit={handleEditSubmit}>
             <DialogHeader>
-              <DialogTitle>Edit location</DialogTitle>
+              <DialogTitle>Edit contact</DialogTitle>
               <DialogDescription>
-                Rename this reusable place record.
+                Rename this reusable assignee record.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <Label htmlFor={nameId}>Name</Label>
+              <Label htmlFor={displayNameId}>Display name</Label>
               <Input
                 autoComplete="off"
-                id={nameId}
+                id={displayNameId}
                 maxLength={120}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => setDisplayName(event.target.value)}
                 required
-                value={name}
+                value={displayName}
               />
             </div>
             {error ? (
@@ -176,20 +176,21 @@ function LocationActions({
           <Button
             disabled={!canManage}
             size="icon"
-            title={disabledReason ?? "Archive location"}
+            title={disabledReason ?? "Archive contact"}
             type="button"
             variant="outline"
           >
             <Archive aria-hidden="true" className="size-4" />
-            <span className="sr-only">Archive {location.name}</span>
+            <span className="sr-only">Archive {contact.displayName}</span>
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Archive location?</DialogTitle>
+            <DialogTitle>Archive contact?</DialogTitle>
             <DialogDescription>
-              {location.name} will leave normal location lists and suggestions.
-              Existing item records keep their historical context.
+              {contact.displayName} will leave normal contact lists and
+              suggestions. Existing signed-to and 2062 history keeps its
+              context.
             </DialogDescription>
           </DialogHeader>
           {error ? (
@@ -221,37 +222,37 @@ function LocationActions({
   );
 }
 
-export function LocationList({
+export function ContactList({
   canManage,
+  contacts,
   disabledReason,
-  locations,
   onArchive,
   onUpdate,
-}: LocationListProps) {
+}: ContactListProps) {
   return (
     <div className="divide-y rounded-lg border bg-card text-card-foreground">
-      {locations.map((location) => (
+      {contacts.map((contact) => (
         <article
           className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-secondary/40"
-          key={location.id}
+          key={contact.id}
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
-            <MapPin aria-hidden="true" className="size-4" />
+            <UserRound aria-hidden="true" className="size-4" />
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1">
               <h2 className="truncate text-base font-semibold tracking-normal">
-                {location.name}
+                {contact.displayName}
               </h2>
               <p className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
                 <CalendarDays aria-hidden="true" className="size-3.5" />
-                Added {formatCreatedDate(location.createdAt)}
+                Added {formatCreatedDate(contact.createdAt)}
               </p>
             </div>
-            <LocationActions
+            <ContactActions
               canManage={canManage}
+              contact={contact}
               disabledReason={disabledReason}
-              location={location}
               onArchive={onArchive}
               onUpdate={onUpdate}
             />

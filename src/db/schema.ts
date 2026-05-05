@@ -243,6 +243,7 @@ export const contacts = pgTable(
       .notNull()
       .references(() => accounts.id),
     displayName: text("display_name").notNull(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -267,6 +268,7 @@ export const locations = pgTable(
       .notNull()
       .references(() => accounts.id),
     name: text("name").notNull(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -275,10 +277,9 @@ export const locations = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("locations_account_id_lower_name_unique_idx").on(
-      table.accountId,
-      sql`lower(${table.name})`,
-    ),
+    uniqueIndex("locations_account_id_lower_name_unique_idx")
+      .on(table.accountId, sql`lower(${table.name})`)
+      .where(sql`${table.archivedAt} is null`),
   ],
 ).enableRLS();
 

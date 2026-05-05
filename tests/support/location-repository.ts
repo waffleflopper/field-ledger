@@ -14,6 +14,7 @@ export class InMemoryLocationRepository implements LocationRepository {
   async create(location: NewLocationRecord) {
     const createdLocation: LocationRecord = {
       ...location,
+      archivedAt: location.archivedAt ?? null,
       createdAt: location.createdAt ?? new Date(),
       updatedAt: location.updatedAt ?? new Date(),
     };
@@ -24,7 +25,10 @@ export class InMemoryLocationRepository implements LocationRepository {
 
   async findByAccountId(accountId: string) {
     return this.locations
-      .filter((location) => location.accountId === accountId)
+      .filter(
+        (location) =>
+          location.accountId === accountId && location.archivedAt == null,
+      )
       .sort((left, right) => left.name.localeCompare(right.name));
   }
 
@@ -41,7 +45,10 @@ export class InMemoryLocationRepository implements LocationRepository {
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
     return this.locations
-      .filter((location) => location.accountId === accountId)
+      .filter(
+        (location) =>
+          location.accountId === accountId && location.archivedAt == null,
+      )
       .filter(
         (location) =>
           normalizedQuery.length === 0 ||
@@ -49,6 +56,29 @@ export class InMemoryLocationRepository implements LocationRepository {
       )
       .sort((left, right) => left.name.localeCompare(right.name))
       .slice(0, 10);
+  }
+
+  async update(
+    accountId: string,
+    locationId: string,
+    values: Partial<Pick<LocationRecord, "archivedAt" | "name" | "updatedAt">>,
+  ) {
+    const index = this.locations.findIndex(
+      (location) =>
+        location.accountId === accountId && location.id === locationId,
+    );
+
+    if (index === -1) {
+      return null;
+    }
+
+    const updated: LocationRecord = {
+      ...this.locations[index]!,
+      ...values,
+    };
+
+    this.locations[index] = updated;
+    return updated;
   }
 }
 

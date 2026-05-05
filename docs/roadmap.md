@@ -55,8 +55,8 @@
 
 ## Phase 6: Contacts + Locations
 
-- account-wide reusable contacts
-- account-wide reusable locations
+- account-wide reusable contacts (MVP surface implemented at `/app/contacts`)
+- account-wide reusable locations (MVP surface implemented at `/app/locations`)
 - inline create/select flows
 
 ## Phase 7: Requirements

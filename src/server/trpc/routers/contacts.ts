@@ -2,9 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  archiveContact,
   createContact,
   listContacts,
   searchContacts,
+  updateContact,
 } from "@/modules/contacts";
 import type {
   AppUnitOfWork,
@@ -18,6 +20,14 @@ const contactDisplayNameInput = z.object({
     .trim()
     .min(1, "Contact display name is required.")
     .max(120),
+});
+
+const contactIdInput = z.object({
+  id: z.uuid(),
+});
+
+const updateContactInput = contactDisplayNameInput.extend({
+  id: z.uuid(),
 });
 
 const searchContactsInput = z.object({
@@ -36,6 +46,8 @@ function toTRPCError(
       throw new TRPCError({ code: "FORBIDDEN", message });
     case "Contact display name is required.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
+    case "Contact is already archived.":
+      throw new TRPCError({ code: "CONFLICT", message });
     default:
       console.error("Unexpected contacts tRPC error.", {
         accountId: context.accountId,
@@ -103,4 +115,57 @@ export const contactsRouter = createTRPCRouter({
         }),
       ),
     ),
+  update: protectedProcedure
+    .input(updateContactInput)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await runInUnitOfWork(
+        ctx,
+        "contacts.update",
+        (repositories) =>
+          updateContact({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            contactId: input.id,
+            input: {
+              displayName: input.displayName,
+            },
+            contactRepository: repositories.contactRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+      );
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Contact was not found.",
+        });
+      }
+
+      return updated;
+    }),
+  archive: protectedProcedure
+    .input(contactIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const archived = await runInUnitOfWork(
+        ctx,
+        "contacts.archive",
+        (repositories) =>
+          archiveContact({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            contactId: input.id,
+            contactRepository: repositories.contactRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+      );
+
+      if (!archived) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Contact was not found.",
+        });
+      }
+
+      return archived;
+    }),
 });

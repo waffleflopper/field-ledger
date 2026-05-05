@@ -8,6 +8,11 @@ export interface LocationRepository {
     locationId: string,
   ): Promise<LocationRecord | null>;
   searchByName(accountId: string, query: string): Promise<LocationRecord[]>;
+  update(
+    accountId: string,
+    locationId: string,
+    values: Partial<Pick<LocationRecord, "archivedAt" | "name" | "updatedAt">>,
+  ): Promise<LocationRecord | null>;
 }
 
 export function createUnavailableLocationRepository(): LocationRepository {
@@ -22,6 +27,9 @@ export function createUnavailableLocationRepository(): LocationRepository {
       throw new Error("An authenticated database session is required.");
     },
     async searchByName() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async update() {
       throw new Error("An authenticated database session is required.");
     },
   };

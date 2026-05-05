@@ -1,16 +1,17 @@
 "use client";
 
-import type { AccountCapabilities } from "@/modules/billing";
-import type { LocationRecord } from "@/modules/locations/application/types";
-import { trpc } from "@/trpc/react";
 import { AlertTriangle } from "lucide-react";
-import { CreateLocationForm } from "./create-location-form";
-import { LocationEmptyState } from "./location-empty-state";
-import { LocationList } from "./location-list";
 
-type LocationsWorkspaceProps = {
+import type { AccountCapabilities } from "@/modules/billing";
+import type { ContactRecord } from "@/modules/contacts";
+import { trpc } from "@/trpc/react";
+import { ContactEmptyState } from "./contact-empty-state";
+import { ContactList } from "./contact-list";
+import { CreateContactForm } from "./create-contact-form";
+
+type ContactsWorkspaceProps = {
   initialCapabilities: AccountCapabilities;
-  initialLocations: LocationRecord[];
+  initialContacts: ContactRecord[];
 };
 
 function getCreateDisabledReason(capabilities: AccountCapabilities) {
@@ -21,44 +22,44 @@ function getCreateDisabledReason(capabilities: AccountCapabilities) {
   return null;
 }
 
-export function LocationsWorkspace({
+export function ContactsWorkspace({
   initialCapabilities,
-  initialLocations,
-}: LocationsWorkspaceProps) {
+  initialContacts,
+}: ContactsWorkspaceProps) {
   const utilities = trpc.useUtils();
-  const locationsQuery = trpc.locations.list.useQuery(undefined, {
-    initialData: initialLocations,
+  const contactsQuery = trpc.contacts.list.useQuery(undefined, {
+    initialData: initialContacts,
   });
   const capabilitiesQuery = trpc.billing.capabilities.useQuery(undefined, {
     initialData: initialCapabilities,
   });
-  const locations = locationsQuery.data ?? [];
-  const hasLocations = locations.length > 0;
+  const contacts = contactsQuery.data ?? [];
+  const hasContacts = contacts.length > 0;
   const capabilities = capabilitiesQuery.data ?? initialCapabilities;
   const disabledReason = getCreateDisabledReason(capabilities);
   const canCreate = disabledReason === null;
-  const createMutation = trpc.locations.create.useMutation({
+  const createMutation = trpc.contacts.create.useMutation({
     onSuccess: async () => {
       await Promise.all([
-        utilities.locations.list.invalidate(),
-        utilities.locations.search.invalidate(),
+        utilities.contacts.list.invalidate(),
+        utilities.contacts.search.invalidate(),
         utilities.billing.capabilities.invalidate(),
       ]);
     },
   });
-  const updateMutation = trpc.locations.update.useMutation({
+  const updateMutation = trpc.contacts.update.useMutation({
     onSuccess: async () => {
       await Promise.all([
-        utilities.locations.list.invalidate(),
-        utilities.locations.search.invalidate(),
+        utilities.contacts.list.invalidate(),
+        utilities.contacts.search.invalidate(),
       ]);
     },
   });
-  const archiveMutation = trpc.locations.archive.useMutation({
+  const archiveMutation = trpc.contacts.archive.useMutation({
     onSuccess: async () => {
       await Promise.all([
-        utilities.locations.list.invalidate(),
-        utilities.locations.search.invalidate(),
+        utilities.contacts.list.invalidate(),
+        utilities.contacts.search.invalidate(),
       ]);
     },
   });
@@ -68,18 +69,18 @@ export function LocationsWorkspace({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Reusable places
+            Reusable assignees
           </p>
           <h1 className="text-2xl font-semibold tracking-normal md:text-3xl">
-            Locations
+            Contacts
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Review account-wide places and keep item location names consistent
-            without storing sensitive operational detail.
+            Review account-wide assignee records and keep signed-to names
+            consistent across manual item assignments and formal 2062s.
           </p>
         </div>
 
-        <CreateLocationForm
+        <CreateContactForm
           canCreate={canCreate}
           disabledReason={disabledReason}
           onSubmit={async (input) => {
@@ -94,8 +95,8 @@ export function LocationsWorkspace({
           className="mt-0.5 size-4 shrink-0 text-primary"
         />
         <p>
-          Keep location names plain. Do not store classified information, PHI,
-          grid coordinates, or sensitive operational detail here.
+          Contacts are lightweight assignee names, not a team directory. Keep
+          personal context minimal and avoid sensitive information.
         </p>
       </div>
 
@@ -105,13 +106,13 @@ export function LocationsWorkspace({
         </p>
       ) : null}
 
-      {locationsQuery.isLoading ? (
+      {contactsQuery.isLoading ? (
         <div className="space-y-2">
           <div className="h-16 rounded-lg border bg-card" />
           <div className="h-16 rounded-lg border bg-card" />
           <div className="h-16 rounded-lg border bg-card" />
         </div>
-      ) : locationsQuery.error && !hasLocations ? (
+      ) : contactsQuery.error && !hasContacts ? (
         <div
           className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
@@ -120,11 +121,11 @@ export function LocationsWorkspace({
             aria-hidden="true"
             className="mt-0.5 size-4 shrink-0"
           />
-          <p>{locationsQuery.error.message}</p>
+          <p>{contactsQuery.error.message}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {locationsQuery.error ? (
+          {contactsQuery.error ? (
             <div
               className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               role="status"
@@ -134,29 +135,29 @@ export function LocationsWorkspace({
                 className="mt-0.5 size-4 shrink-0"
               />
               <p>
-                Showing the last loaded locations. Refresh failed:{" "}
-                {locationsQuery.error.message}
+                Showing the last loaded contacts. Refresh failed:{" "}
+                {contactsQuery.error.message}
               </p>
             </div>
           ) : null}
 
-          {hasLocations ? (
-            <LocationList
+          {hasContacts ? (
+            <ContactList
               canManage={canCreate}
+              contacts={contacts}
               disabledReason={disabledReason}
-              locations={locations}
-              onArchive={async (location) => {
-                await archiveMutation.mutateAsync({ id: location.id });
+              onArchive={async (contact) => {
+                await archiveMutation.mutateAsync({ id: contact.id });
               }}
-              onUpdate={async (location, input) => {
+              onUpdate={async (contact, input) => {
                 await updateMutation.mutateAsync({
-                  id: location.id,
-                  name: input.name,
+                  id: contact.id,
+                  displayName: input.displayName,
                 });
               }}
             />
           ) : (
-            <LocationEmptyState canCreate={canCreate} />
+            <ContactEmptyState canCreate={canCreate} />
           )}
         </div>
       )}

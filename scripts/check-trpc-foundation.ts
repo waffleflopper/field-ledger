@@ -42,6 +42,9 @@ async function main() {
       async searchByName() {
         return [];
       },
+      async update() {
+        throw new Error("Foundation check should not update contacts.");
+      },
     },
     handReceiptRepository: {
       async create() {
@@ -110,6 +113,9 @@ async function main() {
       },
       async searchByName() {
         return [];
+      },
+      async update() {
+        throw new Error("Foundation check should not update locations.");
       },
     },
     requirementRepository: {
