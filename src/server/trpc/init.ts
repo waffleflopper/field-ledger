@@ -12,6 +12,7 @@ import {
 } from "@/modules/requirements";
 import { createUnavailableDocumentRepository } from "@/modules/documents";
 import { createUnavailableStoragePort } from "@/modules/provider-boundaries/storage";
+import { createUnavailableGitHubIssuesPort } from "@/modules/provider-boundaries/github/issues";
 import type { TRPCContext } from "@/server/trpc/context";
 
 const t = initTRPC.context<TRPCContext>().create({
@@ -45,6 +46,8 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       handReceiptRepository: ctx.handReceiptRepository,
       itemRepository: ctx.itemRepository,
       locationRepository: ctx.locationRepository,
+      githubIssuesPort:
+        ctx.githubIssuesPort ?? createUnavailableGitHubIssuesPort(),
       requirementCompletionRepository:
         ctx.requirementCompletionRepository ??
         createUnavailableRequirementCompletionRepository(),

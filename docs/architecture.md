@@ -46,6 +46,7 @@ Required boundaries:
 - audit logger
 - notifications
 - import/export
+- issue tracker feedback
 
 Better Auth is the selected auth/session provider. Supabase Auth was used in
 the first Phase 1 implementation, but ADR 0005 replaces it as the intended auth
@@ -59,6 +60,12 @@ boundaries.
 The audit logger boundary is app-owned. Product modules emit meaningful events
 through audit application services and repository ports; routes, UI components,
 and future provider adapters must not insert audit records directly.
+
+The issue tracker feedback boundary is app-owned. In-app feedback may file
+triage issues through a GitHub provider adapter, but feedback bodies must not
+include account ids, auth provider ids, email addresses, document contents, or
+other private account metadata. The adapter must require an explicit
+Field-Ledger-specific token instead of falling back to generic runtime tokens.
 
 When a product workflow must persist domain state and audit history atomically,
 use the app-owned database unit-of-work boundary. The unit of work provides

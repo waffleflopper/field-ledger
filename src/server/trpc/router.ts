@@ -5,6 +5,7 @@ import { auditRouter } from "@/server/trpc/routers/audit";
 import { billingRouter } from "@/server/trpc/routers/billing";
 import { contactsRouter } from "@/server/trpc/routers/contacts";
 import { documentsRouter } from "@/server/trpc/routers/documents";
+import { feedbackRouter } from "@/server/trpc/routers/feedback";
 import { foundationRouter } from "@/server/trpc/routers/foundation";
 import { handReceiptsRouter } from "@/server/trpc/routers/hand-receipts";
 import { itemsRouter } from "@/server/trpc/routers/items";
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   billing: billingRouter,
   contacts: contactsRouter,
   documents: documentsRouter,
+  feedback: feedbackRouter,
   foundation: foundationRouter,
   handReceipts: handReceiptsRouter,
   items: itemsRouter,
