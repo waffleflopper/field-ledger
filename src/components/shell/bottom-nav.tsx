@@ -11,6 +11,7 @@ import {
   secondaryNavItems,
   type ShellNavItem,
 } from "@/components/shell/navigation-config";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -128,6 +129,12 @@ export function BottomNav() {
               <MoreSheetSection items={footerNavItems} title="Account" />
               <div className="border-t pt-2">
                 <FeedbackDialog triggerClassName="h-10 w-full justify-start border border-border bg-card px-3" />
+              </div>
+              <div className="border-t pt-2">
+                <ModeToggle
+                  className="h-10 w-full justify-start border border-border bg-card px-3"
+                  contentAlign="start"
+                />
               </div>
               <form
                 action="/auth/signout"

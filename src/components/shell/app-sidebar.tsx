@@ -11,6 +11,7 @@ import {
   secondaryNavItems,
   type ShellNavItem,
 } from "@/components/shell/navigation-config";
+import { ModeToggle } from "@/components/mode-toggle";
 import {
   Sidebar,
   SidebarContent,
@@ -111,6 +112,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
+        <ModeToggle
+          className="h-8 w-full justify-start px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+          labelClassName="group-data-[collapsible=icon]:hidden"
+        />
         <FeedbackDialog triggerClassName="h-8 w-full justify-start px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&_span]:hidden" />
         <SidebarMenu>
           {footerNavItems.map((item) => (
