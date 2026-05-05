@@ -41,5 +41,13 @@ describe("billingRouter", () => {
       activeHandReceiptLimit: 3,
       subscriptionTier: "base",
     });
+
+    await expect(caller.billing.status()).resolves.toMatchObject({
+      isReadOnly: false,
+      activeHandReceiptLimit: 3,
+      subscriptionTier: "base",
+      trialStartsAt: expect.any(Date),
+      trialEndsAt: expect.any(Date),
+    });
   });
 });

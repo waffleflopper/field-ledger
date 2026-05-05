@@ -108,6 +108,20 @@ export function getOnboardingStatus({
   };
 }
 
+export function getAccountSessionSummary({
+  account,
+  email,
+  now = new Date(),
+}: GetOnboardingStatusInput & { email: string | null }) {
+  const capabilities = deriveAccountCapabilities(account, now);
+
+  return {
+    email,
+    accessState: capabilities.accessState,
+    isReadOnly: capabilities.isReadOnly,
+  };
+}
+
 export async function completeOnboarding({
   account,
   repository,

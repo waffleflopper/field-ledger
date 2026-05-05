@@ -56,6 +56,12 @@ describe("accountsRouter", () => {
       isReadOnly: false,
     });
 
+    await expect(caller.accounts.me()).resolves.toEqual({
+      email: "owner@example.com",
+      accessState: "active",
+      isReadOnly: false,
+    });
+
     await expect(caller.accounts.completeOnboarding()).resolves.toMatchObject({
       completed: true,
       accessState: "active",
