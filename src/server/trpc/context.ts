@@ -58,6 +58,11 @@ import {
 } from "@/modules/provider-boundaries/database/app-unit-of-work";
 import { getDrizzleClient } from "@/modules/provider-boundaries/database/drizzle";
 import {
+  createGitHubIssuesPortFromEnvironment,
+  createUnavailableGitHubIssuesPort,
+  type GitHubIssuesPort,
+} from "@/modules/provider-boundaries/github/issues";
+import {
   createStoragePortFromEnvironment,
   createUnavailableStoragePort,
   type StoragePort,
@@ -75,6 +80,7 @@ export async function createTRPCContext(): Promise<{
   handReceiptRepository: HandReceiptRepository;
   itemRepository: ItemRepository;
   locationRepository: LocationRepository;
+  githubIssuesPort?: GitHubIssuesPort;
   requirementCompletionRepository?: RequirementCompletionRepository;
   requirementRepository: RequirementRepository;
   unitOfWork: AppUnitOfWork;
@@ -98,6 +104,7 @@ export async function createTRPCContext(): Promise<{
       handReceiptRepository: createUnavailableHandReceiptRepository(),
       itemRepository: createUnavailableItemRepository(),
       locationRepository: createUnavailableLocationRepository(),
+      githubIssuesPort: createUnavailableGitHubIssuesPort(),
       requirementCompletionRepository:
         createUnavailableRequirementCompletionRepository(),
       requirementRepository: createUnavailableRequirementRepository(),
@@ -142,6 +149,7 @@ export async function createTRPCContext(): Promise<{
     locationRepository: createDrizzleLocationRepository(db, {
       authSubject: session.userId,
     }),
+    githubIssuesPort: createGitHubIssuesPortFromEnvironment(),
     requirementCompletionRepository:
       createDrizzleRequirementCompletionRepository(db, {
         authSubject: session.userId,

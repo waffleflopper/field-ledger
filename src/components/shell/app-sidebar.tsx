@@ -26,6 +26,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { FeedbackDialog } from "@/modules/feedback/ui/feedback-dialog";
 
 function SidebarNavItem({
   item,
@@ -110,6 +111,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
+        <FeedbackDialog triggerClassName="h-8 w-full justify-start px-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&_span]:hidden" />
         <SidebarMenu>
           {footerNavItems.map((item) => (
             <SidebarNavItem item={item} key={item.href} pathname={pathname} />

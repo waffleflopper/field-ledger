@@ -22,9 +22,16 @@ Provider integrations must sit behind internal boundaries:
 - audit logging
 - notification
 - import/export
+- issue tracker feedback
 
 Domain modules and UI routes must call app-owned services/ports, not Better
 Auth, Supabase, or Stripe directly.
+
+In-app feedback may use GitHub Issues through an internal provider boundary.
+The feedback module sends only the user's feedback text and the current page
+URL. It must not publish account ids, auth provider ids, email addresses, or
+other private account metadata to GitHub, and the adapter must require an
+explicit Field Ledger token.
 
 ## Consequences
 
@@ -37,3 +44,4 @@ Auth, Supabase, or Stripe directly.
 
 - Direct Better Auth, Stripe, or Supabase calls from UI components.
 - A large fake billing simulation with invoices/webhooks/checkouts. MVP fake billing should stay minimal.
+- Falling back to generic GitHub tokens for an in-app write integration.

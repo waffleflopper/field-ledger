@@ -22,6 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { FeedbackDialog } from "@/modules/feedback/ui/feedback-dialog";
 
 function BottomNavLink({
   item,
@@ -125,6 +126,9 @@ export function BottomNav() {
             <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1">
               <MoreSheetSection items={secondaryNavItems} title="Records" />
               <MoreSheetSection items={footerNavItems} title="Account" />
+              <div className="border-t pt-2">
+                <FeedbackDialog triggerClassName="h-10 w-full justify-start border border-border bg-card px-3" />
+              </div>
               <form
                 action="/auth/signout"
                 className="border-t pt-2"

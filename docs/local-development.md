@@ -68,6 +68,18 @@ local Supabase project can run at the same time.
    pnpm dev
    ```
 
+## Optional GitHub Feedback
+
+The protected app shell includes a feedback button that files GitHub issues on
+`waffleflopper/field-ledger` with the `needs-triage` and `feedback` labels.
+Set `FIELD_LEDGER_GITHUB_TOKEN` in `.env.local` with issue write access to
+enable it locally. A generic `GITHUB_TOKEN` is deliberately ignored so local
+tooling tokens are not reused by accident. Without the token, the app keeps
+running but feedback submissions return `Feedback is not configured.`
+
+Feedback issues include the submitted text and page URL only. They do not
+include account ids, auth provider ids, or email addresses.
+
 ## Drizzle Migrations
 
 Drizzle owns app schema and migrations.
