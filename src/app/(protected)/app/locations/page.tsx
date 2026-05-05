@@ -1,14 +1,18 @@
-import { MapPin } from "lucide-react";
+import { LocationsWorkspace } from "@/modules/locations/ui/locations-workspace";
+import { createTRPCContext } from "@/server/trpc/context";
+import { appRouter } from "@/server/trpc/router";
 
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+export default async function LocationsPage() {
+  const caller = appRouter.createCaller(await createTRPCContext());
+  const [locations, capabilities] = await Promise.all([
+    caller.locations.list(),
+    caller.billing.capabilities(),
+  ]);
 
-export default function LocationsPage() {
   return (
-    <PlaceholderPage
-      description="Locations will provide reusable account-level places for property records without storing sensitive operational details."
-      icon={MapPin}
-      sections={["Location list", "Reusable places", "Item placement"]}
-      title="Locations"
+    <LocationsWorkspace
+      initialCapabilities={capabilities}
+      initialLocations={locations}
     />
   );
 }

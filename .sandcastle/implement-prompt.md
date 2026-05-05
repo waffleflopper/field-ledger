@@ -49,13 +49,7 @@ Do not invent product decisions or architecture changes that are not supported b
 
 # FEEDBACK LOOPS
 
-Before committing, run `pnpm verify:sandcastle`.
-
-Do not run `pnpm install`, `npm install`, `corepack install`, or any other dependency install/refresh command inside the sandbox.
-
-Do not run `pnpm test`, `pnpm test:*`, `pnpm exec vitest`, `pnpm exec playwright`, Playwright, local Supabase, Docker-in-Docker, RLS tests, or broad end-to-end tests unless the issue explicitly requires those surfaces and the needed dependencies/services already work without install repair.
-
-If a targeted test is blocked by missing optional native packages, browser binaries, Supabase, Docker, or another sandbox dependency issue, stop that check and record it as a verification limitation in the commit message. Do not try to repair sandbox dependencies.
+Before committing, run `pnpm verify`
 
 # COMMIT
 

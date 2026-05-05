@@ -186,9 +186,11 @@ Required:
 
 - name
 
-Creating a location emits `location.created`. Locations can be created inline
-from item create and edit flows, selected from existing account locations, or
-cleared from an item when the place is unknown.
+Creating a location emits `location.created`. Locations can be created from the
+standalone Locations route or inline from item create and edit flows, selected
+from existing account locations, or cleared from an item when the place is
+unknown. MVP locations remain name-only and must not include classified
+information, PHI, grid coordinates, or sensitive operational detail.
 
 Optional later:
 
