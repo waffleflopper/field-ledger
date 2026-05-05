@@ -45,6 +45,22 @@ export function LocationsWorkspace({
       ]);
     },
   });
+  const updateMutation = trpc.locations.update.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utilities.locations.list.invalidate(),
+        utilities.locations.search.invalidate(),
+      ]);
+    },
+  });
+  const archiveMutation = trpc.locations.archive.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utilities.locations.list.invalidate(),
+        utilities.locations.search.invalidate(),
+      ]);
+    },
+  });
 
   return (
     <section className="space-y-5">
@@ -89,7 +105,20 @@ export function LocationsWorkspace({
       ) : null}
 
       {locations.length > 0 ? (
-        <LocationList locations={locations} />
+        <LocationList
+          canManage={canCreate}
+          disabledReason={disabledReason}
+          locations={locations}
+          onArchive={async (location) => {
+            await archiveMutation.mutateAsync({ id: location.id });
+          }}
+          onUpdate={async (location, input) => {
+            await updateMutation.mutateAsync({
+              id: location.id,
+              name: input.name,
+            });
+          }}
+        />
       ) : (
         <LocationEmptyState canCreate={canCreate} />
       )}

@@ -46,6 +46,22 @@ export function ContactsWorkspace({
       ]);
     },
   });
+  const updateMutation = trpc.contacts.update.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utilities.contacts.list.invalidate(),
+        utilities.contacts.search.invalidate(),
+      ]);
+    },
+  });
+  const archiveMutation = trpc.contacts.archive.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utilities.contacts.list.invalidate(),
+        utilities.contacts.search.invalidate(),
+      ]);
+    },
+  });
 
   return (
     <section className="space-y-5">
@@ -107,7 +123,20 @@ export function ContactsWorkspace({
           <p>{contactsQuery.error.message}</p>
         </div>
       ) : contacts.length > 0 ? (
-        <ContactList contacts={contacts} />
+        <ContactList
+          canManage={canCreate}
+          contacts={contacts}
+          disabledReason={disabledReason}
+          onArchive={async (contact) => {
+            await archiveMutation.mutateAsync({ id: contact.id });
+          }}
+          onUpdate={async (contact, input) => {
+            await updateMutation.mutateAsync({
+              id: contact.id,
+              displayName: input.displayName,
+            });
+          }}
+        />
       ) : (
         <ContactEmptyState canCreate={canCreate} />
       )}

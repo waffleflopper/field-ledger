@@ -5,6 +5,13 @@ export interface ContactRepository {
   findByAccountId(accountId: string): Promise<ContactRecord[]>;
   findById(accountId: string, contactId: string): Promise<ContactRecord | null>;
   searchByName(accountId: string, query: string): Promise<ContactRecord[]>;
+  update(
+    accountId: string,
+    contactId: string,
+    values: Partial<
+      Pick<ContactRecord, "archivedAt" | "displayName" | "updatedAt">
+    >,
+  ): Promise<ContactRecord | null>;
 }
 
 export function createUnavailableContactRepository(): ContactRepository {
@@ -19,6 +26,9 @@ export function createUnavailableContactRepository(): ContactRepository {
       throw new Error("An authenticated database session is required.");
     },
     async searchByName() {
+      throw new Error("An authenticated database session is required.");
+    },
+    async update() {
       throw new Error("An authenticated database session is required.");
     },
   };

@@ -102,6 +102,43 @@ describe("locationsRouter", () => {
     ]);
   });
 
+  it("updates and archives locations through tRPC", async () => {
+    const locationRepository = new InMemoryLocationRepository();
+    const auditRepository = new InMemoryAuditRepository();
+    const caller = createCaller({ auditRepository, locationRepository });
+
+    const location = await caller.locations.create({
+      name: "Arms room",
+    });
+
+    await expect(
+      caller.locations.update({
+        id: location.id,
+        name: "Motor pool",
+      }),
+    ).resolves.toMatchObject({
+      id: location.id,
+      name: "Motor pool",
+    });
+    await expect(
+      caller.locations.archive({
+        id: location.id,
+      }),
+    ).resolves.toMatchObject({
+      id: location.id,
+      archivedAt: expect.any(Date),
+    });
+    await expect(caller.locations.list()).resolves.toEqual([]);
+    await expect(caller.locations.search({ query: "motor" })).resolves.toEqual(
+      [],
+    );
+    expect(auditRepository.events).toMatchObject([
+      { action: "location.created" },
+      { action: "location.updated" },
+      { action: "location.archived" },
+    ]);
+  });
+
   it("maps read-only location creation to FORBIDDEN while keeping reads available", async () => {
     const locationRepository = new InMemoryLocationRepository([
       {
@@ -128,6 +165,23 @@ describe("locationsRouter", () => {
     await expect(
       caller.locations.create({
         name: "Motor pool",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.locations.update({
+        id: "00000000-0000-4000-8000-000000000001",
+        name: "Motor pool",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.locations.archive({
+        id: "00000000-0000-4000-8000-000000000001",
       }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",

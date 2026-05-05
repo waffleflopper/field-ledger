@@ -102,6 +102,41 @@ describe("contactsRouter", () => {
     ]);
   });
 
+  it("updates and archives contacts through tRPC", async () => {
+    const contactRepository = new InMemoryContactRepository();
+    const auditRepository = new InMemoryAuditRepository();
+    const caller = createCaller({ auditRepository, contactRepository });
+
+    const contact = await caller.contacts.create({
+      displayName: "SSG Rivera",
+    });
+
+    await expect(
+      caller.contacts.update({
+        id: contact.id,
+        displayName: "SFC Rivera",
+      }),
+    ).resolves.toMatchObject({
+      id: contact.id,
+      displayName: "SFC Rivera",
+    });
+    await expect(
+      caller.contacts.archive({
+        id: contact.id,
+      }),
+    ).resolves.toMatchObject({
+      id: contact.id,
+      archivedAt: expect.any(Date),
+    });
+    await expect(caller.contacts.list()).resolves.toEqual([]);
+    await expect(caller.contacts.search({ query: "sfc" })).resolves.toEqual([]);
+    expect(auditRepository.events).toMatchObject([
+      { action: "contact.created" },
+      { action: "contact.updated" },
+      { action: "contact.archived" },
+    ]);
+  });
+
   it("maps read-only contact creation to FORBIDDEN while keeping reads available", async () => {
     const contactRepository = new InMemoryContactRepository([
       {
@@ -128,6 +163,23 @@ describe("contactsRouter", () => {
     await expect(
       caller.contacts.create({
         displayName: "CPL Nguyen",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.contacts.update({
+        id: "00000000-0000-4000-8000-000000000001",
+        displayName: "CPL Nguyen",
+      }),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "This account is read-only.",
+    });
+    await expect(
+      caller.contacts.archive({
+        id: "00000000-0000-4000-8000-000000000001",
       }),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",

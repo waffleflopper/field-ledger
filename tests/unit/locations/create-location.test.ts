@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
-import { createLocation, searchLocations } from "@/modules/locations";
+import {
+  archiveLocation,
+  createLocation,
+  searchLocations,
+  updateLocation,
+} from "@/modules/locations";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryLocationRepository } from "../../support/location-repository";
 
@@ -127,5 +132,89 @@ describe("locations", () => {
         repository,
       }),
     ).resolves.toEqual([]);
+  });
+
+  it("updates an active location and records audit history", async () => {
+    const account = createAccount();
+    const locationRepository = new InMemoryLocationRepository([
+      {
+        id: "location-1",
+        accountId: account.id,
+        name: "Arms room",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const location = await updateLocation({
+      account,
+      actorId: account.userId,
+      locationId: "location-1",
+      input: {
+        name: "Motor pool",
+      },
+      locationRepository,
+      auditRepository,
+      now: new Date("2026-05-02T12:00:00.000Z"),
+    });
+
+    expect(location).toMatchObject({
+      id: "location-1",
+      name: "Motor pool",
+    });
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "location.updated",
+        targetType: "location",
+        targetId: "location-1",
+        metadata: {
+          name: "Motor pool",
+          previousName: "Arms room",
+        },
+      },
+    ]);
+  });
+
+  it("archives locations instead of deleting them", async () => {
+    const account = createAccount();
+    const locationRepository = new InMemoryLocationRepository([
+      {
+        id: "location-1",
+        accountId: account.id,
+        name: "Arms room",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const archived = await archiveLocation({
+      account,
+      actorId: account.userId,
+      locationId: "location-1",
+      locationRepository,
+      auditRepository,
+      now: new Date("2026-05-02T12:00:00.000Z"),
+    });
+
+    expect(archived).toMatchObject({
+      id: "location-1",
+      archivedAt: new Date("2026-05-02T12:00:00.000Z"),
+    });
+    await expect(
+      searchLocations({
+        accountId: account.id,
+        query: "arms",
+        repository: locationRepository,
+      }),
+    ).resolves.toEqual([]);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "location.archived",
+        targetType: "location",
+        targetId: "location-1",
+      },
+    ]);
   });
 });

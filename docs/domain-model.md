@@ -172,11 +172,15 @@ Optional later:
 - rank
 - section/unit
 - notes
-- archived/inactive status
 
 Manual signed-to fallback always references a contact. If the user types a new
 name, create a contact with only display name. Creating a contact emits
 `contact.created`.
+
+Contacts can be renamed or archived from the standalone Contacts route.
+Archiving a contact removes it from normal contact lists and suggestions, but
+does not delete the record or erase signed-to and 2062 history. Contact update
+and archive actions emit `contact.updated` and `contact.archived`.
 
 ## Locations
 
@@ -198,7 +202,11 @@ Optional later:
 - room
 - section
 - notes
-- archived/inactive status
+
+Locations can be renamed or archived from the standalone Locations route.
+Archiving a location removes it from normal location lists and suggestions, but
+does not delete the record or erase item history. Location update and archive
+actions emit `location.updated` and `location.archived`.
 
 ## Documents
 

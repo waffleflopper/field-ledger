@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike } from "drizzle-orm";
+import { and, asc, eq, ilike, isNull } from "drizzle-orm";
 
 import { contacts } from "@/db/schema";
 import type { ContactRepository } from "@/modules/contacts";
@@ -21,6 +21,7 @@ function toContactRecord(row: ContactRow): ContactRecord {
     id: row.id,
     accountId: row.accountId,
     displayName: row.displayName,
+    archivedAt: row.archivedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -49,7 +50,9 @@ function createContactRepository(run: ContactOperation): ContactRepository {
         transaction
           .select()
           .from(contacts)
-          .where(eq(contacts.accountId, accountId))
+          .where(
+            and(eq(contacts.accountId, accountId), isNull(contacts.archivedAt)),
+          )
           .orderBy(asc(contacts.displayName)),
       );
 
@@ -78,15 +81,32 @@ function createContactRepository(run: ContactOperation): ContactRepository {
             trimmed
               ? and(
                   eq(contacts.accountId, accountId),
+                  isNull(contacts.archivedAt),
                   ilike(contacts.displayName, `${trimmed}%`),
                 )
-              : eq(contacts.accountId, accountId),
+              : and(
+                  eq(contacts.accountId, accountId),
+                  isNull(contacts.archivedAt),
+                ),
           )
           .orderBy(asc(contacts.displayName))
           .limit(10),
       );
 
       return rows.map(toContactRecord);
+    },
+    async update(accountId, contactId, values) {
+      const [row] = await run((transaction) =>
+        transaction
+          .update(contacts)
+          .set(values)
+          .where(
+            and(eq(contacts.accountId, accountId), eq(contacts.id, contactId)),
+          )
+          .returning(),
+      );
+
+      return row ? toContactRecord(row) : null;
     },
   };
 }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { AccountRecord } from "@/modules/accounts/application/ensure-account";
-import { createContact, searchContacts } from "@/modules/contacts";
+import {
+  archiveContact,
+  createContact,
+  searchContacts,
+  updateContact,
+} from "@/modules/contacts";
 import { InMemoryAuditRepository } from "../../support/audit-repository";
 import { InMemoryContactRepository } from "../../support/contact-repository";
 
@@ -127,5 +132,89 @@ describe("contacts", () => {
         repository,
       }),
     ).resolves.toEqual([]);
+  });
+
+  it("updates an active contact and records audit history", async () => {
+    const account = createAccount();
+    const contactRepository = new InMemoryContactRepository([
+      {
+        id: "contact-1",
+        accountId: account.id,
+        displayName: "SSG Rivera",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const contact = await updateContact({
+      account,
+      actorId: account.userId,
+      contactId: "contact-1",
+      input: {
+        displayName: "SFC Rivera",
+      },
+      contactRepository,
+      auditRepository,
+      now: new Date("2026-05-02T12:00:00.000Z"),
+    });
+
+    expect(contact).toMatchObject({
+      id: "contact-1",
+      displayName: "SFC Rivera",
+    });
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "contact.updated",
+        targetType: "contact",
+        targetId: "contact-1",
+        metadata: {
+          displayName: "SFC Rivera",
+          previousDisplayName: "SSG Rivera",
+        },
+      },
+    ]);
+  });
+
+  it("archives contacts instead of deleting them", async () => {
+    const account = createAccount();
+    const contactRepository = new InMemoryContactRepository([
+      {
+        id: "contact-1",
+        accountId: account.id,
+        displayName: "SSG Rivera",
+        createdAt: new Date("2026-05-01T12:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T12:00:00.000Z"),
+      },
+    ]);
+    const auditRepository = new InMemoryAuditRepository();
+
+    const archived = await archiveContact({
+      account,
+      actorId: account.userId,
+      contactId: "contact-1",
+      contactRepository,
+      auditRepository,
+      now: new Date("2026-05-02T12:00:00.000Z"),
+    });
+
+    expect(archived).toMatchObject({
+      id: "contact-1",
+      archivedAt: new Date("2026-05-02T12:00:00.000Z"),
+    });
+    await expect(
+      searchContacts({
+        accountId: account.id,
+        query: "ssg",
+        repository: contactRepository,
+      }),
+    ).resolves.toEqual([]);
+    expect(auditRepository.events).toMatchObject([
+      {
+        action: "contact.archived",
+        targetType: "contact",
+        targetId: "contact-1",
+      },
+    ]);
   });
 });

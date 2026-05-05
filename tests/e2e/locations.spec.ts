@@ -69,6 +69,35 @@ test("users can create and review reusable locations", async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("heading", { name: "Arms room" })).toBeVisible();
   await expect(page.getByText(/Added /)).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit Arms room" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit location" });
+  await editDialog.getByLabel("Name").fill("Motor pool");
+  await editDialog.getByRole("button", { name: "Save" }).click();
+
+  await expect(editDialog).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Motor pool" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Archive Motor pool" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive location?",
+  });
+  await expect(
+    archiveDialog.getByText("Existing item records keep their historical"),
+  ).toBeVisible();
+  await archiveDialog.getByRole("button", { name: "Archive" }).click();
+
+  await expect(archiveDialog).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "No reusable locations yet" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "New location" }).click();
+  const recreateDialog = page.getByRole("dialog", { name: "Create location" });
+  await recreateDialog.getByLabel("Name").fill("Motor pool");
+  await recreateDialog.getByRole("button", { name: "Create" }).click();
+  await expect(recreateDialog).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Motor pool" })).toBeVisible();
 });
 
 test("read-only users can review locations but cannot create them", async ({
@@ -99,5 +128,11 @@ test("read-only users can review locations but cannot create them", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "New location" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Edit Motor pool" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Archive Motor pool" }),
   ).toBeDisabled();
 });

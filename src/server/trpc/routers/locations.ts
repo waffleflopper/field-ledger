@@ -2,9 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
+  archiveLocation,
   createLocation,
   listLocations,
   searchLocations,
+  updateLocation,
 } from "@/modules/locations";
 import type {
   AppUnitOfWork,
@@ -14,6 +16,14 @@ import { createTRPCRouter, protectedProcedure } from "@/server/trpc/init";
 
 const locationNameInput = z.object({
   name: z.string().trim().min(1, "Location name is required.").max(120),
+});
+
+const locationIdInput = z.object({
+  id: z.uuid(),
+});
+
+const updateLocationInput = locationNameInput.extend({
+  id: z.uuid(),
 });
 
 const searchLocationsInput = z.object({
@@ -32,6 +42,8 @@ function toTRPCError(
       throw new TRPCError({ code: "FORBIDDEN", message });
     case "Location name is required.":
       throw new TRPCError({ code: "BAD_REQUEST", message });
+    case "Location is already archived.":
+      throw new TRPCError({ code: "CONFLICT", message });
     default:
       console.error("Unexpected locations tRPC error.", {
         accountId: context.accountId,
@@ -99,4 +111,57 @@ export const locationsRouter = createTRPCRouter({
         }),
       ),
     ),
+  update: protectedProcedure
+    .input(updateLocationInput)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await runInUnitOfWork(
+        ctx,
+        "locations.update",
+        (repositories) =>
+          updateLocation({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            locationId: input.id,
+            input: {
+              name: input.name,
+            },
+            locationRepository: repositories.locationRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+      );
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Location was not found.",
+        });
+      }
+
+      return updated;
+    }),
+  archive: protectedProcedure
+    .input(locationIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const archived = await runInUnitOfWork(
+        ctx,
+        "locations.archive",
+        (repositories) =>
+          archiveLocation({
+            account: ctx.account,
+            actorId: ctx.session.userId,
+            locationId: input.id,
+            locationRepository: repositories.locationRepository,
+            auditRepository: repositories.auditRepository,
+          }),
+      );
+
+      if (!archived) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Location was not found.",
+        });
+      }
+
+      return archived;
+    }),
 });

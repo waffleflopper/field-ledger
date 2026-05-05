@@ -69,6 +69,28 @@ test("users can create and review reusable contacts", async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("heading", { name: "SSG Rivera" })).toBeVisible();
   await expect(page.getByText(/Added /)).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit SSG Rivera" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit contact" });
+  await editDialog.getByLabel("Display name").fill("SFC Rivera");
+  await editDialog.getByRole("button", { name: "Save" }).click();
+
+  await expect(editDialog).toBeHidden();
+  await expect(page.getByRole("heading", { name: "SFC Rivera" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Archive SFC Rivera" }).click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive contact?",
+  });
+  await expect(
+    archiveDialog.getByText("Existing signed-to and 2062 history"),
+  ).toBeVisible();
+  await archiveDialog.getByRole("button", { name: "Archive" }).click();
+
+  await expect(archiveDialog).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "No reusable assignees yet" }),
+  ).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(390);
@@ -102,6 +124,12 @@ test("read-only users can review contacts but cannot create them", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "New contact" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Edit CPL Nguyen" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Archive CPL Nguyen" }),
   ).toBeDisabled();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
