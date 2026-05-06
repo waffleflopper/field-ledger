@@ -23,15 +23,15 @@ describe("DashboardQuickActions", () => {
       createElement(DashboardQuickActions, { isReadOnly: false }),
     );
 
-    expect(markup).toContain("Quick Actions");
-    expect(markup).toContain("Add item");
-    expect(markup).toContain("Search items");
-    expect(markup).toContain("Review 2062s");
-    expect(markup).toContain("Review archived receipts");
-    expect(hrefFor(markup, "Add item")).toBe("/app/hand-receipts");
-    expect(hrefFor(markup, "Search items")).toBe("/app/items");
-    expect(hrefFor(markup, "Review 2062s")).toBe("/app/active-2062s");
-    expect(hrefFor(markup, "Review archived receipts")).toBe(
+    expect(markup).toContain("Common actions");
+    expect(markup).toContain("Add property item");
+    expect(markup).toContain("Find an item");
+    expect(markup).toContain("Review active 2062s");
+    expect(markup).toContain("Archived receipts");
+    expect(hrefFor(markup, "Add property item")).toBe("/app/hand-receipts");
+    expect(hrefFor(markup, "Find an item")).toBe("/app/items");
+    expect(hrefFor(markup, "Review active 2062s")).toBe("/app/active-2062s");
+    expect(hrefFor(markup, "Archived receipts")).toBe(
       "/app/hand-receipts?view=archived",
     );
   });
@@ -41,10 +41,10 @@ describe("DashboardQuickActions", () => {
       createElement(DashboardQuickActions, { isReadOnly: true }),
     );
 
-    expect(markup).not.toContain("Quick Actions");
-    expect(markup).not.toContain("Add item");
-    expect(markup).not.toContain("Search items");
-    expect(markup).not.toContain("Review 2062s");
-    expect(markup).not.toContain("Review archived receipts");
+    expect(markup).not.toContain("Common actions");
+    expect(markup).not.toContain("Add property item");
+    expect(markup).not.toContain("Find an item");
+    expect(markup).not.toContain("Review active 2062s");
+    expect(markup).not.toContain("Archived receipts");
   });
 });

@@ -21,7 +21,7 @@ describe("DashboardSignedOut", () => {
 
     expect(markup).toContain("No signed-out property");
     expect(markup).toContain("This account is read-only");
-    expect(markup).not.toContain("Review-only signed-out state");
+    expect(markup).not.toContain("Signed-out property is review-only");
   });
 
   it("shows the read-only notice when signed-out property exists", () => {
@@ -45,7 +45,8 @@ describe("DashboardSignedOut", () => {
       }),
     );
 
-    expect(markup).toContain("Review-only signed-out state");
+    expect(markup).toContain("Signed-out property is review-only");
+    expect(markup).toContain("no-2062 assignments");
     expect(markup).toContain("Radio set");
   });
 });

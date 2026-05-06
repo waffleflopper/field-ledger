@@ -93,9 +93,15 @@ test("dashboard shows requirement work in priority order on mobile", async ({
 
   await page.goto("/app/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Overdue" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Due Soon" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Overdue" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Due Soon" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Plan Ahead" }),
+  ).toBeVisible();
 
   const overdue = page.getByRole("link").filter({ hasText: "Overdue PMCS" });
   await expect(overdue).toBeVisible();
@@ -109,17 +115,16 @@ test("dashboard shows requirement work in priority order on mobile", async ({
     page.getByRole("link").filter({ hasText: "Beyond window PMCS" }),
   ).toBeHidden();
   await expect(page.getByText("Dashboard receipt")).toHaveCount(3);
-  await expect(page.getByRole("link", { name: "Add item" })).toHaveAttribute(
-    "href",
-    "/app/hand-receipts",
-  );
+  await expect(
+    page.getByRole("link", { name: /Add property item/ }),
+  ).toHaveAttribute("href", "/app/hand-receipts");
 
   const sectionOrder = await page
-    .getByRole("heading", { name: /^(Overdue|Due Soon|Upcoming)$/ })
+    .getByRole("heading", { name: /^(Overdue|Due Soon|Plan Ahead)$/ })
     .evaluateAll((headings) =>
       headings.map((heading) => heading.textContent?.trim()),
     );
-  expect(sectionOrder).toEqual(["Overdue", "Due Soon", "Upcoming"]);
+  expect(sectionOrder).toEqual(["Overdue", "Due Soon", "Plan Ahead"]);
 
   await overdue.first().click();
   await expect(page).toHaveURL(/\/app\/items\/[0-9a-f-]+$/);
@@ -128,7 +133,7 @@ test("dashboard shows requirement work in priority order on mobile", async ({
   ).toBeVisible();
 
   await page.goto("/app/dashboard");
-  await page.getByRole("link", { name: "Add item" }).click();
+  await page.getByRole("link", { name: /Add property item/ }).click();
   await expect(page).toHaveURL(/\/app\/hand-receipts$/);
 });
 

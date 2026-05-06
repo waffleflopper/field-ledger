@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 type DashboardSignedOutProps = DashboardSignedOutResult & {
   isReadOnly: boolean;
+  layout?: "full" | "rail";
 };
 
 function coverageBadgeClasses(
@@ -17,8 +18,8 @@ function coverageBadgeClasses(
   return cn(
     "rounded-[3px] border px-2 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em]",
     coverageType === "da2062"
-      ? "border-emerald-900/30 bg-emerald-900/5 text-emerald-900"
-      : "border-amber-800/30 bg-amber-800/5 text-amber-900",
+      ? "border-chart-4/30 bg-chart-4/5 text-chart-4"
+      : "border-chart-2/30 bg-chart-2/5 text-chart-2",
   );
 }
 
@@ -28,26 +29,29 @@ function DashboardSignedOutRowView({ row }: { row: DashboardSignedOutRow }) {
   return (
     <li>
       <Link
-        className="grid min-h-20 gap-2 rounded-md border bg-card px-3 py-3 text-card-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[1fr_auto]"
+        className="group grid min-h-20 gap-3 rounded-md border bg-card px-3 py-3 text-card-foreground transition-colors hover:border-primary/30 hover:bg-secondary/50 active:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto]"
         href={`/app/items/${row.itemId}`}
       >
         <span className="min-w-0 space-y-1">
-          <span className="block truncate text-sm font-semibold tracking-normal">
+          <span className="block truncate text-sm font-semibold tracking-normal group-hover:text-primary">
             {row.nomenclature}
           </span>
           <span className="block truncate text-sm text-muted-foreground">
-            Signed to {row.signedToName}
+            Assigned to {row.signedToName}
           </span>
-          <span className="block truncate text-xs font-medium text-muted-foreground">
+          <span className="block truncate font-mono text-[0.6875rem] text-muted-foreground">
             {row.handReceiptName} · {row.identifier}
           </span>
         </span>
-        <span className="flex items-center gap-2 sm:flex-col sm:items-end sm:justify-center">
+        <span className="flex min-w-0 items-center gap-2 sm:flex-col sm:items-end sm:justify-center">
           <span className={coverageBadgeClasses(row.coverageType)}>
             {label}
           </span>
           {row.documentFilename ? (
-            <span className="max-w-36 truncate text-[0.6875rem] text-muted-foreground">
+            <span
+              className="max-w-full truncate text-[0.6875rem] text-muted-foreground sm:max-w-36"
+              title={row.documentFilename}
+            >
               {row.documentFilename}
             </span>
           ) : null}
@@ -75,7 +79,10 @@ function DashboardSignedOutSection({
             {title}
           </h3>
         </div>
-        <span className="rounded-[3px] border bg-secondary px-2 py-0.5 font-mono text-[0.6875rem] text-muted-foreground">
+        <span
+          aria-label={`${rows.length} items`}
+          className="shrink-0 rounded-[3px] border bg-secondary px-2 py-0.5 font-mono text-[0.6875rem] text-muted-foreground"
+        >
           {rows.length}
         </span>
       </div>
@@ -91,28 +98,40 @@ function DashboardSignedOutSection({
 function DashboardSignedOutEmpty({ isReadOnly }: { isReadOnly: boolean }) {
   return (
     <div className="rounded-lg border bg-card p-4 text-card-foreground">
-      <h3 className="text-base font-semibold tracking-normal">
-        No signed-out property
-      </h3>
-      <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-        Items assigned by DA 2062 or manual signed-to state will appear here.
-        {isReadOnly
-          ? " This account is read-only, so this is review-only."
-          : ""}
-      </p>
+      <div className="space-y-2">
+        <h3 className="text-base font-semibold tracking-normal">
+          No signed-out property
+        </h3>
+        <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+          Property assigned out by DA 2062 or without a 2062 will appear here.
+          {isReadOnly
+            ? " This account is read-only, so this section is for review."
+            : " Open an item detail page when property leaves your hand receipt."}
+        </p>
+      </div>
+      {isReadOnly ? null : (
+        <div className="mt-3 border-t pt-3 text-sm font-medium">
+          <Link
+            className="rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href="/app/items"
+          >
+            Find an item
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
 
 function DashboardSignedOutReadOnlyNotice() {
   return (
-    <div className="rounded-lg border border-amber-800/30 bg-amber-800/5 p-4 text-card-foreground">
+    <div className="rounded-lg border border-chart-2/30 bg-chart-2/5 p-4 text-card-foreground">
       <h3 className="text-base font-semibold tracking-normal">
-        Review-only signed-out state
+        Signed-out property is review-only
       </h3>
       <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-        This account can still review formal 2062 coverage and manual signed-to
-        property, but the dashboard is not showing write actions.
+        You can review DA 2062 coverage and no-2062 assignments, but this
+        account cannot change signed-out property from the dashboard.
       </p>
     </div>
   );
@@ -126,12 +145,12 @@ export function DashboardSignedOut(props: DashboardSignedOutProps) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold tracking-normal">
-            Signed-Out Property
+            Signed-out property
           </h2>
         </div>
         {hasSignedOut ? (
           <Link
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href="/app/items"
           >
             View all
@@ -142,7 +161,12 @@ export function DashboardSignedOut(props: DashboardSignedOutProps) {
         <DashboardSignedOutReadOnlyNotice />
       ) : null}
       {hasSignedOut ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div
+          className={cn(
+            "grid gap-4",
+            props.layout === "rail" ? "" : "lg:grid-cols-2",
+          )}
+        >
           {props.coveredItems.length > 0 ? (
             <DashboardSignedOutSection
               icon={ReceiptText}
@@ -154,7 +178,7 @@ export function DashboardSignedOut(props: DashboardSignedOutProps) {
             <DashboardSignedOutSection
               icon={ClipboardList}
               rows={props.manualItems}
-              title="Manual"
+              title="No 2062"
             />
           ) : null}
         </div>
